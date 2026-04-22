@@ -18,12 +18,12 @@ Aujourd'hui, ces messages sont traites manuellement. Les risques observes:
 - retard de traitement sans relance
 - manque de tracabilite sur "qui fait quoi"
 
-Le but de la demo est de montrer qu'un flux n8n + eXo peut transformer ce chaos en execution fiable, avec ou sans IA.
+Le but de la demo est de montrer qu'un flux n8n + eXo peut transformer ce chaos en execution fiable, en mode IA-first pour l'affectation des taches.
 
 ## 3) Ce qu'on cherche a demontrer
 1. Chaque email entrant devient une tache exploitable.
 2. La priorite et le delai sont calcules automatiquement.
-3. L'assignation est faite selon regles (ou IA) et disponibilite.
+3. L'assignation est faite par un agent IA selon le contenu de l'email et les responsabilites des membres.
 4. Les retards declenchent relance puis escalade.
 5. Les evidences sont visibles dans eXo (commentaires, statut, historique).
 
@@ -80,27 +80,32 @@ Base URL REST (a valider): `https://<exo-host>/portal/rest`
 ## 6) Sequence detaillee
 1. Trigger MCP eXo email: `list_emails` (polling planifie n8n) puis `get_email_by_id`.
 2. Normalisation: auteur, sujet, corps, date, pieces jointes.
-3. Qualification:
-   - avec IA: intent/domain/priority/sla/suggestedAssignee
-   - sans IA: dictionnaire de regles keywords
-4. Resolution projet/statut via MCP (`list_projects` + `list_project_statuses`).
-5. Creation tache eXo via MCP (`create_task_in_project`) puis assignation (`assign_task`).
+3. Qualification et affectation par Agent IA (node `agent` n8n):
+   - analyse du sujet, expediteur, corps, pieces jointes et contexte
+   - sortie structuree: `intent`, `domain`, `priority`, `slaHours`, `assignee_username`, `rationale`
+   - l'agent route vers le meilleur responsable selon consignes metier
+4. Filtre actionnabilite strict: si l'email n'est pas clairement actionnable, on ignore (pas de creation de tache).
+5. Resolution projet/statut via MCP (`list_projects` + `list_project_statuses`).
+6. Creation tache eXo via MCP (`create_task_in_project`) puis assignation (`assign_task`).
+7. Si `create_task_in_project` ne retourne pas de `task_id`, le workflow echoue explicitement (pas de faux succes).
 6. Enrichissement optionnel via MCP eXo (doc de contexte lie au ticket).
 7. Polling des taches en retard via MCP (`list_tasks`).
 8. Relance automatique via MCP (`add_task_comment`).
 9. Escalade si depassement de seuil.
 10. Si un endpoint MCP echoue: bascule REST uniquement pour l'etape concernee.
 
-## 7) Avec IA vs sans IA
-### Avec IA
+## 7) Mode d'affectation cible (IA)
+### Agent IA d'affectation
 - Classification semantique des emails.
 - Resume automatique du ticket.
-- Suggestion d'assignation selon charge et competence.
+- Affectation decidee par l'agent selon le contenu complet du message (`from`, `subject`, `body`) et les responsabilites ci-dessous:
+  - `louis`: responsable des moyens techniques et numeriques du festival.
+  - `claire`: cheffe de projet festival.
+  - `lucie`: responsable des relations avec les institutions.
+- Sortie attendue de l'agent: `assignee_username` + justification courte (`rationale`) pour tracabilite.
 
-### Sans IA
-- Matrice `keywords -> priorite -> assignee -> SLA`.
-- Templates de description.
-- Round-robin simple.
+### Fallback (seulement si IA indisponible)
+- Matrice simplifiee de secours pour garantir la continuite de service.
 
 ## 8) Story-driven dataset (base demo)
 ```json
@@ -112,9 +117,9 @@ Base URL REST (a valider): `https://<exo-host>/portal/rest`
     "projectName": "Festival Art2Rue - Operations"
   },
   "actors": [
-    {"username":"maria","role":"Ops reseau","skills":["vpn","reseau"],"capacity":3},
-    {"username":"yann","role":"Support collaboratif","skills":["ged","documents"],"capacity":2},
-    {"username":"sarah","role":"Securite SI","skills":["acces","securite"],"capacity":2},
+    {"username":"louis","role":"Responsable moyens techniques et numeriques","skills":["vpn","reseau","outillage","numerique"],"capacity":3},
+    {"username":"claire","role":"Cheffe de projet festival","skills":["coordination","arbitrage","suivi global"],"capacity":3},
+    {"username":"lucie","role":"Responsable relations institutions","skills":["mairie","administration","documents institutionnels"],"capacity":2},
     {"username":"teamlead_it","role":"Manager IT"}
   ],
   "emails": [
@@ -140,11 +145,21 @@ Base URL REST (a valider): `https://<exo-host>/portal/rest`
       "receivedAt":"2026-05-14T08:15:00Z"
     }
   ],
-  "routingRules": [
-    {"match":"vpn", "priority":"HIGH", "assignee":"maria", "slaHours":4},
-    {"match":"acces ged", "priority":"NORMAL", "assignee":"yann", "slaHours":24},
-    {"match":"plan de circulation", "priority":"HIGH", "assignee":"sarah", "slaHours":6}
-  ],
+  "routingPolicy": {
+    "type": "ai_agent",
+    "instructions": [
+      "Analyse le sujet, l'expediteur et le corps de l'email.",
+      "Assigne louis pour les sujets techniques et numeriques.",
+      "Assigne lucie pour les demandes liees aux institutions (mairie, administration).",
+      "Assigne claire pour la coordination projet, arbitrages ou cas transverses."
+    ],
+    "outputSchema": {
+      "assignee_username": "louis|claire|lucie",
+      "priority": "LOW|NORMAL|HIGH|URGENT",
+      "slaHours": "number",
+      "rationale": "string"
+    }
+  },
   "watchers": ["teamlead_it"]
 }
 ```
@@ -155,13 +170,9 @@ Base URL REST (a valider): `https://<exo-host>/portal/rest`
 {
   "project_id": 66,
   "title": "Incident VPN - acces impossible",
-  "description": "Mail client: VPN KO depuis 8h",
-  "assignee_username": "maria",
-  "watcher_usernames": ["teamlead_it"],
-  "priority": "HIGH",
-  "dueDate": "2026-05-14T11:50:00Z",
-  "status_id": 261,
-  "context": "MAIL"
+  "description": "<div><p><strong>Email source:</strong> billetterie@prestataire.fr</p><h4>Contexte</h4><p>VPN KO depuis 8h.</p></div>",
+  "assignee": "louis",
+  "priority": "HIGH"
 }
 ```
 
@@ -178,7 +189,7 @@ Base URL REST (a valider): `https://<exo-host>/portal/rest`
 {
   "title": "Incident VPN - acces impossible",
   "description": "Mail client: VPN KO depuis 8h",
-  "assignee": "maria",
+  "assignee": "louis",
   "watcher": ["teamlead_it"],
   "priority": "HIGH",
   "dueDate": "2026-05-14T11:50:00Z"
@@ -194,10 +205,12 @@ Base URL REST (a valider): `https://<exo-host>/portal/rest`
 6. Montrer escalade manager si delai depasse.
 
 ## 11) Criteres d'acceptation
-- 100% des emails cibles convertis en taches.
-- Priorite, assignee et dueDate toujours renseignes.
+- 100% des emails clairement actionnables convertis en taches.
+- Les emails non actionnables sont ignores (aucune tache creee).
+- Priorite et assignee toujours renseignes sur les taches creees.
 - Relance visible en commentaire pour les retards.
 - Escalade declenchee sur au moins 1 cas de test.
+- En cas de reponse invalide de `create_task_in_project` (sans `task_id`), l'execution est en echec explicite.
 
 ## 12) MCP eXo direct - payloads reels observes
 Ces payloads ont ete captures via appels directs `mcp__exo_qaui_mcp_server__`.
