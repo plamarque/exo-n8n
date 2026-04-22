@@ -1,0 +1,888 @@
+{
+  "name": "WF01 - Email to Task (MCP-first, REST fallback)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual_trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1540,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "id": "schedule_intake",
+      "name": "Schedule - Intake",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1540,
+        -60
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "schedule_sla",
+      "name": "Schedule - SLA Sweep",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1540,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "number": [
+            {
+              "name": "emailLimit",
+              "value": 50
+            }
+          ]
+        }
+      },
+      "id": "set_intake_config",
+      "name": "Set Intake Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1320,
+        -140
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.EXO_MCP_ENDPOINT}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.EXO_MCP_TOKEN}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { tool: 'list_emails', arguments: { limit: $json.emailLimit, offset: 0 } } }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "mcp_list_emails",
+      "name": "MCP - list_emails",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1080,
+        -140
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const seen = getWorkflowStaticData('global');\nif (!seen.processedEmailIds) seen.processedEmailIds = [];\n\nfunction parseMaybeEnvelope(raw) {\n  if (Array.isArray(raw) && raw.length && raw[0]?.type === 'text' && typeof raw[0]?.text === 'string') {\n    return JSON.parse(raw[0].text);\n  }\n  if (typeof raw === 'string') return JSON.parse(raw);\n  return raw;\n}\n\nconst payload = parseMaybeEnvelope($json);\nconst emails = Array.isArray(payload) ? payload : (payload.emails || []);\n\nconst outputs = [];\nfor (const email of emails) {\n  const id = String(email.email_id ?? email.id ?? email.messageId ?? '');\n  if (!id) continue;\n  if (seen.processedEmailIds.includes(id)) continue;\n  outputs.push({ json: { emailId: id } });\n  seen.processedEmailIds.push(id);\n}\n\nif (seen.processedEmailIds.length > 5000) {\n  seen.processedEmailIds = seen.processedEmailIds.slice(-5000);\n}\n\nreturn outputs;"
+      },
+      "id": "parse_new_emails",
+      "name": "Parse + Deduplicate Emails",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -860,
+        -140
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.EXO_MCP_ENDPOINT}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.EXO_MCP_TOKEN}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { tool: 'get_email_by_id', arguments: { email_id: $json.emailId } } }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "mcp_get_email",
+      "name": "MCP - get_email_by_id",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -640,
+        -140
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function parseMaybeEnvelope(raw) {\n  if (Array.isArray(raw) && raw.length && raw[0]?.type === 'text' && typeof raw[0]?.text === 'string') {\n    return JSON.parse(raw[0].text);\n  }\n  if (typeof raw === 'string') return JSON.parse(raw);\n  return raw;\n}\n\nfunction classify(text) {\n  const t = (text || '').toLowerCase();\n  const rules = [\n    { match: 'vpn', priority: 'HIGH', assignee: 'maria', slaHours: 4 },\n    { match: 'acces ged', priority: 'NORMAL', assignee: 'yann', slaHours: 24 },\n    { match: 'plan de circulation', priority: 'HIGH', assignee: 'sarah', slaHours: 6 }\n  ];\n\n  for (const rule of rules) {\n    if (t.includes(rule.match)) return rule;\n  }\n\n  return { priority: 'NORMAL', assignee: $env.EXO_DEFAULT_ASSIGNEE || 'yann', slaHours: 24 };\n}\n\nconst email = parseMaybeEnvelope($json);\nconst body = email?.content?.body || email?.body || '';\nconst subject = email?.subject || 'Email sans sujet';\nconst sender = email?.sender || email?.from || 'unknown';\nconst receivedAt = email?.receivedDate || email?.receivedAt || new Date().toISOString();\n\nconst decision = classify(`${subject} ${body}`);\nconst due = new Date(new Date(receivedAt).getTime() + decision.slaHours * 60 * 60 * 1000).toISOString();\n\nreturn [{\n  json: {\n    rawEmail: email,\n    task: {\n      title: subject,\n      description: `Mail from: ${sender}\\n\\n${body}`.slice(0, 5000),\n      priority: decision.priority,\n      assignee: decision.assignee,\n      dueDate: due,\n      watcherUsernames: ($env.EXO_WATCHERS || 'teamlead_it').split(',').map(v => v.trim()).filter(Boolean),\n      context: 'MAIL'\n    }\n  }\n}];"
+      },
+      "id": "normalize_qualify",
+      "name": "Normalize + Qualify",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -420,
+        -140
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.EXO_MCP_ENDPOINT}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.EXO_MCP_TOKEN}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { tool: 'list_projects', arguments: { limit: 200, offset: 0 } } }}"
+      },
+      "id": "mcp_list_projects",
+      "name": "MCP - list_projects",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -200,
+        -140
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function parseMaybeEnvelope(raw) {\n  if (Array.isArray(raw) && raw.length && raw[0]?.type === 'text' && typeof raw[0]?.text === 'string') {\n    return JSON.parse(raw[0].text);\n  }\n  if (typeof raw === 'string') return JSON.parse(raw);\n  return raw;\n}\n\nconst projectsPayload = parseMaybeEnvelope($json);\nconst projects = projectsPayload?.projects || projectsPayload || [];\nconst targetName = ($env.EXO_PROJECT_NAME || 'Festival Art2Rue - Operations').toLowerCase();\nconst fallbackId = Number($env.EXO_PROJECT_ID || 66);\n\nconst match = projects.find((p) => (p.name || '').toLowerCase() === targetName)\n  || projects.find((p) => (p.name || '').toLowerCase().includes('art2rue'));\n\nconst projectId = Number(match?.project_id || match?.id || fallbackId);\nconst fromNormalize = $('Normalize + Qualify').item.json;\n\nreturn [{ json: { ...fromNormalize, projectId } }];"
+      },
+      "id": "resolve_project",
+      "name": "Resolve Project",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        20,
+        -140
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.EXO_MCP_ENDPOINT}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.EXO_MCP_TOKEN}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { tool: 'list_project_statuses', arguments: { project_id: $json.projectId } } }}"
+      },
+      "id": "mcp_list_statuses",
+      "name": "MCP - list_project_statuses",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        -140
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function parseMaybeEnvelope(raw) {\n  if (Array.isArray(raw) && raw.length && raw[0]?.type === 'text' && typeof raw[0]?.text === 'string') {\n    return JSON.parse(raw[0].text);\n  }\n  if (typeof raw === 'string') return JSON.parse(raw);\n  return raw;\n}\n\nconst statusesPayload = parseMaybeEnvelope($json);\nconst statuses = statusesPayload?.statuses || statusesPayload || [];\nconst fallbackStatusId = Number($env.EXO_DEFAULT_STATUS_ID || 261);\n\nconst todo = statuses.find((s) => ['todo', 'to do', 'open'].includes(String(s.name || '').toLowerCase()));\nconst statusId = Number(todo?.status_id || todo?.id || fallbackStatusId);\nconst fromResolveProject = $('Resolve Project').item.json;\n\nreturn [{ json: { ...fromResolveProject, statusId } }];"
+      },
+      "id": "resolve_status",
+      "name": "Resolve Status",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        -140
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.EXO_MCP_ENDPOINT}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.EXO_MCP_TOKEN}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { tool: 'create_task_in_project', arguments: { project_id: $json.projectId, title: $json.task.title, description: $json.task.description, assignee_username: $json.task.assignee, watcher_usernames: $json.task.watcherUsernames, priority: $json.task.priority, dueDate: $json.task.dueDate, status_id: $json.statusId, context: $json.task.context } } }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "mcp_create_task",
+      "name": "MCP - create_task_in_project",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        680,
+        -140
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "if_mcp_ok",
+              "leftValue": "={{$json.error}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if_mcp_create_ok",
+      "name": "IF MCP Create OK",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        900,
+        -140
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.EXO_REST_BASE_URL + '/tasks'}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.EXO_REST_TOKEN}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { title: $item(0).$node['Resolve Status'].json.task.title, description: $item(0).$node['Resolve Status'].json.task.description, assignee: $item(0).$node['Resolve Status'].json.task.assignee, watcher: $item(0).$node['Resolve Status'].json.task.watcherUsernames, priority: $item(0).$node['Resolve Status'].json.task.priority, dueDate: $item(0).$node['Resolve Status'].json.task.dueDate } }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "rest_create_task",
+      "name": "REST Fallback - POST /tasks",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        20
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "function parseMaybeEnvelope(raw) {\n  if (Array.isArray(raw) && raw.length && raw[0]?.type === 'text' && typeof raw[0]?.text === 'string') {\n    return JSON.parse(raw[0].text);\n  }\n  if (typeof raw === 'string') return JSON.parse(raw);\n  return raw;\n}\n\nconst taskSource = $input.first().json;\nconst fromResolve = $('Resolve Status').item.json;\nconst payload = parseMaybeEnvelope(taskSource);\nconst taskId = payload?.task_id || payload?.id || payload?.task?.task_id || null;\n\nreturn [{\n  json: {\n    ...fromResolve,\n    createdTaskId: taskId,\n    taskCreatedVia: taskSource?.error ? 'REST_FALLBACK' : 'MCP'\n  }\n}];"
+      },
+      "id": "normalize_create_result",
+      "name": "Normalize Create Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1340,
+        -140
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.EXO_MCP_ENDPOINT}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.EXO_MCP_TOKEN}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { tool: 'assign_task', arguments: { task_id: $json.createdTaskId, assignee_username: $json.task.assignee } } }}"
+      },
+      "id": "mcp_assign_task",
+      "name": "MCP - assign_task",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1560,
+        -140
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.EXO_MCP_ENDPOINT}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.EXO_MCP_TOKEN}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { tool: 'add_task_comment', arguments: { task_id: $item(0).$node['Normalize Create Result'].json.createdTaskId, comment: `Auto-created from email. Priority=${$item(0).$node['Normalize Create Result'].json.task.priority}. SLA due=${$item(0).$node['Normalize Create Result'].json.task.dueDate}. Source=${$item(0).$node['Normalize Create Result'].json.taskCreatedVia}` } } }}"
+      },
+      "id": "mcp_add_creation_comment",
+      "name": "MCP - add_task_comment (creation evidence)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1780,
+        -140
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "number": [
+            {
+              "name": "projectId",
+              "value": "={{Number($env.EXO_PROJECT_ID || 66)}}"
+            },
+            {
+              "name": "overdueLimit",
+              "value": 200
+            }
+          ]
+        }
+      },
+      "id": "set_sla_config",
+      "name": "Set SLA Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1320,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.EXO_MCP_ENDPOINT}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.EXO_MCP_TOKEN}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { tool: 'list_tasks', arguments: { project_id: $json.projectId, offset: 0, limit: $json.overdueLimit } } }}"
+      },
+      "id": "mcp_list_tasks",
+      "name": "MCP - list_tasks",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1080,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function parseMaybeEnvelope(raw) {\n  if (Array.isArray(raw) && raw.length && raw[0]?.type === 'text' && typeof raw[0]?.text === 'string') {\n    return JSON.parse(raw[0].text);\n  }\n  if (typeof raw === 'string') return JSON.parse(raw);\n  return raw;\n}\n\nconst payload = parseMaybeEnvelope($json);\nconst tasks = payload?.tasks || payload || [];\nconst now = Date.now();\nconst escalationHours = Number($env.EXO_ESCALATION_HOURS || 2);\n\nconst out = [];\nfor (const task of tasks) {\n  const due = task?.dueDate || task?.due_date;\n  if (!due) continue;\n\n  const dueTs = new Date(due).getTime();\n  if (!Number.isFinite(dueTs) || dueTs >= now) continue;\n\n  const overdueHours = (now - dueTs) / 3600000;\n  const taskId = task.task_id || task.id;\n  if (!taskId) continue;\n\n  out.push({\n    json: {\n      taskId,\n      overdueHours,\n      needsEscalation: overdueHours >= escalationHours,\n      escalationTo: $env.EXO_ESCALATE_TO || 'teamlead_it'\n    }\n  });\n}\n\nreturn out;"
+      },
+      "id": "detect_overdue",
+      "name": "Detect Overdue + Escalation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -860,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.EXO_MCP_ENDPOINT}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.EXO_MCP_TOKEN}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { tool: 'add_task_comment', arguments: { task_id: $json.taskId, comment: `Relance automatique: SLA depasse depuis ${$json.overdueHours.toFixed(1)}h. Merci de mettre a jour le statut.` } } }}"
+      },
+      "id": "mcp_overdue_comment",
+      "name": "MCP - add_task_comment (overdue)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -640,
+        580
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "if_escalate",
+              "leftValue": "={{$json.needsEscalation}}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if_escalate",
+      "name": "IF Needs Escalation",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -420,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.EXO_MCP_ENDPOINT}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.EXO_MCP_TOKEN}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { tool: 'assign_task', arguments: { task_id: $json.taskId, assignee_username: $json.escalationTo } } }}"
+      },
+      "id": "mcp_escalate_assign",
+      "name": "MCP - assign_task (escalation)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -200,
+        520
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.EXO_MCP_ENDPOINT}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.EXO_MCP_TOKEN}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { tool: 'add_task_comment', arguments: { task_id: $json.taskId, comment: `Escalade automatique: retard > seuil, reassigne a ${$json.escalationTo}.` } } }}"
+      },
+      "id": "mcp_escalate_comment",
+      "name": "MCP - add_task_comment (escalation)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -200,
+        640
+      ],
+      "continueOnFail": true
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Intake Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule - Intake": {
+      "main": [
+        [
+          {
+            "node": "Set Intake Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Intake Config": {
+      "main": [
+        [
+          {
+            "node": "MCP - list_emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP - list_emails": {
+      "main": [
+        [
+          {
+            "node": "Parse + Deduplicate Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse + Deduplicate Emails": {
+      "main": [
+        [
+          {
+            "node": "MCP - get_email_by_id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP - get_email_by_id": {
+      "main": [
+        [
+          {
+            "node": "Normalize + Qualify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize + Qualify": {
+      "main": [
+        [
+          {
+            "node": "MCP - list_projects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP - list_projects": {
+      "main": [
+        [
+          {
+            "node": "Resolve Project",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Project": {
+      "main": [
+        [
+          {
+            "node": "MCP - list_project_statuses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP - list_project_statuses": {
+      "main": [
+        [
+          {
+            "node": "Resolve Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Status": {
+      "main": [
+        [
+          {
+            "node": "MCP - create_task_in_project",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP - create_task_in_project": {
+      "main": [
+        [
+          {
+            "node": "IF MCP Create OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF MCP Create OK": {
+      "main": [
+        [
+          {
+            "node": "Normalize Create Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "REST Fallback - POST /tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "REST Fallback - POST /tasks": {
+      "main": [
+        [
+          {
+            "node": "Normalize Create Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Create Result": {
+      "main": [
+        [
+          {
+            "node": "MCP - assign_task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP - assign_task": {
+      "main": [
+        [
+          {
+            "node": "MCP - add_task_comment (creation evidence)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule - SLA Sweep": {
+      "main": [
+        [
+          {
+            "node": "Set SLA Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set SLA Config": {
+      "main": [
+        [
+          {
+            "node": "MCP - list_tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP - list_tasks": {
+      "main": [
+        [
+          {
+            "node": "Detect Overdue + Escalation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Overdue + Escalation": {
+      "main": [
+        [
+          {
+            "node": "MCP - add_task_comment (overdue)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP - add_task_comment (overdue)": {
+      "main": [
+        [
+          {
+            "node": "IF Needs Escalation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Needs Escalation": {
+      "main": [
+        [
+          {
+            "node": "MCP - assign_task (escalation)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "MCP - add_task_comment (escalation)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "active": false,
+  "versionId": "wf01-email-to-task-v1"
+}
