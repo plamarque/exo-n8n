@@ -10,7 +10,10 @@
       "name": "Manual Start",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [220, 120],
+      "position": [
+        220,
+        120
+      ],
       "parameters": {}
     },
     {
@@ -18,7 +21,10 @@
       "name": "Schedule Intake (5m)",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.3,
-      "position": [220, 280],
+      "position": [
+        220,
+        280
+      ],
       "parameters": {
         "rule": {
           "interval": [
@@ -35,14 +41,23 @@
       "name": "MCP Search Folder Docs",
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
-      "position": [480, 200],
+      "position": [
+        480,
+        200
+      ],
       "parameters": {
         "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
         "authentication": "mcpOAuth2Api",
-        "tool": { "__rl": true, "mode": "id", "value": "search_documents" },
+        "tool": {
+          "__rl": true,
+          "mode": "id",
+          "value": "search_documents"
+        },
         "inputMode": "json",
         "jsonInput": "={{ { query: \"\", parent_folder_id: ($vars.WF02_PARENT_FOLDER_ID || \"b468cb5639805e11480baa56164da90c\"), limit: 100, offset: 0 } }}",
-        "options": { "timeout": 60000 }
+        "options": {
+          "timeout": 60000
+        }
       }
     },
     {
@@ -50,7 +65,10 @@
       "name": "Parse + Deduplicate Docs",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [740, 200],
+      "position": [
+        740,
+        200
+      ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "jsCode": "const seen = $getWorkflowStaticData('global');\nif (!Array.isArray(seen.wf02ProcessedDocKeys)) seen.wf02ProcessedDocKeys = [];\n\nconst first = $input.first().json;\nlet payload = first;\nif (first?.content?.[0]?.text !== undefined) payload = first.content[0].text;\nif (Array.isArray(payload) && payload[0]?.type === 'text' && typeof payload[0]?.text === 'string') payload = JSON.parse(payload[0].text);\nelse if (typeof payload === 'string') payload = JSON.parse(payload);\n\nconst docs = Array.isArray(payload) ? payload : (payload?.documents || []);\nconst out = [];\nfor (const doc of docs) {\n  const docId = String(doc.document_id || '').trim();\n  if (!docId) continue;\n  const key = docId + ':' + String(doc.updated_date || '');\n  if (seen.wf02ProcessedDocKeys.includes(key)) continue;\n  seen.wf02ProcessedDocKeys.push(key);\n  out.push({ json: { document_id: docId, cycle_id: key } });\n}\nif (seen.wf02ProcessedDocKeys.length > 5000) seen.wf02ProcessedDocKeys = seen.wf02ProcessedDocKeys.slice(-5000);\nreturn out;"
@@ -61,14 +79,23 @@
       "name": "MCP Get Document By ID",
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
-      "position": [980, 200],
+      "position": [
+        980,
+        200
+      ],
       "parameters": {
         "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
         "authentication": "mcpOAuth2Api",
-        "tool": { "__rl": true, "mode": "id", "value": "get_document_by_id" },
+        "tool": {
+          "__rl": true,
+          "mode": "id",
+          "value": "get_document_by_id"
+        },
         "inputMode": "json",
         "jsonInput": "={{ { document_id: $json.document_id } }}",
-        "options": { "timeout": 60000 }
+        "options": {
+          "timeout": 60000
+        }
       }
     },
     {
@@ -76,10 +103,13 @@
       "name": "Build Task Payload",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1240, 200],
+      "position": [
+        1240,
+        200
+      ],
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const fromList = $('Parse + Deduplicate Docs').item.json;\nlet payload = $json;\nif ($json?.content?.[0]?.text !== undefined) payload = $json.content[0].text;\nif (Array.isArray(payload) && payload[0]?.type === 'text' && typeof payload[0]?.text === 'string') payload = JSON.parse(payload[0].text);\nelse if (typeof payload === 'string') payload = JSON.parse(payload);\n\nconst doc = payload || {};\nconst documentId = String(doc.document_id || fromList.document_id || '').trim();\nif (!documentId) throw new Error('Missing document_id');\nconst cycleId = fromList.cycle_id || (documentId + ':' + String(doc.updated_date || new Date().toISOString()));\nconst titleCore = String(doc.name || 'Document sans titre').replace(/\\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();\nconst title = ('Validation - ' + titleCore).slice(0, 140);\nconst author = String(doc?.created_username?.username || 'claire').trim() || 'claire';\nconst docUrl = (doc.url && String(doc.url).startsWith('http')) ? String(doc.url) : ('https://exo-qaui.meeds.io' + String(doc.url || ''));\nconst approvalBase = String($vars.WF02_APPROVAL_BASE_URL || 'https://n8n.example.com/webhook/wf02-doc-validation/approve').replace(/\\/$/, '');\nconst approvalArt = approvalBase + '?task_id={{TASK_ID}}&cycle_id=' + encodeURIComponent(cycleId) + '&role=artistique&actor=nadia';\nconst approvalTech = approvalBase + '?task_id={{TASK_ID}}&cycle_id=' + encodeURIComponent(cycleId) + '&role=technique&actor=etienne';\nconst description = '<p><strong>Document source:</strong> <a href=\"' + docUrl + '\">' + String(doc.name || documentId) + '</a></p>' + '<p><strong>Cycle:</strong> ' + cycleId + '</p>' + '<p><strong>Tampon Artistique (Nadia):</strong> ' + approvalArt + '</p>' + '<p><strong>Tampon Technique (Etienne):</strong> ' + approvalTech + '</p>' + '<p>Regle: passage en Done uniquement si les deux tampons sont APPROUVE.</p>';\nreturn { document_id: documentId, cycle_id: cycleId, author_username: author, createTaskInput: { project_id: Number($vars.WF02_PROJECT_ID || 117), title, description, assignee: author, coworkers: ['nadia','etienne'], status_id: Number($vars.WF02_INPROGRESS_STATUS_ID || 475), priority: 'NORMAL' } };"
+        "jsCode": "const fromList = $('Parse + Deduplicate Docs').item.json;\nlet payload = $json;\nif ($json?.content?.[0]?.text !== undefined) payload = $json.content[0].text;\nif (Array.isArray(payload) && payload[0]?.type === 'text' && typeof payload[0]?.text === 'string') payload = JSON.parse(payload[0].text);\nelse if (typeof payload === 'string') payload = JSON.parse(payload);\n\nconst doc = payload || {};\nconst documentId = String(doc.document_id || fromList.document_id || '').trim();\nif (!documentId) throw new Error('Missing document_id');\nconst cycleId = fromList.cycle_id || (documentId + ':' + String(doc.updated_date || new Date().toISOString()));\nconst titleCore = String(doc.name || 'Document sans titre').replace(/\\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();\nconst title = ('Validation - ' + titleCore).slice(0, 140);\nconst author = String(doc?.created_username?.username || 'claire').trim() || 'claire';\nconst docUrl = (doc.url && String(doc.url).startsWith('http')) ? String(doc.url) : ('https://exo-qaui.meeds.io' + String(doc.url || ''));\n\nconst description = '<p><strong>Document source:</strong> <a href=\"' + docUrl + '\" target=\"_blank\" rel=\"noopener noreferrer\">' + String(doc.name || documentId) + '</a></p>' + '<p><strong>Cycle:</strong> ' + cycleId + '</p>' + '<p><strong>Validation:</strong> utilisez les liens d\\'approbation dans le premier commentaire de la tache.</p>' + '<p>Regle: passage en Done uniquement si les deux tampons sont APPROUVE.</p>';\n\nreturn { document_id: documentId, cycle_id: cycleId, author_username: author, createTaskInput: { project_id: Number($vars.WF02_PROJECT_ID || 117), title, description, assignee: author, coworkers: ['nadia','etienne'], status_id: Number($vars.WF02_INPROGRESS_STATUS_ID || 475), priority: 'NORMAL' } };\n"
       }
     },
     {
@@ -87,14 +117,23 @@
       "name": "MCP Create Task",
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
-      "position": [1500, 200],
+      "position": [
+        1500,
+        200
+      ],
       "parameters": {
         "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
         "authentication": "mcpOAuth2Api",
-        "tool": { "__rl": true, "mode": "id", "value": "create_task_in_project" },
+        "tool": {
+          "__rl": true,
+          "mode": "id",
+          "value": "create_task_in_project"
+        },
         "inputMode": "json",
         "jsonInput": "={{$json.createTaskInput}}",
-        "options": { "timeout": 60000 }
+        "options": {
+          "timeout": 60000
+        }
       }
     },
     {
@@ -102,7 +141,10 @@
       "name": "Extract Task ID",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1760, 200],
+      "position": [
+        1760,
+        200
+      ],
       "parameters": {
         "mode": "runOnceForEachItem",
         "jsCode": "const fromBuild = $('Build Task Payload').item.json;\nlet payload = $json;\nif ($json?.content?.[0]?.text !== undefined) payload = $json.content[0].text;\nif (Array.isArray(payload) && payload[0]?.type === 'text' && typeof payload[0]?.text === 'string') payload = JSON.parse(payload[0].text);\nelse if (typeof payload === 'string') payload = JSON.parse(payload);\nconst taskId = Number(payload?.task_id || payload?.id || payload?.task?.task_id || 0);\nif (!taskId) throw new Error('No task_id');\nreturn { ...fromBuild, task_id: taskId };"
@@ -113,14 +155,23 @@
       "name": "MCP Add Initial Comment",
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
-      "position": [2020, 200],
+      "position": [
+        2020,
+        200
+      ],
       "parameters": {
         "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
         "authentication": "mcpOAuth2Api",
-        "tool": { "__rl": true, "mode": "id", "value": "add_task_comment" },
+        "tool": {
+          "__rl": true,
+          "mode": "id",
+          "value": "add_task_comment"
+        },
         "inputMode": "json",
-        "jsonInput": "={{ { task_id: $json.task_id, text: \"Validation lancee: en attente des deux tampons. cycle_id=\" + $json.cycle_id } }}",
-        "options": { "timeout": 60000 }
+        "jsonInput": "={{ (() => { const base = String($vars.WF02_APPROVAL_BASE_URL || \"https://meeds.app.n8n.cloud/webhook/wf02-doc-validation/approve\").replace(/\\/$/, \"\"); const art = base + \"?task_id=\" + $json.task_id + \"&cycle_id=\" + encodeURIComponent($json.cycle_id) + \"&role=artistique&actor=nadia\"; const tech = base + \"?task_id=\" + $json.task_id + \"&cycle_id=\" + encodeURIComponent($json.cycle_id) + \"&role=technique&actor=etienne\"; const text = \"<p><strong>Validation lancee</strong> (cycle: \" + $json.cycle_id + \").</p><p><a href=\\\"\" + art + \"\\\" target=\\\"_blank\\\" rel=\\\"noopener noreferrer\\\">Valider Artistique (Nadia)</a></p><p><a href=\\\"\" + tech + \"\\\" target=\\\"_blank\\\" rel=\\\"noopener noreferrer\\\">Valider Technique (Etienne)</a></p>\"; return { task_id: $json.task_id, text }; })() }}",
+        "options": {
+          "timeout": 60000
+        }
       }
     },
     {
@@ -128,7 +179,10 @@
       "name": "Register Approval State",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2280, 200],
+      "position": [
+        2280,
+        200
+      ],
       "parameters": {
         "mode": "runOnceForEachItem",
         "jsCode": "const state = $getWorkflowStaticData('global');\nif (!state.wf02Approvals) state.wf02Approvals = {};\nconst key = String($json.task_id) + ':' + String($json.cycle_id);\nstate.wf02Approvals[key] = { task_id: $json.task_id, cycle_id: $json.cycle_id, document_id: $json.document_id, author_username: $json.author_username, approvals: { artistique: { actor: 'nadia', decision: 'EN_ATTENTE', reason: '', at: '' }, technique: { actor: 'etienne', decision: 'EN_ATTENTE', reason: '', at: '' } } };\nreturn $json;"
@@ -139,7 +193,10 @@
       "name": "Approval Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
-      "position": [220, 620],
+      "position": [
+        220,
+        620
+      ],
       "parameters": {
         "httpMethod": "POST",
         "path": "wf02-doc-validation/approve",
@@ -153,7 +210,10 @@
       "name": "Parse Approval",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [480, 620],
+      "position": [
+        480,
+        620
+      ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "jsCode": "const input = $input.first().json || {};\nconst body = input.body || {};\nconst query = input.query || {};\nconst task_id = Number(body.task_id ?? query.task_id ?? 0);\nconst cycle_id = String(body.cycle_id ?? query.cycle_id ?? '');\nconst role = String(body.role ?? query.role ?? '').toLowerCase();\nconst decision = String(body.decision ?? query.decision ?? '').toUpperCase();\nconst reason = String(body.reason ?? query.reason ?? '');\nif (!task_id || !cycle_id || !role || !decision) throw new Error('Invalid approval payload');\nreturn [{ json: { task_id, cycle_id, role, decision, reason } }];"
@@ -164,14 +224,23 @@
       "name": "MCP Add Decision Comment",
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
-      "position": [740, 620],
+      "position": [
+        740,
+        620
+      ],
       "parameters": {
         "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
         "authentication": "mcpOAuth2Api",
-        "tool": { "__rl": true, "mode": "id", "value": "add_task_comment" },
+        "tool": {
+          "__rl": true,
+          "mode": "id",
+          "value": "add_task_comment"
+        },
         "inputMode": "json",
         "jsonInput": "={{ { task_id: $json.task_id, text: \"Tampon \" + $json.role + \": \" + $json.decision + ($json.reason ? (\". Motif: \" + $json.reason) : \"\") } }}",
-        "options": { "timeout": 60000 }
+        "options": {
+          "timeout": 60000
+        }
       }
     },
     {
@@ -179,7 +248,10 @@
       "name": "Update Approval State",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1000, 620],
+      "position": [
+        1000,
+        620
+      ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "jsCode": "const input = $('Parse Approval').item.json;\nconst state = $getWorkflowStaticData('global');\nif (!state.wf02Approvals) state.wf02Approvals = {};\nconst key = String(input.task_id) + ':' + String(input.cycle_id);\nif (!state.wf02Approvals[key]) { state.wf02Approvals[key] = { task_id: input.task_id, cycle_id: input.cycle_id, approvals: { artistique: { actor: 'nadia', decision: 'EN_ATTENTE', reason: '', at: '' }, technique: { actor: 'etienne', decision: 'EN_ATTENTE', reason: '', at: '' } } }; }\nconst row = state.wf02Approvals[key];\nif (row.approvals[input.role]) { row.approvals[input.role].decision = input.decision; row.approvals[input.role].reason = input.reason || ''; row.approvals[input.role].at = new Date().toISOString(); }\nconst art = row.approvals.artistique?.decision;\nconst tech = row.approvals.technique?.decision;\nconst joinReady = art !== 'EN_ATTENTE' && tech !== 'EN_ATTENTE';\nconst bothApproved = art === 'APPROUVE' && tech === 'APPROUVE';\nreturn [{ json: { task_id: row.task_id, cycle_id: row.cycle_id, joinReady, bothApproved, artistique: row.approvals.artistique, technique: row.approvals.technique } }];"
@@ -190,7 +262,10 @@
       "name": "IF Join Ready",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
-      "position": [1240, 620],
+      "position": [
+        1240,
+        620
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -219,7 +294,10 @@
       "name": "IF Both Approved",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
-      "position": [1480, 560],
+      "position": [
+        1480,
+        560
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -248,14 +326,23 @@
       "name": "MCP Set Done",
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
-      "position": [1720, 500],
+      "position": [
+        1720,
+        500
+      ],
       "parameters": {
         "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
         "authentication": "mcpOAuth2Api",
-        "tool": { "__rl": true, "mode": "id", "value": "update_task_status" },
+        "tool": {
+          "__rl": true,
+          "mode": "id",
+          "value": "update_task_status"
+        },
         "inputMode": "json",
         "jsonInput": "={{ { task_id: $json.task_id, status_id: Number($vars.WF02_DONE_STATUS_ID || 477) } }}",
-        "options": { "timeout": 60000 }
+        "options": {
+          "timeout": 60000
+        }
       }
     },
     {
@@ -263,14 +350,23 @@
       "name": "MCP Final Comment Approved",
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
-      "position": [1960, 500],
+      "position": [
+        1960,
+        500
+      ],
       "parameters": {
         "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
         "authentication": "mcpOAuth2Api",
-        "tool": { "__rl": true, "mode": "id", "value": "add_task_comment" },
+        "tool": {
+          "__rl": true,
+          "mode": "id",
+          "value": "add_task_comment"
+        },
         "inputMode": "json",
         "jsonInput": "={{ { task_id: $(\"Update Approval State\").item.json.task_id, text: \"Double tampon obtenu. Tache approuvee et cloturee.\" } }}",
-        "options": { "timeout": 60000 }
+        "options": {
+          "timeout": 60000
+        }
       }
     },
     {
@@ -278,7 +374,10 @@
       "name": "Respond Approved",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
-      "position": [2200, 500],
+      "position": [
+        2200,
+        500
+      ],
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ { ok: true, status: \"approved\" } }}",
@@ -292,14 +391,23 @@
       "name": "MCP Keep InProgress",
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
-      "position": [1720, 660],
+      "position": [
+        1720,
+        660
+      ],
       "parameters": {
         "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
         "authentication": "mcpOAuth2Api",
-        "tool": { "__rl": true, "mode": "id", "value": "update_task_status" },
+        "tool": {
+          "__rl": true,
+          "mode": "id",
+          "value": "update_task_status"
+        },
         "inputMode": "json",
         "jsonInput": "={{ { task_id: $json.task_id, status_id: Number($vars.WF02_INPROGRESS_STATUS_ID || 475) } }}",
-        "options": { "timeout": 60000 }
+        "options": {
+          "timeout": 60000
+        }
       }
     },
     {
@@ -307,14 +415,23 @@
       "name": "MCP Final Comment Rejected",
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
-      "position": [1960, 660],
+      "position": [
+        1960,
+        660
+      ],
       "parameters": {
         "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
         "authentication": "mcpOAuth2Api",
-        "tool": { "__rl": true, "mode": "id", "value": "add_task_comment" },
+        "tool": {
+          "__rl": true,
+          "mode": "id",
+          "value": "add_task_comment"
+        },
         "inputMode": "json",
         "jsonInput": "={{ { task_id: $(\"Update Approval State\").item.json.task_id, text: \"Validation incomplete/refusee. Merci de corriger puis resoumettre le document.\" } }}",
-        "options": { "timeout": 60000 }
+        "options": {
+          "timeout": 60000
+        }
       }
     },
     {
@@ -322,7 +439,10 @@
       "name": "Respond Rejected",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
-      "position": [2200, 660],
+      "position": [
+        2200,
+        660
+      ],
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ { ok: true, status: \"rejected\" } }}",
@@ -336,7 +456,10 @@
       "name": "Respond Pending",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
-      "position": [1480, 760],
+      "position": [
+        1480,
+        760
+      ],
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ { ok: true, status: \"pending\", message: \"Decision enregistree. En attente du second tampon.\" } }}",
@@ -347,25 +470,228 @@
     }
   ],
   "connections": {
-    "Manual Start": { "main": [[{ "node": "MCP Search Folder Docs", "type": "main", "index": 0 }]] },
-    "Schedule Intake (5m)": { "main": [[{ "node": "MCP Search Folder Docs", "type": "main", "index": 0 }]] },
-    "MCP Search Folder Docs": { "main": [[{ "node": "Parse + Deduplicate Docs", "type": "main", "index": 0 }]] },
-    "Parse + Deduplicate Docs": { "main": [[{ "node": "MCP Get Document By ID", "type": "main", "index": 0 }]] },
-    "MCP Get Document By ID": { "main": [[{ "node": "Build Task Payload", "type": "main", "index": 0 }]] },
-    "Build Task Payload": { "main": [[{ "node": "MCP Create Task", "type": "main", "index": 0 }]] },
-    "MCP Create Task": { "main": [[{ "node": "Extract Task ID", "type": "main", "index": 0 }]] },
-    "Extract Task ID": { "main": [[{ "node": "MCP Add Initial Comment", "type": "main", "index": 0 }]] },
-    "MCP Add Initial Comment": { "main": [[{ "node": "Register Approval State", "type": "main", "index": 0 }]] },
-
-    "Approval Webhook": { "main": [[{ "node": "Parse Approval", "type": "main", "index": 0 }]] },
-    "Parse Approval": { "main": [[{ "node": "MCP Add Decision Comment", "type": "main", "index": 0 }]] },
-    "MCP Add Decision Comment": { "main": [[{ "node": "Update Approval State", "type": "main", "index": 0 }]] },
-    "Update Approval State": { "main": [[{ "node": "IF Join Ready", "type": "main", "index": 0 }]] },
-    "IF Join Ready": { "main": [[{ "node": "IF Both Approved", "type": "main", "index": 0 }], [{ "node": "Respond Pending", "type": "main", "index": 0 }]] },
-    "IF Both Approved": { "main": [[{ "node": "MCP Set Done", "type": "main", "index": 0 }], [{ "node": "MCP Keep InProgress", "type": "main", "index": 0 }]] },
-    "MCP Set Done": { "main": [[{ "node": "MCP Final Comment Approved", "type": "main", "index": 0 }]] },
-    "MCP Final Comment Approved": { "main": [[{ "node": "Respond Approved", "type": "main", "index": 0 }]] },
-    "MCP Keep InProgress": { "main": [[{ "node": "MCP Final Comment Rejected", "type": "main", "index": 0 }]] },
-    "MCP Final Comment Rejected": { "main": [[{ "node": "Respond Rejected", "type": "main", "index": 0 }]] }
+    "Manual Start": {
+      "main": [
+        [
+          {
+            "node": "MCP Search Folder Docs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Intake (5m)": {
+      "main": [
+        [
+          {
+            "node": "MCP Search Folder Docs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Search Folder Docs": {
+      "main": [
+        [
+          {
+            "node": "Parse + Deduplicate Docs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse + Deduplicate Docs": {
+      "main": [
+        [
+          {
+            "node": "MCP Get Document By ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Get Document By ID": {
+      "main": [
+        [
+          {
+            "node": "Build Task Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Task Payload": {
+      "main": [
+        [
+          {
+            "node": "MCP Create Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Create Task": {
+      "main": [
+        [
+          {
+            "node": "Extract Task ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Task ID": {
+      "main": [
+        [
+          {
+            "node": "MCP Add Initial Comment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Add Initial Comment": {
+      "main": [
+        [
+          {
+            "node": "Register Approval State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approval Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Approval": {
+      "main": [
+        [
+          {
+            "node": "MCP Add Decision Comment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Add Decision Comment": {
+      "main": [
+        [
+          {
+            "node": "Update Approval State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Approval State": {
+      "main": [
+        [
+          {
+            "node": "IF Join Ready",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Join Ready": {
+      "main": [
+        [
+          {
+            "node": "IF Both Approved",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Pending",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Both Approved": {
+      "main": [
+        [
+          {
+            "node": "MCP Set Done",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "MCP Keep InProgress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Set Done": {
+      "main": [
+        [
+          {
+            "node": "MCP Final Comment Approved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Final Comment Approved": {
+      "main": [
+        [
+          {
+            "node": "Respond Approved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Keep InProgress": {
+      "main": [
+        [
+          {
+            "node": "MCP Final Comment Rejected",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Final Comment Rejected": {
+      "main": [
+        [
+          {
+            "node": "Respond Rejected",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   }
 }
