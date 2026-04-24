@@ -1,0 +1,1442 @@
+{
+  "name": "eXo Document Enrichment with AI",
+  "nodes": [
+    {
+      "id": "680684fc-47a7-4d46-bebf-f7ca97c732ca",
+      "name": "Manual Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        368
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "252fd056-6416-44cf-9dae-272176df33c9",
+      "name": "Workflow Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        464,
+        464
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "spaceName",
+              "value": "={{ $vars.EXO_SPACE_NAME }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ef2a2959-7f5c-44c2-b17e-f1f40c7bc837",
+      "name": "IF Space Name",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        624,
+        464
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "s0",
+              "leftValue": "={{ String($json.spaceName || '').trim() }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "0b88082e-2fcf-494b-822c-45b064b0e5f2",
+      "name": "Ensure Tracking Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        912,
+        464
+      ],
+      "parameters": {
+        "resource": "table",
+        "operation": "create",
+        "tableName": "exo_processed_documents",
+        "columns": {
+          "column": [
+            {
+              "name": "documentId"
+            },
+            {
+              "name": "lastProcessedDate",
+              "type": "date"
+            },
+            {
+              "name": "description"
+            },
+            {
+              "name": "categories"
+            },
+            {
+              "name": "spaceName"
+            },
+            {
+              "name": "documentName"
+            },
+            {
+              "name": "documentUrl"
+            },
+            {
+              "name": "editorUrl"
+            }
+          ]
+        },
+        "options": {
+          "createIfNotExists": true
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "482e1bbb-1d62-4d9a-965a-0bd0910e6f3a",
+      "name": "Get Spaces",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        1136,
+        464
+      ],
+      "parameters": {
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "authentication": "mcpOAuth2Api",
+        "tool": {
+          "__rl": true,
+          "value": "get_my_spaces",
+          "mode": "list",
+          "cachedResultName": "get_my_spaces"
+        },
+        "inputMode": "json",
+        "jsonInput": {},
+        "options": {
+          "timeout": 120000
+        }
+      }
+    },
+    {
+      "id": "37a3490a-0bae-4dc1-a0fd-40e66ac1ad0f",
+      "name": "Resolve Space",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1248,
+        464
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "spaceName",
+              "value": "={{ String($('Workflow Input').item.json.spaceName || '').trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "spaceId",
+              "value": "={{ ($json.content?.[0]?.text || []).find((s) => s.name === String($('Workflow Input').item.json.spaceName || '').trim())?.space_id }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "2e16c044-e316-4a98-8e9c-88ba6d098707",
+      "name": "IF Space Resolved",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1424,
+        464
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "k0",
+              "leftValue": "={{ $json.spaceId != null && $json.spaceId !== \"\" && !Number.isNaN(Number($json.spaceId)) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "37648616-236f-4716-bd6d-aa4e1affeb23",
+      "name": "List Documents",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        1584,
+        464
+      ],
+      "parameters": {
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "authentication": "mcpOAuth2Api",
+        "tool": {
+          "__rl": true,
+          "mode": "list",
+          "value": "search_documents",
+          "cachedResultName": "search_documents"
+        },
+        "inputMode": "json",
+        "jsonInput": "={{ { \"offset\": 0, \"query\": \" \", \"limit\": 500, \"space_id\": $(\"Resolve Space\").item.json.spaceId } }}",
+        "options": {
+          "timeout": 120000
+        }
+      }
+    },
+    {
+      "id": "be0aed2f-ee80-4736-93ab-3ecfd0a650d9",
+      "name": "Split Out Documents",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1712,
+        464
+      ],
+      "parameters": {
+        "fieldToSplitOut": "content[0].text",
+        "options": {}
+      }
+    },
+    {
+      "id": "f9213459-683b-4281-a6b2-499cbc684a9a",
+      "name": "Filter - Has document_id",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        1808,
+        464
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d0",
+              "leftValue": "={{ String($json.document_id || '') }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "39a5af6d-f401-4ef3-8f74-7f9a480877c0",
+      "name": "Normalize Documents",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1808,
+        464
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "id",
+              "value": "={{ String($json.document_id) }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "updatedDate",
+              "value": "={{ $json.updated_date }}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "description",
+              "value": "={{ $json.description ?? '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "84497a14-9a32-4642-9150-f8c8e504b89a",
+      "name": "Merge Documents to Process",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2256,
+        464
+      ],
+      "parameters": {
+        "mode": "combineBySql",
+        "numberInputs": 2,
+        "query": "SELECT input1.id, input1.updatedDate, input1.description\nFROM input1\nLEFT JOIN input2 ON input1.id = input2.documentId\nWHERE input2.documentId IS NULL\n   OR input2.lastProcessedDate IS NULL\n   OR input2.lastProcessedDate = ''\n   OR input1.updatedDate > input2.lastProcessedDate",
+        "options": {
+          "emptyQueryResult": "empty"
+        }
+      }
+    },
+    {
+      "id": "6d2be9da-f6ec-4db9-a117-eb0c1f4b8bdc",
+      "name": "Stop - Space not found",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        304
+      ],
+      "parameters": {
+        "errorMessage": "Espace eXo introuvable (aucun espace de ce nom pour l’utilisateur)."
+      }
+    },
+    {
+      "id": "858070af-134a-4735-a520-c65c56d49a96",
+      "name": "Stop - Missing spaceName",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        640,
+        288
+      ],
+      "parameters": {
+        "errorMessage": "Missing required workflow input: 'spaceName'"
+      }
+    },
+    {
+      "id": "280ec80e-2511-42b2-8535-a7ef36cba634",
+      "name": "Get Processed For Doc",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2032,
+        464
+      ],
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "exo_processed_documents"
+        },
+        "returnAll": true
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "afe0ed92-ea95-4241-b62c-802f302c5d4f",
+      "name": "Limit to 5 Documents",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        2480,
+        464
+      ],
+      "parameters": {
+        "maxItems": 5
+      }
+    },
+    {
+      "id": "90e5c880-788b-4420-950e-3dcbb8c5c2ce",
+      "name": "Processing Summary",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2928,
+        304
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "message",
+              "value": "Document enrichment completed successfully",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "processedCount",
+              "value": "={{ $(\"Update Tracking\").all().length }}",
+              "type": "number"
+            },
+            {
+              "id": "3",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "d4d292b3-65e6-4a11-a1d0-005cc54c1a1c",
+      "name": "Read Document Content",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        2928,
+        464
+      ],
+      "parameters": {
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "authentication": "mcpOAuth2Api",
+        "tool": {
+          "__rl": true,
+          "mode": "list",
+          "value": "get_document_by_id",
+          "cachedResultName": "get_document_by_id"
+        },
+        "inputMode": "json",
+        "jsonInput": "={{ { \"document_id\": $json.id } }}",
+        "options": {
+          "timeout": 120000
+        }
+      }
+    },
+    {
+      "id": "b0fec78d-df18-47df-80ca-84cda35b7395",
+      "name": "List Categories",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        3152,
+        464
+      ],
+      "parameters": {
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "authentication": "mcpOAuth2Api",
+        "tool": {
+          "__rl": true,
+          "value": "get_category_tree",
+          "mode": "list",
+          "cachedResultName": "get_category_tree"
+        },
+        "inputMode": "json",
+        "jsonInput": {},
+        "options": {
+          "timeout": 120000
+        }
+      }
+    },
+    {
+      "id": "542d2709-c45c-4075-9afd-30ca4f4304b9",
+      "name": "Prepare AI Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3376,
+        464
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "documentId",
+              "value": "={{ $(\"Process Each Document\").item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "documentName",
+              "value": "={{ $(\"Read Document Content\").item.json.content?.[0]?.text?.name || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "content",
+              "value": "={{ JSON.stringify($(\"Read Document Content\").item.json.content?.[0]?.text || {}) }}",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "availableCategories",
+              "value": "={{ (() => { const root = $(\"List Categories\").item.json.content?.[0]?.text; const names = []; const walk = (n) => { if (!n) return; if (Array.isArray(n)) { n.forEach(walk); return; } if (n.name) names.push(n.name); if (Array.isArray(n.sub_categories)) walk(n.sub_categories); }; walk(root?.sub_categories || root); return [...new Set(names.filter(Boolean))]; })() }}",
+              "type": "array"
+            },
+            {
+              "id": "5",
+              "name": "updatedDate",
+              "value": "={{ $(\"Process Each Document\").item.json.updatedDate }}",
+              "type": "string"
+            },
+            {
+              "id": "6",
+              "name": "spaceName",
+              "value": "={{ $(\"Resolve Space\").item.json.spaceName }}",
+              "type": "string"
+            },
+            {
+              "id": "7",
+              "name": "documentUrl",
+              "value": "={{ $(\"Read Document Content\").item.json.content?.[0]?.text?.url ? \"http://exo-qaui.meeds.io\" + $(\"Read Document Content\").item.json.content?.[0]?.text?.url : \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "8",
+              "name": "editorUrl",
+              "value": "={{ (() => { const docId = $(\"Read Document Content\").item.json.content?.[0]?.text?.document_id || \"\"; return docId ? \"http://exo-qaui.meeds.io/portal/dw/oeditor?docId=\" + encodeURIComponent(docId) : \"\"; })() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "2d8454da-4761-4d1e-a57f-6f9e8495501c",
+      "name": "Analyze Document",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        3616,
+        464
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze this document and provide:\n1. A concise description in 30 words or less, written in the same language as the document. If the language is uncertain, default to French.\n2. Suggest 2-3 relevant categories from the available list\n\nDocument: {{ $json.documentName }}\nContent: {{ $json.content }}\n\nAvailable categories: {{ $json.availableCategories.join(\", \") }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a document metadata expert. Return the description in the document's language; if language cannot be identified confidently, return French by default. Keep description concise (max 30 words) and suggest categories only from the provided list."
+        }
+      }
+    },
+    {
+      "id": "f3c65bdb-1e0c-4050-89b6-09ebd7ab2a39",
+      "name": "GPT-4o Mini Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        3616,
+        688
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.3
+        }
+      }
+    },
+    {
+      "id": "ba5e4641-3eaa-41f8-adae-07cb0d4b87e6",
+      "name": "Structured Output",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        3744,
+        688
+      ],
+      "parameters": {
+        "jsonSchemaExample": "{\"description\":\"A concise 30-word description\",\"suggestedCategories\":[\"Category1\",\"Category2\"]}"
+      }
+    },
+    {
+      "id": "191cc25d-1082-46c6-817f-fe6a39597913",
+      "name": "Extract Results",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3840,
+        464
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "documentId",
+              "value": "={{ $(\"Prepare AI Input\").item.json.documentId }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "description",
+              "value": "={{ $json.output.description }}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "suggestedCategories",
+              "value": "={{ $json.output.suggestedCategories }}",
+              "type": "array"
+            },
+            {
+              "id": "4",
+              "name": "updatedDate",
+              "value": "={{ $(\"Prepare AI Input\").item.json.updatedDate }}",
+              "type": "string"
+            },
+            {
+              "id": "5",
+              "name": "spaceName",
+              "value": "={{ $(\"Prepare AI Input\").item.json.spaceName }}",
+              "type": "string"
+            },
+            {
+              "id": "6",
+              "name": "documentName",
+              "value": "={{ $(\"Prepare AI Input\").item.json.documentName }}",
+              "type": "string"
+            },
+            {
+              "id": "7",
+              "name": "documentUrl",
+              "value": "={{ $(\"Prepare AI Input\").item.json.documentUrl }}",
+              "type": "string"
+            },
+            {
+              "id": "8",
+              "name": "editorUrl",
+              "value": "={{ $(\"Prepare AI Input\").item.json.editorUrl }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "4e2c89f9-7937-4d9f-b67c-52b2315a1577",
+      "name": "Add Description",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        4064,
+        464
+      ],
+      "parameters": {
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "authentication": "mcpOAuth2Api",
+        "tool": {
+          "__rl": true,
+          "value": "update_document_description",
+          "mode": "list",
+          "cachedResultName": "update_document_description"
+        },
+        "inputMode": "json",
+        "jsonInput": "={{ { \"document_id\": $(\"Extract Results\").item.json.documentId, \"html_description\": $(\"Extract Results\").item.json.description } }}",
+        "options": {
+          "timeout": 120000
+        }
+      }
+    },
+    {
+      "id": "d5b51936-7dbd-416f-971d-2538e2f62e80",
+      "name": "IF Description MCP OK",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4192,
+        464
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b0",
+              "leftValue": "={{ !String($json.content?.[0]?.text ?? '').toLowerCase().includes('exception') }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "5034eb4c-a6fa-44aa-857e-eb033a0d4165",
+      "name": "Check Description Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4432,
+        464
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "documentId",
+              "value": "={{ $('Extract Results').item.json.documentId }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "description",
+              "value": "={{ $('Extract Results').item.json.description }}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "suggestedCategories",
+              "value": "={{ $('Extract Results').item.json.suggestedCategories }}",
+              "type": "array"
+            },
+            {
+              "id": "4",
+              "name": "updatedDate",
+              "value": "={{ $('Extract Results').item.json.updatedDate }}",
+              "type": "string"
+            },
+            {
+              "id": "5",
+              "name": "spaceName",
+              "value": "={{ $('Extract Results').item.json.spaceName }}",
+              "type": "string"
+            },
+            {
+              "id": "6",
+              "name": "documentName",
+              "value": "={{ $('Extract Results').item.json.documentName }}",
+              "type": "string"
+            },
+            {
+              "id": "7",
+              "name": "documentUrl",
+              "value": "={{ $('Extract Results').item.json.documentUrl }}",
+              "type": "string"
+            },
+            {
+              "id": "8",
+              "name": "editorUrl",
+              "value": "={{ $('Extract Results').item.json.editorUrl }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "69a3fedf-08b7-4426-ba00-a06513cd7f46",
+      "name": "Prepare Category Assignments",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4512,
+        464
+      ],
+      "parameters": {
+        "jsCode": "const doc = $json;\nconst wanted = (doc.suggestedCategories || []).map((n) => String(n));\nconst tree = $(\"List Categories\").item.json.content?.[0]?.text;\nconst map = new Map();\nconst normalize = (s) => String(s || \"\").replace(/&amp;/g, \"&\").replace(/\\\\s+/g, \" \").trim().toLowerCase();\nconst walk = (node) => {\n  if (!node) return;\n  if (Array.isArray(node)) { node.forEach(walk); return; }\n  if (node.name && node.category_id != null) map.set(normalize(node.name), node.category_id);\n  if (Array.isArray(node.sub_categories)) walk(node.sub_categories);\n};\nwalk(tree?.sub_categories || tree);\nconst out = [];\nfor (const name of wanted) {\n  const id = map.get(normalize(name));\n  if (id != null) out.push({ json: { ...doc, categoryName: name, category_id: id, content_id: doc.documentId, content_type: \"document\" } });\n}\nif (!out.length) throw new Error(\"No category_id match for suggested categories: \" + JSON.stringify(wanted));\nreturn out;"
+      }
+    },
+    {
+      "id": "f754bca6-a455-47fa-bf54-5cdb4eac826a",
+      "name": "Assign Categories",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        4736,
+        464
+      ],
+      "parameters": {
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "authentication": "mcpOAuth2Api",
+        "tool": {
+          "__rl": true,
+          "value": "add_content_to_category",
+          "mode": "list",
+          "cachedResultName": "add_content_to_category"
+        },
+        "inputMode": "json",
+        "jsonInput": "={{ { \"category_id\": $json.category_id, \"content_id\": $json.content_id, \"content_type\": $json.content_type } }}",
+        "options": {
+          "timeout": 120000
+        }
+      }
+    },
+    {
+      "id": "f2470787-e124-472e-8115-1348eb1408c9",
+      "name": "IF Assign MCP OK",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4864,
+        464
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b0",
+              "leftValue": "={{ !String($json.content?.[0]?.text ?? '').toLowerCase().includes('exception') }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "4702a127-ef1c-4ad3-ab41-1ba6c03d9b16",
+      "name": "Check Assign Result",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        5088,
+        464
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "cfbac0d1-30f1-4bdb-b6e6-b1a189899190",
+      "name": "Update Tracking",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        5184,
+        592
+      ],
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "exo_processed_documents"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "documentId",
+              "keyValue": "={{ $(\"Check Description Result\").item.json.documentId }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "documentId": "={{ $(\"Check Description Result\").item.json.documentId }}",
+            "lastProcessedDate": "={{ $now.toISO() }}",
+            "description": "={{ $(\"Check Description Result\").item.json.description }}",
+            "categories": "={{ ($(\"Check Description Result\").item.json.suggestedCategories || []).join(\", \") }}",
+            "spaceName": "={{ $(\"Check Description Result\").item.json.spaceName }}",
+            "documentName": "={{ $(\"Check Description Result\").item.json.documentName }}",
+            "documentUrl": "={{ $(\"Check Description Result\").item.json.documentUrl }}",
+            "editorUrl": "={{ $(\"Check Description Result\").item.json.editorUrl }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "documentId",
+              "displayName": "documentId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "lastProcessedDate",
+              "displayName": "lastProcessedDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "categories",
+              "displayName": "categories",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "spaceName",
+              "displayName": "spaceName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "documentName",
+              "displayName": "documentName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "documentUrl",
+              "displayName": "documentUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "editorUrl",
+              "displayName": "editorUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "9cd849cc-d4f0-4b87-86af-ead9a0ef3cb1",
+      "name": "Process Each Document",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2704,
+        464
+      ],
+      "parameters": {
+        "options": {}
+      }
+    },
+    {
+      "id": "57484694-c24f-4a82-b720-84799a0849c4",
+      "name": "Stop - Category assign failed",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        4880,
+        304
+      ],
+      "parameters": {
+        "errorMessage": "MCP add_content_to_category: échec."
+      }
+    },
+    {
+      "id": "1d0d1d21-80cc-4759-ae63-c231e9c01390",
+      "name": "Stop - Description update failed",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        4208,
+        304
+      ],
+      "parameters": {
+        "errorMessage": "MCP update_document_description: réponse d’échec."
+      }
+    },
+    {
+      "id": "d71b9db2-b11a-4bf9-8f66-ff9c35a6db62",
+      "name": "Daily Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        560
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 2
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Manual Start": {
+      "main": [
+        [
+          {
+            "node": "Workflow Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Input": {
+      "main": [
+        [
+          {
+            "node": "IF Space Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Space Name": {
+      "main": [
+        [
+          {
+            "node": "Ensure Tracking Table",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop - Missing spaceName",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ensure Tracking Table": {
+      "main": [
+        [
+          {
+            "node": "Get Spaces",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Spaces": {
+      "main": [
+        [
+          {
+            "node": "Resolve Space",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Space": {
+      "main": [
+        [
+          {
+            "node": "IF Space Resolved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Space Resolved": {
+      "main": [
+        [
+          {
+            "node": "List Documents",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop - Space not found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Documents": {
+      "main": [
+        [
+          {
+            "node": "Split Out Documents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out Documents": {
+      "main": [
+        [
+          {
+            "node": "Filter - Has document_id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter - Has document_id": {
+      "main": [
+        [
+          {
+            "node": "Normalize Documents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Documents": {
+      "main": [
+        [
+          {
+            "node": "Merge Documents to Process",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Processed For Doc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Documents to Process": {
+      "main": [
+        [
+          {
+            "node": "Limit to 5 Documents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Processed For Doc": {
+      "main": [
+        [
+          {
+            "node": "Merge Documents to Process",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Limit to 5 Documents": {
+      "main": [
+        [
+          {
+            "node": "Process Each Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Document Content": {
+      "main": [
+        [
+          {
+            "node": "List Categories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Categories": {
+      "main": [
+        [
+          {
+            "node": "Prepare AI Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare AI Input": {
+      "main": [
+        [
+          {
+            "node": "Analyze Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Document": {
+      "main": [
+        [
+          {
+            "node": "Extract Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT-4o Mini Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Analyze Document",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Analyze Document",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Results": {
+      "main": [
+        [
+          {
+            "node": "Add Description",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Description": {
+      "main": [
+        [
+          {
+            "node": "IF Description MCP OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Description MCP OK": {
+      "main": [
+        [
+          {
+            "node": "Check Description Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop - Description update failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Description Result": {
+      "main": [
+        [
+          {
+            "node": "Prepare Category Assignments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Category Assignments": {
+      "main": [
+        [
+          {
+            "node": "Assign Categories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assign Categories": {
+      "main": [
+        [
+          {
+            "node": "IF Assign MCP OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Assign MCP OK": {
+      "main": [
+        [
+          {
+            "node": "Check Assign Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop - Category assign failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Assign Result": {
+      "main": [
+        [
+          {
+            "node": "Update Tracking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Tracking": {
+      "main": [
+        [
+          {
+            "node": "Process Each Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Each Document": {
+      "main": [
+        [
+          {
+            "node": "Processing Summary",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Read Document Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Schedule": {
+      "main": [
+        [
+          {
+            "node": "Workflow Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "meta": {
+    "aiBuilderAssisted": true
+  },
+  "description": "Enrichit les documents eXo avec IA en remplaçant les filtres Code par des nœuds natifs n8n quand possible."
+}

@@ -1,0 +1,49 @@
+{
+  "workflowId": "aze2wAktXHYrTBTr",
+  "workflowName": "eXo Document Enrichment with AI",
+  "source": "workflow-04-document-enrichment-ai.md (reverse engineering)",
+  "note": "Le fichier workflow-04-document-enrichment-ai.export.json du dépôt ne contient pas le corps parameters.jsCode. Ce fichier résume le rôle de chaque nœud Code pour l’audit.",
+  "codeNodes": [
+    {
+      "name": "Validate Input",
+      "primaryIntent": "ErrorGuard",
+      "behaviorSummary": "Échec si spaceName (EXO_SPACE_NAME) vide."
+    },
+    {
+      "name": "Resolve Space",
+      "primaryIntent": "MapTransform",
+      "behaviorSummary": "Associe spaceName → spaceId depuis get_my_spaces ; erreur si introuvable."
+    },
+    {
+      "name": "Normalize Documents",
+      "primaryIntent": "UnwrapArray",
+      "behaviorSummary": "Projette les documents en { id, updatedDate, description } pour la suite."
+    },
+    {
+      "name": "Filter Documents to Process",
+      "primaryIntent": "FilterBusiness",
+      "behaviorSummary": "Compare updatedDate vs lastProcessedDate (Data Table) pour ne traiter que nouveaux/modifiés."
+    },
+    {
+      "name": "Check Description Result",
+      "primaryIntent": "ErrorGuard",
+      "behaviorSummary": "Contrôle le retour MCP après update_document_description."
+    },
+    {
+      "name": "Prepare Category Assignments",
+      "primaryIntent": "MapTransform",
+      "behaviorSummary": "Mappe noms de catégories suggérées → category_id depuis l’arbre."
+    },
+    {
+      "name": "Check Assign Result",
+      "primaryIntent": "ErrorGuard",
+      "behaviorSummary": "Contrôle le retour MCP après add_content_to_category."
+    }
+  ],
+  "reexportInstructions": [
+    "Dans n8n : ouvrir le workflow « eXo Document Enrichment with AI » (id aze2wAktXHYrTBTr).",
+    "Menu … → Download / Export JSON (selon version).",
+    "Remplacer ou compléter n8n/workflows/workflow-04-document-enrichment-ai.export.json avec l’export complet.",
+    "Relancer : node n8n/scripts/inventory-code-nodes.mjs pour mettre à jour inventory-code-nodes.json (LOC réelles WF04)."
+  ]
+}

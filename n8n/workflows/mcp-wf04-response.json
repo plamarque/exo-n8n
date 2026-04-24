@@ -1,6 +1,4 @@
 {
-  "source": "user-n8n-mcp.get_workflow_details",
-  "exportedAt": "2026-04-24T22:30:57.918Z",
   "workflow": {
     "id": "aze2wAktXHYrTBTr",
     "name": "eXo Document Enrichment with AI",
