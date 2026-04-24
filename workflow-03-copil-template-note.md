@@ -66,22 +66,12 @@
 [REPORT_AVANCEMENT_END]
 
 ## Points a discuter
-> Cette section peut etre pre-remplie en partie a partir des suggestions IA, puis ajustee librement par les participants.
+> Section pre-remplissable par l'IA puis ajustee par les participants.
+> Les points ci-dessous reprennent les sujets proposes dans l'ordre du jour suggere par l'IA, plus des emplacements reserves pour les ajouts en reunion.
 
-### Point 1
-- Contexte:
-- Discussion:
-- Decision attendue:
-
-### Point 2
-- Contexte:
-- Discussion:
-- Decision attendue:
-
-### Point 3
-- Contexte:
-- Discussion:
-- Decision attendue:
+[POINTS_A_DISCUTER_START]
+<!-- Le workflow remplace ce bloc par une liste HTML : suggestions IA + placeholders participants -->
+[POINTS_A_DISCUTER_END]
 
 ## Decisions prises
 | Sujet | Decision | Responsable | Echeance |
@@ -117,9 +107,10 @@
   - 
 
 ## Annexes
-- Liens utiles:
-  - 
-  - 
+### Liens utiles
+[ANNEXES_LIENS_START]
+<!-- Le workflow insere ici les liens vers le projet et l occurrence agenda du COPIL -->
+[ANNEXES_LIENS_END]
 - Documents de reference:
   - 
   - 
