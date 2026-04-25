@@ -1,7 +1,49 @@
 {
-  "generatedAt": "2026-04-24T20:17:31.608Z",
+  "generatedAt": "2026-04-25T16:21:55.342Z",
   "workflowsDir": "/Users/patrice/Documents/PL Consulting/Clients/eXo/projets/n8n-eXo/n8n/workflows",
   "files": [
+    {
+      "file": "mcp-wf04-response.json",
+      "workflowName": "eXo Document Enrichment with AI",
+      "codeNodeCount": 1,
+      "codeNodes": [
+        {
+          "name": "Prepare Category Assignments",
+          "id": "69a3fedf-08b7-4426-ba00-a06513cd7f46",
+          "mode": null,
+          "typeVersion": 2,
+          "linesOfCode": 19,
+          "chars": 939,
+          "hasParseEnvelope": false,
+          "hasGetWorkflowStaticData": false,
+          "hasHtml": false,
+          "hasMcpContentText": true,
+          "hasJsCode": true,
+          "missingJsCodeInRepo": false
+        }
+      ]
+    },
+    {
+      "file": "wf04-mcp-workflow.json",
+      "workflowName": "eXo Document Enrichment with AI",
+      "codeNodeCount": 1,
+      "codeNodes": [
+        {
+          "name": "Prepare Category Assignments",
+          "id": "69a3fedf-08b7-4426-ba00-a06513cd7f46",
+          "mode": null,
+          "typeVersion": 2,
+          "linesOfCode": 19,
+          "chars": 939,
+          "hasParseEnvelope": false,
+          "hasGetWorkflowStaticData": false,
+          "hasHtml": false,
+          "hasMcpContentText": true,
+          "hasJsCode": true,
+          "missingJsCodeInRepo": false
+        }
+      ]
+    },
     {
       "file": "workflow-01-email-to-task.json",
       "workflowName": "WF01 - Email to Task (MCP-first, REST fallback)",
@@ -327,105 +369,49 @@
     {
       "file": "workflow-04-document-enrichment-ai.export.json",
       "workflowName": "eXo Document Enrichment with AI",
-      "codeNodeCount": 7,
+      "codeNodeCount": 1,
       "codeNodes": [
         {
-          "name": "Validate Input",
+          "name": "Prepare Category Assignments",
+          "id": "69a3fedf-08b7-4426-ba00-a06513cd7f46",
           "mode": null,
           "typeVersion": 2,
-          "linesOfCode": 0,
-          "chars": 0,
+          "linesOfCode": 19,
+          "chars": 939,
           "hasParseEnvelope": false,
           "hasGetWorkflowStaticData": false,
           "hasHtml": false,
-          "hasMcpContentText": false,
-          "hasJsCode": false,
-          "missingJsCodeInRepo": true
-        },
-        {
-          "name": "Resolve Space",
-          "mode": null,
-          "typeVersion": 2,
-          "linesOfCode": 0,
-          "chars": 0,
-          "hasParseEnvelope": false,
-          "hasGetWorkflowStaticData": false,
-          "hasHtml": false,
-          "hasMcpContentText": false,
-          "hasJsCode": false,
-          "missingJsCodeInRepo": true
-        },
-        {
-          "name": "Normalize Documents",
-          "mode": null,
-          "typeVersion": 2,
-          "linesOfCode": 0,
-          "chars": 0,
-          "hasParseEnvelope": false,
-          "hasGetWorkflowStaticData": false,
-          "hasHtml": false,
-          "hasMcpContentText": false,
-          "hasJsCode": false,
-          "missingJsCodeInRepo": true
-        },
-        {
-          "name": "Filter Documents to Process",
-          "mode": null,
-          "typeVersion": 2,
-          "linesOfCode": 0,
-          "chars": 0,
-          "hasParseEnvelope": false,
-          "hasGetWorkflowStaticData": false,
-          "hasHtml": false,
-          "hasMcpContentText": false,
-          "hasJsCode": false,
-          "missingJsCodeInRepo": true
-        },
-        {
-          "name": "Check Description Result",
-          "mode": null,
-          "typeVersion": 2,
-          "linesOfCode": 0,
-          "chars": 0,
-          "hasParseEnvelope": false,
-          "hasGetWorkflowStaticData": false,
-          "hasHtml": false,
-          "hasMcpContentText": false,
-          "hasJsCode": false,
-          "missingJsCodeInRepo": true
-        },
+          "hasMcpContentText": true,
+          "hasJsCode": true,
+          "missingJsCodeInRepo": false
+        }
+      ]
+    },
+    {
+      "file": "workflow-04-document-enrichment-ai.import.json",
+      "workflowName": "eXo Document Enrichment with AI",
+      "codeNodeCount": 1,
+      "codeNodes": [
         {
           "name": "Prepare Category Assignments",
+          "id": "69a3fedf-08b7-4426-ba00-a06513cd7f46",
           "mode": null,
           "typeVersion": 2,
-          "linesOfCode": 0,
-          "chars": 0,
+          "linesOfCode": 19,
+          "chars": 939,
           "hasParseEnvelope": false,
           "hasGetWorkflowStaticData": false,
           "hasHtml": false,
-          "hasMcpContentText": false,
-          "hasJsCode": false,
-          "missingJsCodeInRepo": true
-        },
-        {
-          "name": "Check Assign Result",
-          "mode": null,
-          "typeVersion": 2,
-          "linesOfCode": 0,
-          "chars": 0,
-          "hasParseEnvelope": false,
-          "hasGetWorkflowStaticData": false,
-          "hasHtml": false,
-          "hasMcpContentText": false,
-          "hasJsCode": false,
-          "missingJsCodeInRepo": true
+          "hasMcpContentText": true,
+          "hasJsCode": true,
+          "missingJsCodeInRepo": false
         }
       ]
     }
   ],
   "totals": {
-    "codeNodes": 28,
-    "linesOfCode": 720,
-    "chars": 33786
+    "codeNodes": 25,
+    "linesOfCode": 796,
+    "chars": 37542
   }
 }

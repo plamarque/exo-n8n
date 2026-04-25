@@ -8,7 +8,7 @@
       "typeVersion": 1,
       "position": [
         240,
-        368
+        288
       ],
       "parameters": {}
     },
@@ -19,7 +19,7 @@
       "typeVersion": 3.4,
       "position": [
         464,
-        464
+        384
       ],
       "parameters": {
         "assignments": {
@@ -41,8 +41,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        624,
-        464
+        688,
+        384
       ],
       "parameters": {
         "conditions": {
@@ -74,7 +74,7 @@
       "typeVersion": 1.1,
       "position": [
         912,
-        464
+        480
       ],
       "parameters": {
         "resource": "table",
@@ -122,7 +122,7 @@
       "typeVersion": 1,
       "position": [
         1136,
-        464
+        480
       ],
       "parameters": {
         "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
@@ -146,8 +146,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1248,
-        464
+        1360,
+        480
       ],
       "parameters": {
         "assignments": {
@@ -175,8 +175,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1424,
-        464
+        1584,
+        480
       ],
       "parameters": {
         "conditions": {
@@ -209,8 +209,8 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        1584,
-        464
+        1808,
+        672
       ],
       "parameters": {
         "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
@@ -234,8 +234,8 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        1712,
-        464
+        2032,
+        672
       ],
       "parameters": {
         "fieldToSplitOut": "content[0].text",
@@ -248,8 +248,8 @@
       "type": "n8n-nodes-base.filter",
       "typeVersion": 2.3,
       "position": [
-        1808,
-        464
+        2256,
+        672
       ],
       "parameters": {
         "conditions": {
@@ -281,8 +281,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1808,
-        464
+        2480,
+        672
       ],
       "parameters": {
         "assignments": {
@@ -316,12 +316,11 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        2256,
-        464
+        2928,
+        672
       ],
       "parameters": {
         "mode": "combineBySql",
-        "numberInputs": 2,
         "query": "SELECT input1.id, input1.updatedDate, input1.description\nFROM input1\nLEFT JOIN input2 ON input1.id = input2.documentId\nWHERE input2.documentId IS NULL\n   OR input2.lastProcessedDate IS NULL\n   OR input2.lastProcessedDate = ''\n   OR input1.updatedDate > input2.lastProcessedDate",
         "options": {
           "emptyQueryResult": "empty"
@@ -334,8 +333,8 @@
       "type": "n8n-nodes-base.stopAndError",
       "typeVersion": 1,
       "position": [
-        1440,
-        304
+        1808,
+        480
       ],
       "parameters": {
         "errorMessage": "Espace eXo introuvable (aucun espace de ce nom pour l’utilisateur)."
@@ -347,7 +346,7 @@
       "type": "n8n-nodes-base.stopAndError",
       "typeVersion": 1,
       "position": [
-        640,
+        912,
         288
       ],
       "parameters": {
@@ -360,8 +359,8 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        2032,
-        464
+        2704,
+        772
       ],
       "parameters": {
         "operation": "get",
@@ -382,8 +381,8 @@
       "type": "n8n-nodes-base.limit",
       "typeVersion": 1,
       "position": [
-        2480,
-        464
+        3152,
+        672
       ],
       "parameters": {
         "maxItems": 5
@@ -395,8 +394,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2928,
-        304
+        3600,
+        384
       ],
       "parameters": {
         "assignments": {
@@ -430,8 +429,8 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        2928,
-        464
+        3600,
+        576
       ],
       "parameters": {
         "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
@@ -455,8 +454,8 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        3152,
-        464
+        3824,
+        576
       ],
       "parameters": {
         "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
@@ -480,8 +479,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        3376,
-        464
+        4048,
+        576
       ],
       "parameters": {
         "assignments": {
@@ -545,8 +544,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        3616,
-        464
+        4272,
+        576
       ],
       "parameters": {
         "promptType": "define",
@@ -563,8 +562,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        3616,
-        688
+        4280,
+        800
       ],
       "parameters": {
         "model": {
@@ -584,8 +583,8 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        3744,
-        688
+        4408,
+        800
       ],
       "parameters": {
         "jsonSchemaExample": "{\"description\":\"A concise 30-word description\",\"suggestedCategories\":[\"Category1\",\"Category2\"]}"
@@ -597,8 +596,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        3840,
-        464
+        4624,
+        576
       ],
       "parameters": {
         "assignments": {
@@ -662,8 +661,8 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        4064,
-        464
+        4848,
+        576
       ],
       "parameters": {
         "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
@@ -687,8 +686,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        4192,
-        464
+        5072,
+        576
       ],
       "parameters": {
         "conditions": {
@@ -721,8 +720,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        4432,
-        464
+        5296,
+        672
       ],
       "parameters": {
         "assignments": {
@@ -781,16 +780,67 @@
       }
     },
     {
+      "id": "1c3b3ab2-f707-43c7-a5c5-d854f696060d",
+      "name": "IF Suggested Categories",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        5520,
+        672
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "sg0",
+              "leftValue": "={{ Array.isArray($json.suggestedCategories) && $json.suggestedCategories.length > 0 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "2c40660f-4f89-4c7b-9454-3e15579cdaef",
+      "name": "Split Suggested Categories",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        5744,
+        544
+      ],
+      "parameters": {
+        "fieldToSplitOut": "suggestedCategories",
+        "include": "allOtherFields",
+        "options": {
+          "destinationFieldName": "categoryName"
+        }
+      }
+    },
+    {
       "id": "69a3fedf-08b7-4426-ba00-a06513cd7f46",
       "name": "Prepare Category Assignments",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4512,
-        464
+        5744,
+        672
       ],
       "parameters": {
-        "jsCode": "const doc = $json;\nconst wanted = (doc.suggestedCategories || []).map((n) => String(n));\nconst tree = $(\"List Categories\").item.json.content?.[0]?.text;\nconst map = new Map();\nconst normalize = (s) => String(s || \"\").replace(/&amp;/g, \"&\").replace(/\\\\s+/g, \" \").trim().toLowerCase();\nconst walk = (node) => {\n  if (!node) return;\n  if (Array.isArray(node)) { node.forEach(walk); return; }\n  if (node.name && node.category_id != null) map.set(normalize(node.name), node.category_id);\n  if (Array.isArray(node.sub_categories)) walk(node.sub_categories);\n};\nwalk(tree?.sub_categories || tree);\nconst out = [];\nfor (const name of wanted) {\n  const id = map.get(normalize(name));\n  if (id != null) out.push({ json: { ...doc, categoryName: name, category_id: id, content_id: doc.documentId, content_type: \"document\" } });\n}\nif (!out.length) throw new Error(\"No category_id match for suggested categories: \" + JSON.stringify(wanted));\nreturn out;"
+        "jsCode": "const normalize = (s) => String(s || '').replace(/&amp;/g, '&').replace(/\\s+/g, ' ').trim().toLowerCase();\nconst tree = $(\"List Categories\").item.json.content?.[0]?.text;\nconst map = new Map();\nconst walk = (node) => {\n  if (!node) return;\n  if (Array.isArray(node)) return node.forEach(walk);\n  if (node.name && node.category_id != null) map.set(normalize(node.name), node.category_id);\n  if (Array.isArray(node.sub_categories)) walk(node.sub_categories);\n};\nwalk(tree?.sub_categories || tree);\nconst id = map.get(normalize($json.categoryName));\nif (id == null) throw new Error('No category_id match for suggested category: ' + String($json.categoryName));\nreturn [{ json: { ...$json, category_id: id, content_id: $json.documentId, content_type: 'document' } }];"
       }
     },
     {
@@ -799,8 +849,8 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        4736,
-        464
+        5744,
+        672
       ],
       "parameters": {
         "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
@@ -824,8 +874,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        4864,
-        464
+        5968,
+        672
       ],
       "parameters": {
         "conditions": {
@@ -858,8 +908,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        5088,
-        464
+        6192,
+        768
       ],
       "parameters": {}
     },
@@ -869,8 +919,8 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        5184,
-        592
+        6416,
+        892
       ],
       "parameters": {
         "operation": "upsert",
@@ -994,8 +1044,8 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        2704,
-        464
+        3376,
+        672
       ],
       "parameters": {
         "options": {}
@@ -1007,11 +1057,25 @@
       "type": "n8n-nodes-base.stopAndError",
       "typeVersion": 1,
       "position": [
-        4880,
-        304
+        6192,
+        576
       ],
       "parameters": {
         "errorMessage": "MCP add_content_to_category: échec."
+      }
+    },
+    {
+      "id": "203a898d-fa9e-403e-84ab-7a5cb4b266c5",
+      "name": "Stop - No suggested categories",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        5520,
+        544
+      ],
+      "parameters": {
+        "errorType": "errorMessage",
+        "errorMessage": "Aucune catégorie suggérée pour le document."
       }
     },
     {
@@ -1020,8 +1084,8 @@
       "type": "n8n-nodes-base.stopAndError",
       "typeVersion": 1,
       "position": [
-        4208,
-        304
+        5296,
+        480
       ],
       "parameters": {
         "errorMessage": "MCP update_document_description: réponse d’échec."
@@ -1034,7 +1098,7 @@
       "typeVersion": 1.3,
       "position": [
         240,
-        560
+        480
       ],
       "parameters": {
         "rule": {
@@ -1331,6 +1395,35 @@
       "main": [
         [
           {
+            "node": "IF Suggested Categories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Suggested Categories": {
+      "main": [
+        [
+          {
+            "node": "Split Suggested Categories",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop - No suggested categories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Suggested Categories": {
+      "main": [
+        [
+          {
             "node": "Prepare Category Assignments",
             "type": "main",
             "index": 0
@@ -1438,5 +1531,5 @@
   "meta": {
     "aiBuilderAssisted": true
   },
-  "description": "Enrichit les documents eXo avec IA en remplaçant les filtres Code par des nœuds natifs n8n quand possible."
+  "description": "Enrichit les documents eXo avec IA en réduisant le JavaScript au strict minimum."
 }
