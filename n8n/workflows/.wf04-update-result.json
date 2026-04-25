@@ -1,0 +1,19 @@
+{
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"workflowId\": \"aze2wAktXHYrTBTr\",\n  \"name\": \"eXo Document Enrichment with AI\",\n  \"nodeCount\": 39,\n  \"url\": \"https://meeds.app.n8n.cloud/workflow/aze2wAktXHYrTBTr\",\n  \"autoAssignedCredentials\": []\n}"
+      }
+    ],
+    "structuredContent": {
+      "workflowId": "aze2wAktXHYrTBTr",
+      "name": "eXo Document Enrichment with AI",
+      "nodeCount": 39,
+      "url": "https://meeds.app.n8n.cloud/workflow/aze2wAktXHYrTBTr",
+      "autoAssignedCredentials": []
+    }
+  },
+  "jsonrpc": "2.0",
+  "id": 3
+}
