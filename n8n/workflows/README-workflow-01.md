@@ -1,58 +1,59 @@
-# Workflow 01 - Email to Task (MVP)
+# Workflow 01 - Email to Task
 
-## Files
-- `n8n/workflows/workflow-01-email-to-task.json`
-- `n8n/workflows/workflow-01-email-to-task.live.export.json`
-- `n8n/workflows/workflow-01-email-to-task.live.import.json` (import UI n8n, sans `id`)
-- `n8n/workflows/subworkflow-unwrap-mcp-json.json`
-- `n8n/workflows/subworkflow-unwrap-mcp-json.import.json` (import UI n8n)
-- `n8n/workflows/subworkflow-unwrap-mcp-json.sdk.js` (source SDK pour validation/import MCP)
-- `n8n/workflows/workflow-01-email-to-task.live.sdk.js` (source SDK pour validation/import MCP)
-- `n8n/config/workflow-01.env.example`
+## Artefacts
 
-## Scope implemented
-- Email intake trigger (manual + every 5 min).
-- MCP email polling (`list_emails`) and detail fetch (`get_email_by_id`).
-- Rule-based qualification (priority, assignee, SLA due date).
-- Project + status resolution (`list_projects`, `list_project_statuses`).
-- Task creation MCP-first (`create_task_in_project`) with REST fallback (`POST /tasks`).
-- Evidence comment on created task (`add_task_comment`).
-- SLA sweep every hour with overdue reminder and escalation (`list_tasks`, `assign_task`, `add_task_comment`).
+- `n8n/workflows/workflow-01-email-to-task.json` : export JSON final du workflow n8n `zeVd0scWqU5vcOUq`.
+- `n8n/workflows/subworkflow-unwrap-mcp-json.json` : sous-workflow utilitaire `UTIL - Unwrap MCP JSON`.
+- `n8n/workflows/subworkflow-unwrap-mcp-json.import.json` : variante import UI du sous-workflow.
+- `n8n/workflows/subworkflow-unwrap-mcp-json.sdk.js` : source SDK du sous-workflow utilitaire.
 
-## Assumptions
-- The MCP endpoint accepts a JSON payload in this shape:
-  - `{ "tool": "<tool_name>", "arguments": { ... } }`
-- The MCP response may be wrapped in `[{"type":"text","text":"<json-string>"}]` and is parsed in Code nodes.
-- REST fallback uses bearer token auth.
+Les anciens fichiers `workflow-01-email-to-task.live.*` etaient des artefacts de travail et ne sont plus la source de reference.
 
-## Import in n8n
-1. Import `n8n/workflows/workflow-01-email-to-task.json`.
-2. Define env vars from `n8n/config/workflow-01.env.example`.
-3. Run with `Manual Trigger` for first validation.
-4. Activate workflow after endpoint contract validation.
+## Comportement actuel
 
-## Next hardening steps
-1. Replace static keyword rules with configurable data source.
-2. Add assignee capacity check (via `list_assigned_tasks`).
-3. Add idempotency persisted in Data Store (instead of workflow static data only).
-4. Add per-node MCP->REST fallback for assignment/comment/status update.
+- Declenchement manuel avec `Manual Start` et declenchement planifie avec `Intake Every 5m`.
+- Lecture des emails via MCP eXo avec `list_emails`.
+- Decodage des reponses MCP par le sous-workflow `UTIL - Unwrap MCP JSON` (`E4OAThogWRG93MUG`).
+- Normalisation native des emails (`Normalize Email`) puis filtrage des items sans `emailId`.
+- Classification par `AI Router` avec `Routing Model` et `Routing Output Parser`.
+- Creation de tache seulement si `actionRequired`, `responseExpected` et `actionConfidence >= 0.7`.
+- Construction native des champs metier (`Build MCP Payload`) : assignee, libelle assignee, priorite et titre.
+- Rendu HTML de la description dans le seul noeud Code residuel `Render Task Description HTML`.
+- Creation de tache eXo via `create_task_in_project`, puis extraction native du `task_id`.
+- Echec explicite via `Stop - Missing task_id` si la creation ne retourne pas de `task_id`.
+- Assignation explicite via `assign_task` avec le payload `{ task_id, username }`.
 
-## Live SDK variant (refactor natif)
-- Cible: `workflow-01-email-to-task.live.export.json`.
-- Le parsing MCP est factorise dans le sous-workflow `UTIL - Unwrap MCP JSON`.
-- Les garde-fous IA sont exposes en nœuds natifs (`IF` + `Switch` + `Set`).
-- L'extraction post-creation (`task_id`) est faite en natif (`Execute Workflow` + `Set` + `IF` + `Stop and Error`).
-- Un seul nœud Code residuel est conserve pour le rendu HTML securise de la description de tache (`Render Task Description HTML`).
+## Configuration n8n
 
-## Tester le WF01 live sur n8n
+- `EXO_MCP_ENDPOINT` : endpoint MCP eXo utilise par les noeuds MCP Client.
+- `WF01_PROJECT_ID` : projet cible optionnel. Si absent, le workflow utilise `3`, soit le projet `Festival Art2Rue` observe sur l'instance eXo MIPS.
 
-### Option A — Import dans l’UI n8n
-1. Menu **…** sur un dossier → **Import from File**.
-2. Importer d’abord `n8n/workflows/subworkflow-unwrap-mcp-json.import.json` (nom exact **`UTIL - Unwrap MCP JSON`**).
-3. Importer ensuite `n8n/workflows/workflow-01-email-to-task.live.import.json` (ou remplacer le graphe d’un workflow existant en collant `nodes` + `connections` depuis ce fichier).
-4. Vérifier les credentials MCP / OpenAI sur les nœuds concernés, puis exécuter **Manual Start**.
+Le payload de creation de tache est construit sous `createTaskInput` avec cette forme :
 
-### Option B — MCP n8n
-Valider les fichiers SDK avec `validate_workflow`, puis utiliser `create_workflow_from_code` pour le sous-workflow et `update_workflow` pour `zeVd0scWqU5vcOUq`.
+```json
+{
+  "project_id": 3,
+  "title": "Titre de tache",
+  "description": "<div>...</div>",
+  "assignee": "louis",
+  "priority": "HIGH"
+}
+```
 
-Workflow distant créé pour le parsing : `UTIL - Unwrap MCP JSON` (`E4OAThogWRG93MUG`).
+## Import et test
+
+1. Importer ou mettre a jour `n8n/workflows/subworkflow-unwrap-mcp-json.json` pour garantir le workflow `UTIL - Unwrap MCP JSON`.
+2. Importer ou mettre a jour `n8n/workflows/workflow-01-email-to-task.json`.
+3. Verifier les credentials MCP eXo et OpenAI sur `MCP List Emails`, `MCP Create Task`, `MCP Assign Task` et `Routing Model`.
+4. Executer `Manual Start`.
+5. Controler `MCP Create Task`, `Unwrap MCP Create Task`, `Extract Task Assignment` et `MCP Assign Task`.
+
+Derniere validation serveur observee : execution `1117`, creation reussie des taches `13` et `14` dans `Festival Art2Rue` (`project_id=3`).
+
+## Limites connues
+
+- Le workflow ne contient plus de fallback REST.
+- Le workflow ne contient plus de sweep SLA ni de relance automatique.
+- L'idempotence des emails traites n'est pas encore persistée.
+- Le projet cible est configurable uniquement par `WF01_PROJECT_ID`, avec fallback local a `3`.
+

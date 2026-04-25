@@ -1,306 +1,165 @@
 # Workflow 01 - Email entrant vers tache eXo auto-assignee
 
 ## 1) Objectif
-Automatiser le tri des emails entrants et la creation de taches eXo avec priorisation, assignation, suivi SLA et escalade.
+Automatiser le tri des emails entrants du festival Art2Rue et creer des taches eXo uniquement pour les emails clairement actionnables.
+
+Le workflow final privilegie les noeuds natifs n8n pour la normalisation, les garde-fous et l'extraction des donnees. Un seul noeud Code reste utilise pour le rendu HTML controle de la description de tache.
 
 ## 2) Contexte metier et storytelling
-La ville de Chevigny prepare le festival Art2Rue. L'equipe projet centralise les echanges dans eXo, mais une partie des demandes arrive encore par email (prestataires, mairie, securite, riverains).
+La ville de Chevigny prepare le festival Art2Rue. L'equipe projet centralise les echanges dans eXo, mais une partie des demandes arrive encore par email.
 
-Le lundi matin, l'equipe support recoit un pic de messages:
-- panne VPN du prestataire billetterie
-- demande d'acces GED pour la direction commerciale
-- incident de partage de plan securite
-- question urgente de la mairie sur un document manquant
+Exemples de demandes utiles pour la demo:
+- panne VPN du prestataire billetterie;
+- demande d'acces GED pour des partenaires;
+- question urgente sur un document manquant;
+- message informatif qui ne doit pas creer de tache.
 
-Aujourd'hui, ces messages sont traites manuellement. Les risques observes:
-- oubli d'un email critique
-- mauvaise priorisation
-- retard de traitement sans relance
-- manque de tracabilite sur "qui fait quoi"
+Le but est de montrer qu'un flux n8n + MCP eXo peut transformer les emails actionnables en taches assignees, tout en ignorant les emails ambigus ou purement informatifs.
 
-Le but de la demo est de montrer qu'un flux n8n + eXo peut transformer ce chaos en execution fiable, en mode IA-first pour l'affectation des taches.
+## 3) Artefacts de reference
+- Workflow final exporte: `n8n/workflows/workflow-01-email-to-task.json`.
+- Workflow distant n8n: `zeVd0scWqU5vcOUq` (`WF01 - Email to Task (SDK)`).
+- Sous-workflow utilitaire: `UTIL - Unwrap MCP JSON` (`E4OAThogWRG93MUG`).
+- Source locale du sous-workflow: `n8n/workflows/subworkflow-unwrap-mcp-json.json`.
 
-## 3) Ce qu'on cherche a demontrer
-1. Chaque email entrant devient une tache exploitable.
-2. La priorite et le delai sont calcules automatiquement.
-3. L'assignation est faite par un agent IA selon le contenu de l'email et les responsabilites des membres.
-4. Les retards declenchent relance puis escalade.
-5. Les evidences sont visibles dans eXo (commentaires, statut, historique).
+Les anciens artefacts `workflow-01-email-to-task.live.*` etaient des etats intermediaires et ne sont plus la source de reference.
 
-## 4) Faisabilite MCP eXo QAUI
-### Tools MCP eXo identifies (direct MCP)
-- `get_my_spaces`
-- `search_documents`
-- `get_document_by_id`
-- `list_projects`
-- `get_project_by_id`
-- `list_project_statuses`
-- `list_tasks`
-- `list_assigned_tasks`
+## 4) Fonctionnel couvert
+1. Lecture des emails via `list_emails`.
+2. Decodage des enveloppes MCP via le sous-workflow `UTIL - Unwrap MCP JSON`.
+3. Normalisation des champs email: `emailId`, `subject`, `body`, `sender`, `receivedAt`.
+4. Filtrage des emails sans identifiant.
+5. Analyse IA structuree de chaque email.
+6. Creation de tache seulement si les trois conditions sont vraies:
+   - `actionRequired=true`;
+   - `responseExpected=true`;
+   - `actionConfidence >= 0.7`.
+7. Resolution native de l'assignee et de la priorite a partir de la sortie IA.
+8. Creation d'une tache eXo dans le projet cible.
+9. Extraction native du `task_id` depuis la reponse MCP.
+10. Echec explicite si la creation ne retourne pas de `task_id`.
+11. Assignation explicite de la tache avec `assign_task`.
+
+## 5) Hors scope actuel
+- Pas de fallback REST.
+- Pas de resolution dynamique projet/statut par `list_projects` ou `list_project_statuses`.
+- Pas de sweep SLA, relance automatique ou escalade manager.
+- Pas d'ajout automatique de commentaire de preuve.
+- Pas d'idempotence persistante pour eviter les doublons lors de reruns.
+- Pas d'appel `get_email_by_id`: `list_emails` fournit les champs necessaires au workflow actuel.
+
+Ces capacites restent des ameliorations possibles, mais elles ne font pas partie du workflow final actuel.
+
+## 6) Tools MCP utilises
+### 6.1 eXo MCP
+- `list_emails`
 - `create_task_in_project`
 - `assign_task`
-- `update_task_status`
-- `add_task_comment`
-- `add_project_label_to_task`
-- `list_emails`
-- `get_email_by_id`
 
-### Conclusion pour ce workflow
-- MCP direct couvre la chaine complete de ce cas d'usage (emails + projets + taches + contexte documentaire).
-- L'architecture cible devient **MCP-first**, REST restant un filet de securite endpoint par endpoint.
-- Strategie recommandee:
-  - n8n: orchestration, regles metier, IA optionnelle
-  - eXo MCP: execution nominale des operations
-  - eXo REST: fallback uniquement si indisponibilite MCP sur une capacite donnee
+### 6.2 n8n MCP / workflow utilitaire
+- `UTIL - Unwrap MCP JSON` (`E4OAThogWRG93MUG`) est appele avec `Execute Workflow` apres `list_emails` et apres `create_task_in_project`.
 
-## 5) Endpoints / tools cibles
-### 5.1 MCP eXo (primaire)
-- `list_emails`
-- `get_email_by_id`
-- `list_projects`
-- `get_project_by_id`
-- `list_project_statuses`
-- `create_task_in_project`
-- `assign_task`
-- `update_task_status`
-- `add_task_comment`
-- `get_my_spaces`
-- `search_documents`
-- `get_document_by_id`
+## 7) Variables et configuration
+- `EXO_MCP_ENDPOINT`: endpoint MCP eXo utilise par les noeuds `MCP Client`.
+- `WF01_PROJECT_ID`: projet eXo cible optionnel.
 
-### 5.2 REST eXo (fallback cible)
-Base URL REST (a valider): `https://<exo-host>/portal/rest`
-- `GET /projects/projects?q=...`
-- `GET /projects/projects/status/{id}`
-- `POST /tasks`
-- `GET /tasks/filter`
-- `POST /tasks/comments/{id}`
-- `PUT /tasks/updateCompleted/{idTask}?isCompleted=true|false`
+Si `WF01_PROJECT_ID` n'est pas defini, le workflow utilise `3`, correspondant au projet `Festival Art2Rue` observe sur l'instance eXo MIPS.
 
-## 6) Sequence detaillee
-1. Trigger MCP eXo email: `list_emails` (polling planifie n8n) puis `get_email_by_id`.
-2. Normalisation: auteur, sujet, corps, date, pieces jointes.
-3. Qualification et affectation par Agent IA (node `agent` n8n):
-   - analyse du sujet, expediteur, corps, pieces jointes et contexte
-   - sortie structuree: `intent`, `domain`, `priority`, `slaHours`, `assignee_username`, `rationale`
-   - l'agent route vers le meilleur responsable selon consignes metier
-4. Filtre actionnabilite strict: si l'email n'est pas clairement actionnable, on ignore (pas de creation de tache).
-5. Resolution projet/statut via MCP (`list_projects` + `list_project_statuses`).
-6. Creation tache eXo via MCP (`create_task_in_project`) puis assignation (`assign_task`).
-7. Si `create_task_in_project` ne retourne pas de `task_id`, le workflow echoue explicitement (pas de faux succes).
-6. Enrichissement optionnel via MCP eXo (doc de contexte lie au ticket).
-7. Polling des taches en retard via MCP (`list_tasks`).
-8. Relance automatique via MCP (`add_task_comment`).
-9. Escalade si depassement de seuil.
-10. Si un endpoint MCP echoue: bascule REST uniquement pour l'etape concernee.
+## 8) Sequence technique actuelle
+1. `Manual Start` ou `Intake Every 5m`.
+2. `MCP List Emails`: appelle `list_emails` avec `{ "limit": 50, "offset": 0 }`.
+3. `Unwrap MCP Emails`: convertit la reponse MCP en payload JSON exploitable.
+4. `Split Out Emails`: cree un item n8n par email.
+5. `Normalize Email`: extrait les champs utiles.
+6. `Filter - Has Email ID`: ignore les items sans `emailId`.
+7. `AI Router`: qualifie l'email avec `Routing Model` et `Routing Output Parser`.
+8. `Normalize AI Output`: convertit la sortie IA vers des champs natifs.
+9. `IF Clearly Actionable`: applique les garde-fous.
+10. `Build MCP Payload`: calcule assignee, label, priorite et titre.
+11. `Render Task Description HTML`: construit la description HTML et `createTaskInput`.
+12. `MCP Create Task`: appelle `create_task_in_project`.
+13. `Unwrap MCP Create Task`: decode la reponse MCP de creation.
+14. `Extract Task Assignment`: extrait `task_id`, `username` et `raw_create_payload`.
+15. `IF Has Task ID`: verifie que le `task_id` est strictement positif.
+16. Branche true: `MCP Assign Task` appelle `assign_task`.
+17. Branche false: `Stop - Missing task_id` stoppe l'execution avec un message explicite.
 
-## 7) Mode d'affectation cible (IA)
-### Agent IA d'affectation
-- Classification semantique des emails.
-- Resume automatique du ticket.
-- Affectation decidee par l'agent selon le contenu complet du message (`from`, `subject`, `body`) et les responsabilites ci-dessous:
-  - `louis`: responsable des moyens techniques et numeriques du festival.
-  - `claire`: cheffe de projet festival.
-  - `lucie`: responsable des relations avec les institutions.
-- Sortie attendue de l'agent: `assignee_username` + justification courte (`rationale`) pour tracabilite.
+## 9) Sortie IA attendue
+Le parser structure attend une sortie compatible avec ce schema:
 
-### Fallback (seulement si IA indisponible)
-- Matrice simplifiee de secours pour garantir la continuite de service.
-
-## 8) Story-driven dataset (base demo)
 ```json
 {
-  "storyContext": {
-    "event": "Festival Art2Rue",
-    "date": "2026-06-15",
-    "criticalityWindow": "J-30",
-    "projectName": "Festival Art2Rue - Operations"
-  },
-  "actors": [
-    {"username":"louis","role":"Responsable moyens techniques et numeriques","skills":["vpn","reseau","outillage","numerique"],"capacity":3},
-    {"username":"claire","role":"Cheffe de projet festival","skills":["coordination","arbitrage","suivi global"],"capacity":3},
-    {"username":"lucie","role":"Responsable relations institutions","skills":["mairie","administration","documents institutionnels"],"capacity":2},
-    {"username":"teamlead_it","role":"Manager IT"}
-  ],
-  "emails": [
-    {
-      "messageId":"M-1001",
-      "from":"billetterie@prestataire.fr",
-      "subject":"URGENT - VPN KO depuis 8h",
-      "body":"Nos agents ne peuvent plus acceder a la billetterie.",
-      "receivedAt":"2026-05-14T07:50:00Z"
-    },
-    {
-      "messageId":"M-1002",
-      "from":"dc@novatis.fr",
-      "subject":"Demande acces GED partenaires",
-      "body":"Merci de creer 3 acces externes pour consultation.",
-      "receivedAt":"2026-05-14T08:10:00Z"
-    },
-    {
-      "messageId":"M-1003",
-      "from":"mairie@chevigny.fr",
-      "subject":"Plan de circulation introuvable",
-      "body":"Besoin du document valide avant 14h.",
-      "receivedAt":"2026-05-14T08:15:00Z"
-    }
-  ],
-  "routingPolicy": {
-    "type": "ai_agent",
-    "instructions": [
-      "Analyse le sujet, l'expediteur et le corps de l'email.",
-      "Assigne louis pour les sujets techniques et numeriques.",
-      "Assigne lucie pour les demandes liees aux institutions (mairie, administration).",
-      "Assigne claire pour la coordination projet, arbitrages ou cas transverses."
-    ],
-    "outputSchema": {
-      "assignee_username": "louis|claire|lucie",
-      "priority": "LOW|NORMAL|HIGH|URGENT",
-      "slaHours": "number",
-      "rationale": "string"
-    }
-  },
-  "watchers": ["teamlead_it"]
+  "action_required": true,
+  "response_expected": true,
+  "action_confidence": 0.92,
+  "assignee_username": "louis",
+  "priority": "HIGH",
+  "slaHours": 4,
+  "task_title": "Incident VPN billetterie",
+  "summary": "Interruption VPN.",
+  "next_action": "Diagnostiquer.",
+  "rationale": "Sujet technique."
 }
 ```
 
-## 9) Payloads de reference
-### 9.1 MCP - creation tache (`create_task_in_project`)
+`slaHours` est conserve dans le contrat IA pour usage futur, mais le workflow actuel ne calcule pas d'echeance et ne declenche pas de sweep SLA.
+
+## 10) Regles de mapping
+### Assignee
+- Valeurs acceptees: `louis`, `claire`, `lucie`.
+- Toute autre valeur retombe sur `claire`.
+- Labels affiches dans la description: `Louis`, `Claire`, `Lucie`.
+
+### Priorite
+- Valeurs acceptees par la creation de tache: `LOW`, `NORMAL`, `HIGH`.
+- `URGENT` est mappe vers `HIGH`, car `create_task_in_project` n'accepte pas `URGENT`.
+- Toute valeur inconnue retombe sur `NORMAL`.
+
+## 11) Payloads de reference
+### 11.1 Creation de tache: `create_task_in_project`
+Le workflow construit ce payload sous le champ `createTaskInput`:
+
 ```json
 {
-  "project_id": 66,
-  "title": "Incident VPN - acces impossible",
-  "description": "<div><p><strong>Email source:</strong> billetterie@prestataire.fr</p><h4>Contexte</h4><p>VPN KO depuis 8h.</p></div>",
+  "project_id": 3,
+  "title": "Probleme d'acces a la billetterie",
+  "description": "<div>...</div>",
   "assignee": "louis",
   "priority": "HIGH"
 }
 ```
 
-### 9.2 MCP - relance automatique (`add_task_comment`)
+### 11.2 Assignation: `assign_task`
 ```json
 {
-  "task_id": 371,
-  "comment": "Relance automatique: SLA depasse, merci de mettre a jour le statut."
+  "task_id": 14,
+  "username": "louis"
 }
 ```
 
-### 9.3 REST fallback - creation tache (`POST /tasks`)
-```json
-{
-  "title": "Incident VPN - acces impossible",
-  "description": "Mail client: VPN KO depuis 8h",
-  "assignee": "louis",
-  "watcher": ["teamlead_it"],
-  "priority": "HIGH",
-  "dueDate": "2026-05-14T11:50:00Z"
-}
-```
+## 12) Criteres d'acceptation
+- Les emails clairement actionnables creent une tache eXo.
+- Les emails non actionnables ou ambigus ne creent pas de tache.
+- Les taches creees ont un titre, une description HTML, une priorite et un assignee.
+- `create_task_in_project` recoit un `project_id` valide (`WF01_PROJECT_ID` ou `3` par defaut).
+- Une reponse de creation sans `task_id` stoppe explicitement le workflow.
+- `assign_task` utilise le champ MCP attendu `username`.
 
-## 10) Script de demo (10 min)
-1. Injecter 3 emails de test (M-1001..M-1003).
-2. Montrer creation automatique de 3 taches dans eXo.
-3. Montrer priorites et assignees calculees.
-4. Simuler un retard sur la tache VPN.
-5. Montrer relance auto en commentaire.
-6. Montrer escalade manager si delai depasse.
+## 13) Validation observee
+Derniere validation serveur observee:
+- execution n8n: `1117`;
+- statut: success;
+- taches creees: `13` et `14`;
+- projet: `Festival Art2Rue` (`project_id=3`);
+- creation via `create_task_in_project` validee;
+- extraction `task_id` via `Unwrap MCP Create Task` validee.
 
-## 11) Criteres d'acceptation
-- 100% des emails clairement actionnables convertis en taches.
-- Les emails non actionnables sont ignores (aucune tache creee).
-- Priorite et assignee toujours renseignes sur les taches creees.
-- Relance visible en commentaire pour les retards.
-- Escalade declenchee sur au moins 1 cas de test.
-- En cas de reponse invalide de `create_task_in_project` (sans `task_id`), l'execution est en echec explicite.
+Un appel direct `assign_task` avec `{ "task_id": 13, "username": "louis" }` a egalement ete valide.
 
-## 12) MCP eXo direct - payloads reels observes
-Ces payloads ont ete captures via appels directs `mcp__exo_qaui_mcp_server__`.
-
-### 12.1 `get_my_spaces` (input)
-```json
-{ "limit": 20, "offset": 0, "query": "" }
-```
-
-### 12.2 `get_my_spaces` (output brut)
-```json
-[
-  {
-    "type": "text",
-    "text": "[{\"name\":\"Festival Art2Rue\",\"space_id\":66,...}]"
-  }
-]
-```
-
-### 12.3 `search_documents` (input)
-```json
-{ "query": "festival", "limit": 5, "offset": 0 }
-```
-
-### 12.4 Regle de parsing
-- Le serveur renvoie une enveloppe `[{type,text}]`.
-- `text` contient du JSON serialize en string.
-- Parsing en 2 etapes obligatoire.
-
-## 13) Reevaluation faisabilite MCP QAUI (maj)
-Constat suite a exploration directe (hors workflow n8n):
-
-### 13.1 Capacites MCP confirmees pour Projects/Tasks
-Tools verifies en execution:
-- `list_projects`
-- `get_project_by_id`
-- `list_tasks`
-- `list_assigned_tasks`
-- `list_project_statuses`
-- `list_project_labels`
-- `list_users_of_space_by_role`
-- et aussi tools de mutation exposes: `create_task_in_project`, `assign_task`, `update_task_status`, `add_task_comment`, etc.
-
-Exemple output `list_projects` (brut):
-```json
-[{"type":"text","text":"{\"projects\":[{\"name\":\"Festival Art2Rue\",\"project_id\":66,...}],\"count\":43}"}]
-```
-
-Exemple output `list_tasks` sur `project_id=66`:
-```json
-[{"type":"text","text":"{\"tasks\":[{\"task_id\":371,\"title\":\"Review security...\",\"status\":{\"status_id\":261},...}],\"count\":99}"}]
-```
-
-### 13.2 Capacites MCP emails: validees en appel direct QAUI
-Tools verifies:
-- `list_emails`
-- `get_email_by_id`
-
-Etat observe sur QAUI (2026-04-22):
-- `list_emails` retourne une liste exploitable (`email_id`, `subject`, `content`, `sender`, `receivedDate`).
-- `get_email_by_id` retourne le detail complet pour conversion en tache.
-
-## 14) Architecture cible MCP-first / REST-fallback
-### 14.1 Matrice de decisions techniques
-1. Source emails entrantes:
-- Priorite: MCP eXo `list_emails` + `get_email_by_id`
-- Fallback: IMAP/Gmail externe si indisponibilite MCP
-
-2. Creation et pilotage taches:
-- Priorite: MCP eXo (`create_task_in_project`, `assign_task`, `update_task_status`, `add_task_comment`, `list_tasks`)
-- Fallback: REST Tasks (`POST /tasks`, `PUT/GET associes`)
-
-3. Resolution projet/statuts:
-- Priorite: MCP eXo (`list_projects`, `list_project_statuses`, `get_project_by_id`)
-- Fallback: REST Projects
-
-4. Contexte documentaire:
-- Priorite: MCP eXo (`search_documents`, `get_document_by_id`)
-- Fallback: REST Documents
-
-### 14.2 Evidence de validation email MCP (2026-04-22)
-- `list_emails` OK: retourne des emails avec `email_id`, `subject`, `content`, `sender`, `receivedDate`.
-- `get_email_by_id` OK: retourne le detail complet (to, body, meta, etc.).
-
-Exemple output `list_emails` (brut):
-```json
-[{"type":"text","text":"[{\"email_id\":3,\"subject\":\"Security alert\",...}]"}]
-```
-
-Exemple output `get_email_by_id` (brut):
-```json
-[{"type":"text","text":"{\"email_id\":1,\"subject\":\"hello\",\"content\":{\"body\":\"bienvenue -- Patrice Lamarque\"},...}"}]
-```
+## 14) Points d'amelioration
+1. Ajouter une idempotence persistante par `emailId`.
+2. Reintroduire un sweep SLA dans un workflow dedie si le besoin demo revient.
+3. Ajouter un commentaire de preuve apres creation de tache.
+4. Resoudre dynamiquement le projet cible par nom si plusieurs environnements eXo sont utilises.
+5. Externaliser les regles assignee/priorite dans une table de configuration.
+6. Supprimer le dernier noeud Code si un rendu HTML natif devient maintenable avec les noeuds n8n disponibles.
