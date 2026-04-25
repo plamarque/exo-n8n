@@ -1,0 +1,46 @@
+{
+  "name": "UTIL - Unwrap MCP JSON",
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "nodes": [
+    {
+      "id": "f0d5a5ea-b9d9-4ea8-a083-88b2c8dd3ec1",
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        220,
+        260
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "273f3214-6f2d-49a8-bf4b-74125d3f45ff",
+      "name": "Unwrap Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        260
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "let payload = $json;\nif (payload?.content?.[0]?.text !== undefined) payload = payload.content[0].text;\nif (Array.isArray(payload) && payload[0]?.type === 'text' && typeof payload[0]?.text === 'string') payload = payload[0].text;\nif (typeof payload === 'string') {\n  try {\n    payload = JSON.parse(payload);\n  } catch {\n    payload = {};\n  }\n}\nif (Array.isArray(payload) && payload.length === 1 && payload[0]?.type === 'text' && typeof payload[0]?.text === 'string') {\n  try {\n    payload = JSON.parse(payload[0].text);\n  } catch {\n    payload = payload[0].text;\n  }\n}\nreturn { payload };"
+      }
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Unwrap Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

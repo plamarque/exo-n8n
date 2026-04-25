@@ -1,0 +1,1321 @@
+{
+  "name": "WF01 - Email to Task (SDK)",
+  "nodes": [
+    {
+      "id": "6c244bb0-727e-4785-b1a8-ace341b77282",
+      "name": "Manual Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        224,
+        224
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "e168fc27-27f2-413e-8405-22e00523127b",
+      "name": "Intake Every 5m",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        448
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "8b52b27e-8b35-420f-bc19-84eff92f8d1d",
+      "name": "MCP List Emails",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        520,
+        336
+      ],
+      "parameters": {
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "authentication": "mcpOAuth2Api",
+        "tool": {
+          "__rl": true,
+          "mode": "id",
+          "value": "list_emails"
+        },
+        "inputMode": "json",
+        "jsonInput": "{\"limit\":50,\"offset\":0}",
+        "options": {
+          "timeout": 60000
+        }
+      }
+    },
+    {
+      "id": "2687de9e-1831-4dcc-89fb-30d7f4c3935f",
+      "name": "Unwrap MCP Emails",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        760,
+        336
+      ],
+      "parameters": {
+        "workflowId": "E4OAThogWRG93MUG",
+        "options": {}
+      }
+    },
+    {
+      "id": "f8d63b8b-f6e6-4666-92c0-caa5814e6a0d",
+      "name": "Set Email List",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        980,
+        336
+      ],
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "json": [
+            {
+              "name": "emails",
+              "value": "={{ Array.isArray($json.payload) ? $json.payload : (Array.isArray($json.payload?.emails) ? $json.payload.emails : []) }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "6a6433b5-a17c-4317-834a-f6d2f1e2ff00",
+      "name": "Split Out Emails",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        336
+      ],
+      "parameters": {
+        "fieldToSplitOut": "emails",
+        "options": {}
+      }
+    },
+    {
+      "id": "fe6ccf7f-1124-4e1e-adf1-752f3f4e8e49",
+      "name": "Normalize Email",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1420,
+        336
+      ],
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "emailId",
+              "value": "={{ String($json.email_id ?? $json.messageId ?? $json.id ?? '') }}"
+            },
+            {
+              "name": "subject",
+              "value": "={{ $json.subject || 'Email sans sujet' }}"
+            },
+            {
+              "name": "body",
+              "value": "={{ $json.content?.body || $json.body || '' }}"
+            },
+            {
+              "name": "sender",
+              "value": "={{ $json.sender?.address || $json.sender || $json.from || 'unknown' }}"
+            },
+            {
+              "name": "receivedAt",
+              "value": "={{ $json.receivedDate || $json.receivedAt || $now.toISO() }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "46aaf7a2-c4c0-4f26-b40d-9c5b8f6602ea",
+      "name": "Filter - Has Email ID",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1640,
+        336
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has_email_id",
+              "leftValue": "={{$json.emailId}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "a389fdbd-c823-44fc-bf41-20b82cc2abf9",
+      "name": "AI Router",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1880,
+        336
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyse cet email pour determiner s'il est clairement actionnable.\nSubject: {{ $json.subject }}\nSender: {{ $json.sender }}\nBody: {{ $json.body }}\n\nRetourne uniquement les champs structures demandés.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Tu es l'agent de tri des emails du festival Art2Rue. Regle absolue: on cree une tache uniquement si l'email est clairement actionnable. Si doute, ambiguite, ou simple information: ne pas creer de tache. Retourne alors action_required=false et response_expected=false. Valeurs attendues: action_required (boolean), response_expected (boolean), action_confidence (0..1), assignee_username (louis|claire|lucie), priority (LOW|NORMAL|HIGH|URGENT), slaHours (>0), task_title, summary, next_action, rationale. Si action_required=false: assignee_username=claire, priority=LOW, slaHours=72, task_title=\"Information sans action\", next_action=\"Aucune action immediate\"."
+        }
+      }
+    },
+    {
+      "id": "14dce692-9f03-4ee5-97c0-5faca7469924",
+      "name": "Routing Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1880,
+        544
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.1
+        }
+      }
+    },
+    {
+      "id": "71544077-ebbe-4cbc-9ed5-babb4e61bcc3",
+      "name": "Routing Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        2040,
+        544
+      ],
+      "parameters": {
+        "jsonSchemaExample": "{\"action_required\":true,\"response_expected\":true,\"action_confidence\":0.92,\"assignee_username\":\"louis\",\"priority\":\"HIGH\",\"slaHours\":4,\"task_title\":\"Incident VPN billetterie\",\"summary\":\"Interruption d'acces VPN pour la billetterie.\",\"next_action\":\"Diagnostiquer et restaurer l'acces VPN.\",\"rationale\":\"Sujet technique numerique.\"}"
+      }
+    },
+    {
+      "id": "90c2aaf1-a9f9-423f-abd2-2067f5ef1453",
+      "name": "Normalize AI Output",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2120,
+        336
+      ],
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "boolean": [
+            {
+              "name": "actionRequired",
+              "value": "={{ Boolean(($json.output || $json).action_required) }}"
+            },
+            {
+              "name": "responseExpected",
+              "value": "={{ Boolean(($json.output || $json).response_expected) }}"
+            }
+          ],
+          "number": [
+            {
+              "name": "actionConfidence",
+              "value": "={{ Number(($json.output || $json).action_confidence || 0) }}"
+            }
+          ],
+          "string": [
+            {
+              "name": "assigneeCandidate",
+              "value": "={{ String((($json.output || $json).assignee_username || '')).toLowerCase() }}"
+            },
+            {
+              "name": "priorityCandidate",
+              "value": "={{ String((($json.output || $json).priority || 'NORMAL')).toUpperCase() }}"
+            },
+            {
+              "name": "taskTitleCandidate",
+              "value": "={{ String((($json.output || $json).task_title || $json.subject || 'Email a traiter')).slice(0,80) }}"
+            },
+            {
+              "name": "summary",
+              "value": "={{ String((($json.output || $json).summary || 'Synthese non fournie')).slice(0,500) }}"
+            },
+            {
+              "name": "nextAction",
+              "value": "={{ String((($json.output || $json).next_action || 'Analyser et mettre a jour le statut')).slice(0,300) }}"
+            },
+            {
+              "name": "rationale",
+              "value": "={{ String((($json.output || $json).rationale || 'Decision IA')).slice(0,300) }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "5259a7cd-8f51-4bcd-bf58-88f811ca7a6c",
+      "name": "IF Action Required",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2340,
+        336
+      ],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "is_action_required",
+              "leftValue": "={{$json.actionRequired}}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "2a34c414-2e4f-4c96-b4d1-841795ea9f9f",
+      "name": "IF Response Expected",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2560,
+        336
+      ],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "is_response_expected",
+              "leftValue": "={{$json.responseExpected}}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "157eb5a4-a966-49a0-9c52-ef3088c17a66",
+      "name": "IF Confidence >= 0.7",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2780,
+        336
+      ],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "min_confidence",
+              "leftValue": "={{$json.actionConfidence}}",
+              "rightValue": 0.7,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "52796ff3-19a5-4bcb-bef6-5a95717fe467",
+      "name": "Switch Assignee",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        3000,
+        336
+      ],
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.assigneeCandidate}}",
+                    "rightValue": "louis",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "louis"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.assigneeCandidate}}",
+                    "rightValue": "claire",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "claire"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.assigneeCandidate}}",
+                    "rightValue": "lucie",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "lucie"
+            }
+          ]
+        },
+        "fallbackOutput": 3
+      }
+    },
+    {
+      "id": "b7dd0fb9-2fee-41ab-b80d-5af1cdf06f56",
+      "name": "Set Assignee Louis",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3220,
+        120
+      ],
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "resolvedAssignee",
+              "value": "louis"
+            },
+            {
+              "name": "assigneeLabel",
+              "value": "Louis"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "b2af0f5c-4376-4ebe-a021-ecb846fd83b5",
+      "name": "Set Assignee Claire",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3220,
+        260
+      ],
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "resolvedAssignee",
+              "value": "claire"
+            },
+            {
+              "name": "assigneeLabel",
+              "value": "Claire"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "f4f97f64-2938-4582-bfd9-eb42ff53a6d9",
+      "name": "Set Assignee Lucie",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3220,
+        400
+      ],
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "resolvedAssignee",
+              "value": "lucie"
+            },
+            {
+              "name": "assigneeLabel",
+              "value": "Lucie"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "7a896b1e-9372-4c04-a58c-8adac3ff8a49",
+      "name": "Set Assignee Default",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3220,
+        540
+      ],
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "resolvedAssignee",
+              "value": "claire"
+            },
+            {
+              "name": "assigneeLabel",
+              "value": "Claire"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "ff4f911e-8c01-4960-8aa2-872f4f5675a5",
+      "name": "Switch Priority",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        3440,
+        336
+      ],
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.priorityCandidate}}",
+                    "rightValue": "LOW",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "low"
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.priorityCandidate}}",
+                    "rightValue": "NORMAL",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "normal"
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.priorityCandidate}}",
+                    "rightValue": "HIGH",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "high"
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.priorityCandidate}}",
+                    "rightValue": "URGENT",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "urgent"
+            }
+          ]
+        },
+        "fallbackOutput": 4
+      }
+    },
+    {
+      "id": "4f0b20fe-547b-408f-b2ef-c0f347073de6",
+      "name": "Set Priority LOW",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3660,
+        80
+      ],
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "resolvedPriority",
+              "value": "LOW"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "d2f69506-fc5d-4a5f-bf5f-5884483f9e65",
+      "name": "Set Priority NORMAL",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3660,
+        210
+      ],
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "resolvedPriority",
+              "value": "NORMAL"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "6f9148e0-b8bf-4ca9-bfed-f307abf38a99",
+      "name": "Set Priority HIGH",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3660,
+        340
+      ],
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "resolvedPriority",
+              "value": "HIGH"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "62ea9b4d-9c95-45b9-a7cf-77b353f4d649",
+      "name": "Set Priority URGENT->HIGH",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3660,
+        470
+      ],
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "resolvedPriority",
+              "value": "HIGH"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "43742204-e6c1-4588-b9d4-d5308f7a4214",
+      "name": "Set Priority Default",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3660,
+        600
+      ],
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "resolvedPriority",
+              "value": "NORMAL"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "1821f4fc-b840-4118-b20c-5a8ab63dc01f",
+      "name": "Set Build Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3880,
+        336
+      ],
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "string": [
+            {
+              "name": "taskTitle",
+              "value": "={{$json.taskTitleCandidate}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "d33a69c2-248f-4f5f-baee-ea3bc5f4dc6a",
+      "name": "Render Task Description HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4100,
+        336
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\\\"/g, '&quot;');\nconst excerpt = String($json.body || '').replace(/\\s+/g, ' ').slice(0, 400);\nconst description = [\n  '<div>',\n  '<p><strong>Email source:</strong> ' + esc($json.sender) + '<br/><strong>Sujet:</strong> ' + esc($json.subject) + '</p>',\n  '<h4>Contexte</h4>',\n  '<p>' + esc($json.summary || 'Synthese non fournie') + '</p>',\n  '<h4>Action attendue</h4>',\n  '<p>' + esc($json.nextAction || 'Analyser et mettre a jour le statut') + '</p>',\n  '<h4>Decision IA</h4>',\n  '<ul>',\n  '<li><strong>Assignee:</strong> ' + esc($json.assigneeLabel || $json.resolvedAssignee) + ' (' + esc($json.resolvedAssignee) + ')</li>',\n  '<li><strong>Priorite:</strong> ' + esc($json.resolvedPriority) + '</li>',\n  '<li><strong>Confiance actionnable:</strong> ' + esc($json.actionConfidence) + '</li>',\n  '<li><strong>Justification:</strong> ' + esc($json.rationale || 'Decision IA') + '</li>',\n  '</ul>',\n  '<h4>Extrait email</h4>',\n  '<blockquote>' + esc(excerpt) + '</blockquote>',\n  '</div>'\n].join('').slice(0, 5000);\nreturn [{\n  json: {\n    ...$json,\n    aiDecision: {\n      clearlyActionable: true,\n      assignee: $json.resolvedAssignee,\n      assigneeLabel: $json.assigneeLabel,\n      priority: $json.resolvedPriority,\n      actionConfidence: $json.actionConfidence,\n      taskTitle: $json.taskTitle,\n      summary: $json.summary,\n      nextAction: $json.nextAction,\n      rationale: $json.rationale\n    },\n    mcpInput: {\n      project_id: 66,\n      title: $json.taskTitle,\n      description,\n      assignee: $json.resolvedAssignee,\n      priority: $json.resolvedPriority\n    }\n  }\n}];"
+      }
+    },
+    {
+      "id": "a4d3f709-ab1e-4004-8bcf-14cdc04b7de4",
+      "name": "MCP Create Task",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        4320,
+        336
+      ],
+      "parameters": {
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "authentication": "mcpOAuth2Api",
+        "tool": {
+          "__rl": true,
+          "mode": "id",
+          "value": "create_task_in_project"
+        },
+        "inputMode": "json",
+        "jsonInput": "={{ $json.mcpInput }}",
+        "options": {
+          "timeout": 60000
+        }
+      }
+    },
+    {
+      "id": "2114128b-9dcf-4f75-af14-f09a5957ef35",
+      "name": "Unwrap MCP Create Task",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        4540,
+        336
+      ],
+      "parameters": {
+        "workflowId": "E4OAThogWRG93MUG",
+        "options": {}
+      }
+    },
+    {
+      "id": "0d11c2e4-65cf-4425-993c-ad8a818f128e",
+      "name": "Extract Task Assignment",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4760,
+        336
+      ],
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "number": [
+            {
+              "name": "task_id",
+              "value": "={{ Number($json.payload?.task_id || $json.payload?.id || $json.payload?.task?.task_id || 0) }}"
+            }
+          ],
+          "string": [
+            {
+              "name": "assignee_username",
+              "value": "={{ $('Render Task Description HTML').item.json.mcpInput.assignee || 'claire' }}"
+            },
+            {
+              "name": "raw_create_payload",
+              "value": "={{ JSON.stringify($json.payload || {}).slice(0, 800) }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "22b52f4f-b4e2-4d8f-8f74-8c69b34b128d",
+      "name": "IF Has Task ID",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4980,
+        336
+      ],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "has_task_id",
+              "leftValue": "={{$json.task_id}}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "9d865f9d-f6fc-4121-bf72-602c97e44d46",
+      "name": "Stop - Missing task_id",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        5200,
+        460
+      ],
+      "parameters": {
+        "errorMessage": "=create_task_in_project failed or returned no task_id. payload={{$json.raw_create_payload}}"
+      }
+    },
+    {
+      "id": "56e13fb4-cfaa-4e6b-9cc2-cff6d079bd9a",
+      "name": "MCP Assign Task",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        5200,
+        240
+      ],
+      "parameters": {
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "authentication": "mcpOAuth2Api",
+        "tool": {
+          "__rl": true,
+          "mode": "id",
+          "value": "assign_task"
+        },
+        "inputMode": "json",
+        "jsonInput": "={{ { task_id: $json.task_id, assignee_username: $json.assignee_username } }}",
+        "options": {
+          "timeout": 60000
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Manual Start": {
+      "main": [
+        [
+          {
+            "node": "MCP List Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Intake Every 5m": {
+      "main": [
+        [
+          {
+            "node": "MCP List Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP List Emails": {
+      "main": [
+        [
+          {
+            "node": "Unwrap MCP Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unwrap MCP Emails": {
+      "main": [
+        [
+          {
+            "node": "Set Email List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Email List": {
+      "main": [
+        [
+          {
+            "node": "Split Out Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out Emails": {
+      "main": [
+        [
+          {
+            "node": "Normalize Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Email": {
+      "main": [
+        [
+          {
+            "node": "Filter - Has Email ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter - Has Email ID": {
+      "main": [
+        [
+          {
+            "node": "AI Router",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "AI Router": {
+      "main": [
+        [
+          {
+            "node": "Normalize AI Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Routing Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Router",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Routing Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Router",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize AI Output": {
+      "main": [
+        [
+          {
+            "node": "IF Action Required",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Action Required": {
+      "main": [
+        [
+          {
+            "node": "IF Response Expected",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "IF Response Expected": {
+      "main": [
+        [
+          {
+            "node": "IF Confidence >= 0.7",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "IF Confidence >= 0.7": {
+      "main": [
+        [
+          {
+            "node": "Switch Assignee",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Switch Assignee": {
+      "main": [
+        [
+          {
+            "node": "Set Assignee Louis",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Assignee Claire",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Assignee Lucie",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Assignee Default",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Assignee Louis": {
+      "main": [
+        [
+          {
+            "node": "Switch Priority",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Assignee Claire": {
+      "main": [
+        [
+          {
+            "node": "Switch Priority",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Assignee Lucie": {
+      "main": [
+        [
+          {
+            "node": "Switch Priority",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Assignee Default": {
+      "main": [
+        [
+          {
+            "node": "Switch Priority",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Priority": {
+      "main": [
+        [
+          {
+            "node": "Set Priority LOW",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Priority NORMAL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Priority HIGH",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Priority URGENT->HIGH",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Priority Default",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Priority LOW": {
+      "main": [
+        [
+          {
+            "node": "Set Build Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Priority NORMAL": {
+      "main": [
+        [
+          {
+            "node": "Set Build Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Priority HIGH": {
+      "main": [
+        [
+          {
+            "node": "Set Build Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Priority URGENT->HIGH": {
+      "main": [
+        [
+          {
+            "node": "Set Build Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Priority Default": {
+      "main": [
+        [
+          {
+            "node": "Set Build Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Build Payload": {
+      "main": [
+        [
+          {
+            "node": "Render Task Description HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render Task Description HTML": {
+      "main": [
+        [
+          {
+            "node": "MCP Create Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Create Task": {
+      "main": [
+        [
+          {
+            "node": "Unwrap MCP Create Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unwrap MCP Create Task": {
+      "main": [
+        [
+          {
+            "node": "Extract Task Assignment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Task Assignment": {
+      "main": [
+        [
+          {
+            "node": "IF Has Task ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Has Task ID": {
+      "main": [
+        [
+          {
+            "node": "MCP Assign Task",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop - Missing task_id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "pinData": {}
+}
