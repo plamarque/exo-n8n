@@ -1,0 +1,14 @@
+---
+description: Committed repo content must be English-only (docs, workflows, tools, commits).
+alwaysApply: true
+---
+
+# English-only committed artifacts
+
+When you add or edit **tracked** files in this repository:
+
+- Write **English** for Markdown, `workflow.json` user-facing text (labels, prompts, descriptions, default HTML), `tools/*` comments and `console`/error strings, fixtures used as specs, and **git commit messages**.
+- Do **not** commit French or other non-English documentation or workflow copy unless the user explicitly requests a scoped exception.
+- **Exception:** only minimal code literals needed to interoperate with **legacy data already stored outside the repo** (e.g. matching old HTML). Do not expand non-English literals for new features; document any required legacy matches in `docs/DEVELOPMENT.md` or the workflow spec.
+
+Normative detail: [AGENTS.md](../../AGENTS.md) (*Language (committed artifacts)*), [docs/WORKFLOW.md](../../docs/WORKFLOW.md) (*Repository language*).

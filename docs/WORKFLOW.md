@@ -17,6 +17,10 @@ This document defines how project documentation is maintained. It is normative f
 
 Per-workflow documentation lives under `workflows/wf0X-*/` (`SPEC.*.md`, `README.md`). It should not contradict the normative governance docs.
 
+## Repository language
+
+All **committed** artifacts follow **English-only** authoring rules, including workflow exports, specs, tooling comments, and commit messages. A **narrow exception** applies only to minimal literals that must match legacy external data; see [AGENTS.md](../AGENTS.md) (section *Language (committed artifacts)*).
+
 ## Change Rules
 
 1. Functional behavior changes require an update to `docs/SPEC.md`.

@@ -8,6 +8,13 @@ This repository is governed by documentation-first rules for AI-assisted work.
 - Treat `docs/PLAN.md` and `docs/ISSUES.md` as tracking documents, not as sources of functional truth.
 - Treat per-workflow documentation under `workflows/*/` (for example `SPEC.functional.md`, `SPEC.technical.md`, `README.md`) as reference material that may be more detailed than the cross-project governance docs in `docs/`.
 
+## Language (committed artifacts)
+
+- Use **English only** in anything **committed** to this repository: Markdown (`docs/`, `workflows/**`), canonical `workflow.json` (names, descriptions, prompts, user-visible labels, HTML templates shipped as defaults), editorial fixtures, comments and user-facing strings in `tools/`, generated inventories meant for human reading, and **git commit messages**.
+- Do **not** introduce French or other non-English prose in new or edited tracked files unless the user explicitly asks for a scoped exception (for example a bilingual appendix).
+- **Narrow exception:** minimal string literals whose sole purpose is to match **legacy data already stored outside the repo** (for example old eXo note HTML in another language). Do not grow this surface area; prefer English-first defaults and document any required legacy fragments in `docs/DEVELOPMENT.md` or the relevant workflow spec.
+- Cursor also loads [`.cursor/rules/english-only-artifacts.mdc`](.cursor/rules/english-only-artifacts.mdc) as a project rule (`alwaysApply`) so agents keep the same bar during implementation.
+
 ## Required Workflow
 
 1. Read the relevant governance docs before changing workflows, scripts, configuration, or project documentation.

@@ -4,6 +4,8 @@
 
 This repository is primarily an n8n/eXo workflow artifact workspace. It contains canonical `workflow.json` files per workflow, split specifications under `workflows/`, an optional [audit](audit-code-vs-native.md), generated [inventory](inventory-code-nodes.json), and a minimal [tools/](../tools/) directory.
 
+**Language:** committed files are **English-only** (docs, workflow strings, script comments/messages). See [AGENTS.md](../AGENTS.md) for the full policy and the small exception for legacy external-data matching.
+
 [UNCERTAIN] No root `package.json` was observed, so there is no single repository-level install/test command documented here.
 
 ## Local Prerequisites
