@@ -6,11 +6,23 @@ This repository is primarily an n8n/eXo workflow artifact workspace. It contains
 
 **Language:** committed files are **English-only** (docs, workflow strings, script comments/messages). See [AGENTS.md](../AGENTS.md) for the full policy and the small exception for legacy external-data matching.
 
-[UNCERTAIN] No root `package.json` was observed, so there is no single repository-level install/test command documented here.
+## Node toolchain (workflow SDK)
+
+- Root [package.json](../package.json) pins **`@n8n/workflow-sdk`** for **local** validation and optional codegen of MCP-oriented SDK bundles.
+- After cloning: `npm install` from the repository root.
+- **Source of truth** remains each canonical **`workflow.json`**. Generated files under `work/` are **git-ignored** scratch output (optional `--emit-sdk`).
+
+### Where validation runs
+
+| Step | Where | What |
+|------|--------|------|
+| **Structural / expression checks** on `workflow.json` | **Local** (`validateWorkflow` from `@n8n/workflow-sdk`) | `npm run validate:workflows` or [validate-workflow-json.mjs](../tools/validate-workflow-json.mjs) — no n8n server required. |
+| **MCP `validate_workflow`** | **n8n MCP host** (Cursor / cloud) | Same SDK rules, but input must be **fluent SDK `code`**, not raw JSON. Use `--emit-sdk work/....mjs` locally, then paste or feed that file to MCP if you need MCP-side validation. |
+| **Runtime** (credentials, MCP eXo, quotas) | **Your n8n instance** | UI/API import + execute; not replaced by local SDK validation. |
 
 ## Local Prerequisites
 
-- Node.js capable of running ES modules used by scripts in `tools/`.
+- Node.js **18+** with `npm install` at the repo root (ES modules in `tools/` plus `@n8n/workflow-sdk` for validation).
 - Access to the target n8n instance when synchronizing workflows through the n8n API (optional; MCP n8n is the preferred path when available in Cursor).
 - eXo MCP credentials configured in n8n for workflow execution. Demo endpoint (reference): `https://exo-mips-ft.meeds.io/mcp-server/mcp` — always match `EXO_MCP_ENDPOINT` to the environment under test.
 - OpenAI or compatible credentials configured in n8n for workflows using AI nodes.
@@ -18,14 +30,26 @@ This repository is primarily an n8n/eXo workflow artifact workspace. It contains
 ## Workflow lifecycle (expected)
 
 1. **Edit** the canonical JSON in the repo: `workflows/wf0X-.../workflow.json`.
-2. **Validate** with the n8n MCP (`validate_workflow` / SDK patterns in your MCP client).
-3. **Deploy** with `update_workflow` or `create_workflow_from_code` (or import JSON in the n8n UI for ad-hoc tests).
+2. **Validate locally** with `npm run validate:workflows` (or `npm run validate:workflow -- <path>`). Optionally emit an MCP-ready SDK file: `node tools/validate-workflow-json.mjs <path> --emit-sdk work/<name>.mjs` (ignored by git).
+3. **Deploy** to n8n: import JSON (UI or REST API), or use MCP `update_workflow` / `create_workflow_from_code` with validated SDK `code` if you generated it in step 2.
 4. **Run** on the instance and **inspect executions** in n8n for debugging.
 5. Optional: push a known workflow back from local file via the API (WF04) using [wf04-push-to-n8n-api.mjs](../tools/wf04-push-to-n8n-api.mjs) when you need a quick sync without using MCP for that step.
 
 ## Useful scripts
 
-From the repository root:
+From the repository root (after `npm install`):
+
+```bash
+npm run validate:workflows
+```
+
+Validates every `workflows/**/workflow.json` except under `fixtures/`, using `@n8n/workflow-sdk`’s `validateWorkflow`.
+
+```bash
+npm run validate:workflow -- workflows/wf01-email-to-task/workflow.json
+```
+
+Single-file validation. Add `--emit-sdk work/wf01.generated.mjs` to write an SDK module (under `work/`, git-ignored) for MCP or experiments.
 
 ```bash
 node tools/inventory-code-nodes.mjs

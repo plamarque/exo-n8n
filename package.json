@@ -1,0 +1,17 @@
+{
+  "name": "n8n-exo-workflow-artifacts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Canonical n8n workflow JSON and tooling for eXo integrations.",
+  "scripts": {
+    "validate:workflow": "node tools/validate-workflow-json.mjs",
+    "validate:workflows": "node tools/validate-workflow-json.mjs --all"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@n8n/workflow-sdk": "^0.10.2"
+  }
+}

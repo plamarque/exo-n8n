@@ -1,5 +1,11 @@
 .DS_Store
 
+# Node (workflow SDK validation / codegen)
+node_modules/
+
+# Ephemeral SDK output and scratch (not committed)
+work/
+
 # Local env files
 .env
 *.env
