@@ -12,7 +12,10 @@ work/
 !.env.example
 !*.env.example
 
-# Cursor IDE: ignore everything under .cursor except shared agent rules
+# Cursor IDE: ignore everything under .cursor except shared rules, project skills, and mcp example (no secrets)
 .cursor/*
 !.cursor/rules/
 !.cursor/rules/**
+!.cursor/skills/
+!.cursor/skills/**
+!.cursor/mcp.json.example

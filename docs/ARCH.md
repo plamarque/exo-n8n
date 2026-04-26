@@ -17,7 +17,7 @@ There is no observed application package manifest at the repository root. The ex
 ## External Systems
 
 - **eXo (demo MCP)**: project exploration and tool contracts were validated against a demo server; a current reference base URL is `https://exo-mips-ft.meeds.io/mcp-server/mcp` (always align credentials and `EXO_MCP_ENDPOINT` in n8n to the target tenant).
-- **n8n**: workflows are edited and executed in n8n; this repository holds JSON exports. The Cursor environment can use the **n8n MCP** to validate, create/update workflows, and inspect executions.
+- **n8n**: workflows are edited and executed in n8n; this repository holds JSON exports. The Cursor environment can use the **n8n MCP** to validate, create/update workflows, and inspect executions. **Normative gates before publish** (mandatory local `validateWorkflow` on `workflow.json`; recommended MCP `validate_workflow` when publishing SDK `code` via MCP) are defined in [WORKFLOW.md](WORKFLOW.md#deployment-validation-policy). Optional Cursor MCP connection uses [`.cursor/mcp.json.example`](../.cursor/mcp.json.example) (copy locally; see [DEVELOPMENT.md](DEVELOPMENT.md#cursor-and-mcp-recommended)); real `mcp.json` is not committed.
 
 ## High-Level Components
 
