@@ -1,24 +1,24 @@
-# Workflow 04 - eXo Document Enrichment with AI (Reverse Engineered)
+# Workflow 04 - eXo document enrichment with AI (reverse engineered)
 
-## Spécifications
+## Specifications
 
-- [`SPEC.functional.md`](SPEC.functional.md) : attentes et critères d’acceptation.
-- [`SPEC.technical.md`](SPEC.technical.md) : séquence, MCP, données, statut.
-- **Export secondaire** (snapshot complet) : [`fixtures/workflow.export.snapshot.json`](fixtures/workflow.export.snapshot.json)
+- [`SPEC.functional.md`](SPEC.functional.md) — goals and acceptance criteria.
+- [`SPEC.technical.md`](SPEC.technical.md) — sequence, MCP, data, status.
+- **Secondary export** (full snapshot): [`fixtures/workflow.export.snapshot.json`](fixtures/workflow.export.snapshot.json)
 
-## Fichiers
+## Files
 
-- [`workflow.json`](workflow.json) : artefact **canonique** (ex-import) pour l’import n8n et l’API.
-- `fixtures/` : extraits et snapshots secondaires (export MCP, réponses de debug) — ne pas confondre avec le json canonique.
+- [`workflow.json`](workflow.json) — **canonical** (re-import) artifact for n8n import and API.
+- `fixtures/` — extracts and secondary snapshots (MCP export, debug) — not the canonical JSON.
 
-## Source of truth (historique)
+## Instance reference
 
-- Récupéré via MCP n8n : `get_workflow_details` (workflowId: `aze2wAktXHYrTBTr`).
+- Last aligned with n8n MCP `get_workflow_details` (workflowId: `aze2wAktXHYrTBTr`).
 
-## Comportement d’exécution (rappel)
+## Runtime behavior (summary)
 
-- Déclenchement manuel ou planification quotidienne (ex. 02:00).
-- Requiert `$vars.EXO_SPACE_NAME` (contrainte stricte).
-- MCP eXo pour espaces, documents, catégories.
-- `gpt-4o-mini` + sortie structurée pour la description et les catégories.
-- Data Table `exo_processed_documents` pour l’idempotence.
+- Manual trigger or daily schedule (e.g. 02:00).
+- Requires `$vars.EXO_SPACE_NAME` (strict).
+- eXo MCP for spaces, documents, categories.
+- `gpt-4o-mini` with structured output for description and categories.
+- Data table `exo_processed_documents` for idempotency.

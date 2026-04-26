@@ -376,10 +376,10 @@
       ],
       "parameters": {
         "promptType": "define",
-        "text": "=Analyse cet email pour determiner s il est clairement actionnable.\nSubject: {{ $json.subject }}\nSender: {{ $json.sender }}\nBody: {{ $json.body }}\n\nRetourne uniquement les champs structures demandés.",
+        "text": "=Analyze this email and determine whether it is clearly actionable.\nSubject: {{ $json.subject }}\nSender: {{ $json.sender }}\nBody: {{ $json.body }}\n\nReturn only the structured fields requested.",
         "hasOutputParser": true,
         "options": {
-          "systemMessage": "Tu es l agent de tri des emails du festival Art2Rue. Regle absolue: on cree une tache uniquement si l email est clairement actionnable. Si doute, ambiguite, ou simple information: ne pas creer de tache. Retourne alors action_required=false et response_expected=false. Valeurs attendues: action_required (boolean), response_expected (boolean), action_confidence (0..1), assignee_username (louis|claire|lucie), priority (LOW|NORMAL|HIGH|URGENT), slaHours (>0), task_title, summary, next_action, rationale. Si action_required=false: assignee_username=claire, priority=LOW, slaHours=72, task_title=\"Information sans action\", next_action=\"Aucune action immediate\"."
+          "systemMessage": "You are the triage agent for Art2Rue festival emails. Hard rule: create a task only if the email is clearly actionable. If there is doubt, ambiguity, or it is informational only, do not create a task: set action_required=false and response_expected=false. Expected fields: action_required (boolean), response_expected (boolean), action_confidence (0..1), assignee_username (louis|claire|lucie), priority (LOW|NORMAL|HIGH|URGENT), slaHours (>0), task_title, summary, next_action, rationale. If action_required=false: assignee_username=claire, priority=LOW, slaHours=72, task_title=\"No action required\", next_action=\"No immediate action\"."
         }
       }
     },
@@ -413,7 +413,7 @@
         544
       ],
       "parameters": {
-        "jsonSchemaExample": "{\"action_required\":true,\"response_expected\":true,\"action_confidence\":0.92,\"assignee_username\":\"louis\",\"priority\":\"HIGH\",\"slaHours\":4,\"task_title\":\"Incident VPN billetterie\",\"summary\":\"Interruption VPN.\",\"next_action\":\"Diagnostiquer.\",\"rationale\":\"Sujet technique.\"}"
+        "jsonSchemaExample": "{\"action_required\":true,\"response_expected\":true,\"action_confidence\":0.92,\"assignee_username\":\"louis\",\"priority\":\"HIGH\",\"slaHours\":4,\"task_title\":\"Ticketing VPN incident\",\"summary\":\"VPN outage.\",\"next_action\":\"Diagnose.\",\"rationale\":\"Technical issue.\"}"
       }
     },
     {
@@ -480,25 +480,25 @@
             {
               "id": "taskTitleCandidate",
               "name": "taskTitleCandidate",
-              "value": "={{ String((($json.output || $json).task_title || $('Normalize Email').item.json.subject || 'Email a traiter')).slice(0,80) }}",
+              "value": "={{ String((($json.output || $json).task_title || $('Normalize Email').item.json.subject || 'Email to process')).slice(0,80) }}",
               "type": "string"
             },
             {
               "id": "summary",
               "name": "summary",
-              "value": "={{ String((($json.output || $json).summary || 'Synthese non fournie')).slice(0,500) }}",
+              "value": "={{ String((($json.output || $json).summary || 'Summary not provided')).slice(0,500) }}",
               "type": "string"
             },
             {
               "id": "nextAction",
               "name": "nextAction",
-              "value": "={{ String((($json.output || $json).next_action || 'Analyser et mettre a jour le statut')).slice(0,300) }}",
+              "value": "={{ String((($json.output || $json).next_action || 'Analyze and update status')).slice(0,300) }}",
               "type": "string"
             },
             {
               "id": "rationale",
               "name": "rationale",
-              "value": "={{ String((($json.output || $json).rationale || 'Decision IA')).slice(0,300) }}",
+              "value": "={{ String((($json.output || $json).rationale || 'AI decision')).slice(0,300) }}",
               "type": "string"
             }
           ]
@@ -614,7 +614,7 @@
       ],
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\\\"/g, '&quot;');\nconst excerpt = String($json.body || '').replace(/\\s+/g, ' ').slice(0, 400);\nconst description = ['<div>','<p><strong>Email source:</strong> ' + esc($json.sender) + '<br/><strong>Sujet:</strong> ' + esc($json.subject) + '</p>','<h4>Contexte</h4>','<p>' + esc($json.summary || 'Synthese non fournie') + '</p>','<h4>Action attendue</h4>','<p>' + esc($json.nextAction || 'Analyser et mettre a jour le statut') + '</p>','<h4>Decision IA</h4>','<ul>','<li><strong>Assignee:</strong> ' + esc($json.assigneeLabel || $json.resolvedAssignee) + ' (' + esc($json.resolvedAssignee) + ')</li>','<li><strong>Priorite:</strong> ' + esc($json.resolvedPriority) + '</li>','<li><strong>Confiance actionnable:</strong> ' + esc($json.actionConfidence) + '</li>','<li><strong>Justification:</strong> ' + esc($json.rationale || 'Decision IA') + '</li>','</ul>','<h4>Extrait email</h4>','<blockquote>' + esc(excerpt) + '</blockquote>','</div>'].join('').slice(0, 5000);\nconst projectId = Number($vars.WF01_PROJECT_ID || 3);\nreturn { ...$json, aiDecision: { clearlyActionable: true, assignee: $json.resolvedAssignee, assigneeLabel: $json.assigneeLabel, priority: $json.resolvedPriority, actionConfidence: $json.actionConfidence, taskTitle: $json.taskTitle, summary: $json.summary, nextAction: $json.nextAction, rationale: $json.rationale }, createTaskInput: { project_id: projectId, title: $json.taskTitle, description, assignee: $json.resolvedAssignee, priority: $json.resolvedPriority } };"
+        "jsCode": "const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\\\"/g, '&quot;');\nconst excerpt = String($json.body || '').replace(/\\s+/g, ' ').slice(0, 400);\nconst description = ['<div>','<p><strong>Email from:</strong> ' + esc($json.sender) + '<br/><strong>Subject:</strong> ' + esc($json.subject) + '</p>','<h4>Context</h4>','<p>' + esc($json.summary || 'Summary not provided') + '</p>','<h4>Expected action</h4>','<p>' + esc($json.nextAction || 'Analyze and update status') + '</p>','<h4>AI decision</h4>','<ul>','<li><strong>Assignee:</strong> ' + esc($json.assigneeLabel || $json.resolvedAssignee) + ' (' + esc($json.resolvedAssignee) + ')</li>','<li><strong>Priority:</strong> ' + esc($json.resolvedPriority) + '</li>','<li><strong>Actionable confidence:</strong> ' + esc($json.actionConfidence) + '</li>','<li><strong>Rationale:</strong> ' + esc($json.rationale || 'AI decision') + '</li>','</ul>','<h4>Email excerpt</h4>','<blockquote>' + esc(excerpt) + '</blockquote>','</div>'].join('').slice(0, 5000);\nconst projectId = Number($vars.WF01_PROJECT_ID || 3);\nreturn { ...$json, aiDecision: { clearlyActionable: true, assignee: $json.resolvedAssignee, assigneeLabel: $json.assigneeLabel, priority: $json.resolvedPriority, actionConfidence: $json.actionConfidence, taskTitle: $json.taskTitle, summary: $json.summary, nextAction: $json.nextAction, rationale: $json.rationale }, createTaskInput: { project_id: projectId, title: $json.taskTitle, description, assignee: $json.resolvedAssignee, priority: $json.resolvedPriority } };"
       }
     },
     {
@@ -788,5 +788,5 @@
     "aiBuilderAssisted": true
   },
   "parentFolderId": null,
-  "description": "WF01 refactoré: création de tâches eXo sur project_id 3 et assignation via username."
+  "description": "WF01 refactored: create eXo tasks on project_id 3 and assign by username."
 }

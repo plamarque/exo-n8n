@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-The repository already contains workflow-specific specifications, n8n exports, scripts, configuration examples, and audit material. The documentation was useful but distributed across root Markdown files, `n8n/workflows/`, and `n8n/docs/`.
+The repository already contains workflow-specific specifications, n8n exports, scripts, configuration examples, and audit material. The documentation was useful but scattered across the repository root and workflow folders without a single normative `docs/` contract.
 
 AI-assisted development needs a stable convention for where functional specifications, architecture, planning, issues, and operational notes live.
 

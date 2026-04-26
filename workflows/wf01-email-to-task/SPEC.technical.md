@@ -1,17 +1,15 @@
-# Workflow 01 - Spécification technique
+# Workflow 01 - Technical specification
 
-> Voir `[SPEC.functional.md](SPEC.functional.md)` pour le contexte et les règles produit. Artefact n8n : `[workflow.json](workflow.json)` ; sous-workflow partagé : `[../shared/subworkflows/unwrap-mcp-json/](../shared/subworkflows/unwrap-mcp-json/)`.
+> See `[SPEC.functional.md](SPEC.functional.md)` for product context and rules. n8n artifact: `[workflow.json](workflow.json)` ; shared sub-workflow: `[../shared/subworkflows/unwrap-mcp-json/](../shared/subworkflows/unwrap-mcp-json/)`.
 
-## 1) Artefacts de reference
+## 1) Reference artifacts
 
-- Workflow final (repo): `workflows/wf01-email-to-task/workflow.json`.
-- Workflow distant n8n: `zeVd0scWqU5vcOUq` (`WF01 - Email to Task (SDK)`).
-- Sous-workflow utilitaire: `UTIL - Unwrap MCP JSON` (`E4OAThogWRG93MUG`).
-- Source locale du sous-workflow: `workflows/shared/subworkflows/unwrap-mcp-json/workflow.json`.
+- Final workflow (repo): `workflows/wf01-email-to-task/workflow.json`.
+- Remote n8n workflow: `zeVd0scWqU5vcOUq` (`WF01 - Email to Task (SDK)`).
+- Utility sub-workflow: `UTIL - Unwrap MCP JSON` (`E4OAThogWRG93MUG`).
+- Local sub-workflow: `workflows/shared/subworkflows/unwrap-mcp-json/workflow.json`.
 
-Les anciens artefacts `workflow-01-email-to-task.live.*` etaient des etats intermediaires et ne sont plus la source de reference.
-
-## 2) Tools MCP utilises
+## 2) MCP tools
 
 ### 2.1 eXo MCP
 
@@ -19,40 +17,40 @@ Les anciens artefacts `workflow-01-email-to-task.live.*` etaient des etats inter
 - `create_task_in_project`
 - `assign_task`
 
-### 2.2 n8n / workflow utilitaire
+### 2.2 n8n / utility sub-workflow
 
-- `UTIL - Unwrap MCP JSON` (`E4OAThogWRG93MUG`) est appele avec `Execute Workflow` apres `list_emails` et apres `create_task_in_project`.
+- `UTIL - Unwrap MCP JSON` (`E4OAThogWRG93MUG`) is called with `Execute Workflow` after `list_emails` and after `create_task_in_project`.
 
-## 3) Variables et configuration
+## 3) Variables and configuration
 
-- `EXO_MCP_ENDPOINT`: endpoint MCP eXo utilise par les noeuds `MCP Client`.
-- `WF01_PROJECT_ID`: projet eXo cible optionnel.
+- `EXO_MCP_ENDPOINT` — eXo MCP endpoint used by `MCP Client` nodes.
+- `WF01_PROJECT_ID` — optional eXo target project.
 
-Si `WF01_PROJECT_ID` n'est pas defini, le workflow utilise `3`, correspondant au projet `Festival Art2Rue` observe sur l'instance eXo MIPS.
+If `WF01_PROJECT_ID` is not set, the workflow uses `3` (project `Festival Art2Rue` on the eXo MIPS instance).
 
-## 4) Sequence technique actuelle
+## 4) Current technical sequence
 
-1. `Manual Start` ou `Intake Every 5m`.
-2. `MCP List Emails`: appelle `list_emails` avec `{ "limit": 50, "offset": 0 }`.
-3. `Unwrap MCP Emails`: convertit la reponse MCP en payload JSON exploitable.
-4. `Split Out Emails`: cree un item n8n par email.
-5. `Normalize Email`: extrait les champs utiles.
-6. `Filter - Has Email ID`: ignore les items sans `emailId`.
-7. `AI Router`: qualifie l'email avec `Routing Model` et `Routing Output Parser`.
-8. `Normalize AI Output`: convertit la sortie IA vers des champs natifs.
-9. `IF Clearly Actionable`: applique les garde-fous.
-10. `Build MCP Payload`: calcule assignee, label, priorite et titre.
-11. `Render Task Description HTML`: construit la description HTML et `createTaskInput`.
-12. `MCP Create Task`: appelle `create_task_in_project`.
-13. `Unwrap MCP Create Task`: decode la reponse MCP de creation.
-14. `Extract Task Assignment`: extrait `task_id`, `username` et `raw_create_payload`.
-15. `IF Has Task ID`: verifie que le `task_id` est strictement positif.
-16. Branche true: `MCP Assign Task` appelle `assign_task`.
-17. Branche false: `Stop - Missing task_id` stoppe l'execution avec un message explicite.
+1. `Manual Start` or `Intake Every 5m`.
+2. `MCP List Emails`: `list_emails` with `{ "limit": 50, "offset": 0 }`.
+3. `Unwrap MCP Emails`: turns the MCP response into a usable JSON payload.
+4. `Split Out Emails`: one n8n item per email.
+5. `Normalize Email`: extracts useful fields.
+6. `Filter - Has Email ID`: drop items without `emailId`.
+7. `AI Router`: triage with `Routing Model` and `Routing Output Parser`.
+8. `Normalize AI Output`: maps LLM output to native fields.
+9. `IF Clearly Actionable`: enforces guardrails.
+10. `Build MCP Payload`: assignee, label, priority, title.
+11. `Render Task Description HTML`: builds HTML description and `createTaskInput`.
+12. `MCP Create Task`: `create_task_in_project`.
+13. `Unwrap MCP Create Task`: decodes the create response.
+14. `Extract Task Assignment`: `task_id`, `username`, `raw_create_payload`.
+15. `IF Has Task ID`: `task_id` must be a positive number.
+16. True branch: `MCP Assign Task` — `assign_task`.
+17. False branch: `Stop - Missing task_id` stops with a clear error.
 
-## 5) Sortie IA attendue
+## 5) Expected LLM output
 
-Le parser structure attend une sortie compatible avec ce schema:
+The structured parser expects output compatible with:
 
 ```json
 {
@@ -62,46 +60,46 @@ Le parser structure attend une sortie compatible avec ce schema:
   "assignee_username": "louis",
   "priority": "HIGH",
   "slaHours": 4,
-  "task_title": "Incident VPN billetterie",
-  "summary": "Interruption VPN.",
-  "next_action": "Diagnostiquer.",
-  "rationale": "Sujet technique."
+  "task_title": "Ticketing VPN incident",
+  "summary": "VPN outage.",
+  "next_action": "Diagnose.",
+  "rationale": "Technical issue."
 }
 ```
 
-`slaHours` est conserve dans le contrat IA pour usage futur, mais le workflow actuel ne calcule pas d'echeance et ne declenche pas de sweep SLA.
+`slaHours` is kept in the LLM contract for future use; the current workflow does not compute due dates or run an SLA sweep.
 
-## 6) Regles de mapping
+## 6) Mapping rules
 
 ### Assignee
 
-- Valeurs acceptees: `louis`, `claire`, `lucie`.
-- Toute autre valeur retombe sur `claire`.
-- Labels affiches dans la description: `Louis`, `Claire`, `Lucie`.
+- Allowed: `louis`, `claire`, `lucie`.
+- Any other value falls back to `claire`.
+- Displayed labels: `Louis`, `Claire`, `Lucie`.
 
-### Priorite
+### Priority
 
-- Valeurs acceptees par la creation de tache: `LOW`, `NORMAL`, `HIGH`.
-- `URGENT` est mappe vers `HIGH`, car `create_task_in_project` n'accepte pas `URGENT`.
-- Toute valeur inconnue retombe sur `NORMAL`.
+- `create_task_in_project` accepts `LOW`, `NORMAL`, `HIGH`.
+- `URGENT` maps to `HIGH` (not a supported enum value in create).
+- Unknown values fall back to `NORMAL`.
 
-## 7) Payloads de reference
+## 7) Reference payloads
 
-### 7.1 Creation de tache: `create_task_in_project`
+### 7.1 Create task: `create_task_in_project`
 
-Le workflow construit ce payload sous le champ `createTaskInput`:
+The workflow builds this under `createTaskInput`:
 
 ```json
 {
   "project_id": 3,
-  "title": "Probleme d'acces a la billetterie",
+  "title": "Access issue to ticketing",
   "description": "<div>...</div>",
   "assignee": "louis",
   "priority": "HIGH"
 }
 ```
 
-### 7.2 Assignation: `assign_task`
+### 7.2 Assign: `assign_task`
 
 ```json
 {
@@ -110,25 +108,25 @@ Le workflow construit ce payload sous le champ `createTaskInput`:
 }
 ```
 
-## 8) Validation observee
+## 8) Observed validation
 
-Derniere validation serveur observee:
+Last known server run:
 
-- execution n8n: `1117`;
-- statut: success;
-- taches creees: `13` et `14`;
-- projet: `Festival Art2Rue` (`project_id=3`);
-- creation via `create_task_in_project` validee;
-- extraction `task_id` via `Unwrap MCP Create Task` validee.
+- n8n execution: `1117`;
+- status: success;
+- created tasks: `13` and `14`;
+- project: `Festival Art2Rue` (`project_id=3`);
+- `create_task_in_project` validated;
+- `task_id` extraction via `Unwrap MCP Create Task` validated.
 
-Un appel direct `assign_task` avec `{ "task_id": 13, "username": "louis" }` a egalement ete valide.
+Direct `assign_task` with `{ "task_id": 13, "username": "louis" }` was also validated.
 
-## 9) Points d'amelioration
+## 9) Possible improvements
 
-1. Ajouter une idempotence persistante par `emailId`.
-2. Reintroduire un sweep SLA dans un workflow dedie si le besoin demo revient.
-3. Ajouter un commentaire de preuve apres creation de tache.
-4. Resoudre dynamiquement le projet cible par nom si plusieurs environnements eXo sont utilises.
-5. Externaliser les regles assignee/priorite dans une table de configuration.
-6. Supprimer le dernier noeud Code si un rendu HTML natif devient maintenable avec les noeuds n8n disponibles.
+1. Persist idempotency by `emailId`.
+2. Reintroduce an SLA sweep in a separate workflow if the demo needs it.
+3. Add a proof comment after task creation.
+4. Resolve the target project by name when multiple eXo environments are used.
+5. Externalize assignee/priority rules in a config table.
+6. Remove the last **Code** node if native HTML rendering becomes maintainable.
 

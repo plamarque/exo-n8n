@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Pousse workflows/wf04-document-enrichment-ai/workflow.json
- * vers n8n (API v1) — PUT /workflows/:id
- * Même N8N_BASE_URL / N8N_API_KEY que wf04-from-n8n-api.mjs
+ * Push workflows/wf04-document-enrichment-ai/workflow.json
+ * to n8n (API v1) — PUT /workflows/:id
+ * Uses the same N8N_BASE_URL / N8N_API_KEY as wf04-from-n8n-api.mjs
  */
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -15,12 +15,12 @@ const p = join(__dir, "../workflows/wf04-document-enrichment-ai/workflow.json");
 const WF_ID = "aze2wAktXHYrTBTr";
 
 if (!base || !key) {
-  console.error("Définir N8N_BASE_URL et N8N_API_KEY");
+  console.error("Set N8N_BASE_URL and N8N_API_KEY");
   process.exit(1);
 }
 
 const local = JSON.parse(readFileSync(p, "utf8"));
-// Corps attendu par n8n (nom + nodes + connections + settings, etc.)
+// Body shape n8n expects (name + nodes + connections + settings, etc.)
 const payload = { ...local, id: WF_ID };
 if (!payload.id) payload.id = WF_ID;
 
@@ -34,4 +34,4 @@ if (!res.ok) {
   process.exit(1);
 }
 const saved = await res.json();
-console.log("Workflow mis à jour", saved.id, saved.name, saved.updatedAt);
+console.log("Workflow updated", saved.id, saved.name, saved.updatedAt);

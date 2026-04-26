@@ -1,5 +1,5 @@
 {
-  "name": "WF02 - Validation documentaire split join",
+  "name": "WF02 - Document validation (split / join)",
   "settings": {
     "executionOrder": "v1",
     "availableInMCP": true
@@ -109,7 +109,7 @@
       ],
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const fromList = $('Parse + Deduplicate Docs').item.json;\nlet payload = $json;\nif ($json?.content?.[0]?.text !== undefined) payload = $json.content[0].text;\nif (Array.isArray(payload) && payload[0]?.type === 'text' && typeof payload[0]?.text === 'string') payload = JSON.parse(payload[0].text);\nelse if (typeof payload === 'string') payload = JSON.parse(payload);\n\nconst doc = payload || {};\nconst documentId = String(doc.document_id || fromList.document_id || '').trim();\nif (!documentId) throw new Error('Missing document_id');\nconst cycleId = fromList.cycle_id || (documentId + ':' + String(doc.updated_date || new Date().toISOString()));\nconst titleCore = String(doc.name || 'Document sans titre').replace(/\\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();\nconst title = ('Validation - ' + titleCore).slice(0, 140);\nconst author = String(doc?.created_username?.username || 'claire').trim() || 'claire';\nconst docUrl = (doc.url && String(doc.url).startsWith('http')) ? String(doc.url) : ('https://exo-qaui.meeds.io' + String(doc.url || ''));\n\nconst description = '<p><strong>Document source:</strong> <a href=\"' + docUrl + '\" target=\"_blank\" rel=\"noopener noreferrer\">' + String(doc.name || documentId) + '</a></p>' + '<p><strong>Cycle:</strong> ' + cycleId + '</p>' + '<p><strong>Validation:</strong> utilisez les liens d\\'approbation dans le premier commentaire de la tache.</p>' + '<p>Regle: passage en Done uniquement si les deux tampons sont APPROUVE.</p>';\n\nreturn { document_id: documentId, cycle_id: cycleId, author_username: author, createTaskInput: { project_id: Number($vars.WF02_PROJECT_ID || 117), title, description, assignee: author, coworkers: ['nadia','etienne'], status_id: Number($vars.WF02_INPROGRESS_STATUS_ID || 475), priority: 'NORMAL' } };\n"
+        "jsCode": "const fromList = $('Parse + Deduplicate Docs').item.json;\nlet payload = $json;\nif ($json?.content?.[0]?.text !== undefined) payload = $json.content[0].text;\nif (Array.isArray(payload) && payload[0]?.type === 'text' && typeof payload[0]?.text === 'string') payload = JSON.parse(payload[0].text);\nelse if (typeof payload === 'string') payload = JSON.parse(payload);\n\nconst doc = payload || {};\nconst documentId = String(doc.document_id || fromList.document_id || '').trim();\nif (!documentId) throw new Error('Missing document_id');\nconst cycleId = fromList.cycle_id || (documentId + ':' + String(doc.updated_date || new Date().toISOString()));\nconst titleCore = String(doc.name || 'Untitled document').replace(/\\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();\nconst title = ('Validation - ' + titleCore).slice(0, 140);\nconst author = String(doc?.created_username?.username || 'claire').trim() || 'claire';\nconst docUrl = (doc.url && String(doc.url).startsWith('http')) ? String(doc.url) : ('https://exo-qaui.meeds.io' + String(doc.url || ''));\n\nconst description = '<p><strong>Source document:</strong> <a href=\"' + docUrl + '\" target=\"_blank\" rel=\"noopener noreferrer\">' + String(doc.name || documentId) + '</a></p>' + '<p><strong>Cycle:</strong> ' + cycleId + '</p>' + '<p><strong>Validation:</strong> use the approval links in the first task comment.</p>' + '<p>Rule: move to Done only when both stamps are APPROVED.</p>';\n\nreturn { document_id: documentId, cycle_id: cycleId, author_username: author, createTaskInput: { project_id: Number($vars.WF02_PROJECT_ID || 117), title, description, assignee: author, coworkers: ['nadia','etienne'], status_id: Number($vars.WF02_INPROGRESS_STATUS_ID || 475), priority: 'NORMAL' } };\n"
       }
     },
     {
@@ -168,7 +168,7 @@
           "value": "add_task_comment"
         },
         "inputMode": "json",
-        "jsonInput": "={{ (() => { const base = String($vars.WF02_APPROVAL_BASE_URL || \"https://meeds.app.n8n.cloud/webhook/wf02-doc-validation/approve\").replace(/\\/$/, \"\"); const art = base + \"?task_id=\" + $json.task_id + \"&cycle_id=\" + encodeURIComponent($json.cycle_id) + \"&role=artistique&actor=nadia\"; const tech = base + \"?task_id=\" + $json.task_id + \"&cycle_id=\" + encodeURIComponent($json.cycle_id) + \"&role=technique&actor=etienne\"; const text = \"<p><strong>Validation lancee</strong> (cycle: \" + $json.cycle_id + \").</p><p><a href=\\\"\" + art + \"\\\" target=\\\"_blank\\\" rel=\\\"noopener noreferrer\\\">Valider Artistique (Nadia)</a></p><p><a href=\\\"\" + tech + \"\\\" target=\\\"_blank\\\" rel=\\\"noopener noreferrer\\\">Valider Technique (Etienne)</a></p>\"; return { task_id: $json.task_id, text }; })() }}",
+        "jsonInput": "={{ (() => { const base = String($vars.WF02_APPROVAL_BASE_URL || \"https://meeds.app.n8n.cloud/webhook/wf02-doc-validation/approve\").replace(/\\/$/, \"\"); const art = base + \"?task_id=\" + $json.task_id + \"&cycle_id=\" + encodeURIComponent($json.cycle_id) + \"&role=artistic&actor=nadia\"; const tech = base + \"?task_id=\" + $json.task_id + \"&cycle_id=\" + encodeURIComponent($json.cycle_id) + \"&role=technical&actor=etienne\"; const text = \"<p><strong>Validation started</strong> (cycle: \" + $json.cycle_id + \").</p><p><a href=\\\"\" + art + \"\\\" target=\\\"_blank\\\" rel=\\\"noopener noreferrer\\\">Approve — Artistic (Nadia)</a></p><p><a href=\\\"\" + tech + \"\\\" target=\\\"_blank\\\" rel=\\\"noopener noreferrer\\\">Approve — Technical (Etienne)</a></p>\"; return { task_id: $json.task_id, text }; })() }}",
         "options": {
           "timeout": 60000
         }
@@ -185,7 +185,7 @@
       ],
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const state = $getWorkflowStaticData('global');\nif (!state.wf02Approvals) state.wf02Approvals = {};\nconst key = String($json.task_id) + ':' + String($json.cycle_id);\nstate.wf02Approvals[key] = { task_id: $json.task_id, cycle_id: $json.cycle_id, document_id: $json.document_id, author_username: $json.author_username, approvals: { artistique: { actor: 'nadia', decision: 'EN_ATTENTE', reason: '', at: '' }, technique: { actor: 'etienne', decision: 'EN_ATTENTE', reason: '', at: '' } } };\nreturn $json;"
+        "jsCode": "const state = $getWorkflowStaticData('global');\nif (!state.wf02Approvals) state.wf02Approvals = {};\nconst key = String($json.task_id) + ':' + String($json.cycle_id);\nstate.wf02Approvals[key] = { task_id: $json.task_id, cycle_id: $json.cycle_id, document_id: $json.document_id, author_username: $json.author_username, approvals: { artistic: { actor: 'nadia', decision: 'PENDING', reason: '', at: '' }, technical: { actor: 'etienne', decision: 'PENDING', reason: '', at: '' } } };\nreturn $json;"
       }
     },
     {
@@ -237,7 +237,7 @@
           "value": "add_task_comment"
         },
         "inputMode": "json",
-        "jsonInput": "={{ { task_id: $json.task_id, text: \"Tampon \" + $json.role + \": \" + $json.decision + ($json.reason ? (\". Motif: \" + $json.reason) : \"\") } }}",
+        "jsonInput": "={{ { task_id: $json.task_id, text: \"Stamp \" + $json.role + \": \" + $json.decision + ($json.reason ? (\". Reason: \" + $json.reason) : \"\") } }}",
         "options": {
           "timeout": 60000
         }
@@ -254,7 +254,7 @@
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const input = $('Parse Approval').item.json;\nconst state = $getWorkflowStaticData('global');\nif (!state.wf02Approvals) state.wf02Approvals = {};\nconst key = String(input.task_id) + ':' + String(input.cycle_id);\nif (!state.wf02Approvals[key]) { state.wf02Approvals[key] = { task_id: input.task_id, cycle_id: input.cycle_id, approvals: { artistique: { actor: 'nadia', decision: 'EN_ATTENTE', reason: '', at: '' }, technique: { actor: 'etienne', decision: 'EN_ATTENTE', reason: '', at: '' } } }; }\nconst row = state.wf02Approvals[key];\nif (row.approvals[input.role]) { row.approvals[input.role].decision = input.decision; row.approvals[input.role].reason = input.reason || ''; row.approvals[input.role].at = new Date().toISOString(); }\nconst art = row.approvals.artistique?.decision;\nconst tech = row.approvals.technique?.decision;\nconst joinReady = art !== 'EN_ATTENTE' && tech !== 'EN_ATTENTE';\nconst bothApproved = art === 'APPROUVE' && tech === 'APPROUVE';\nreturn [{ json: { task_id: row.task_id, cycle_id: row.cycle_id, joinReady, bothApproved, artistique: row.approvals.artistique, technique: row.approvals.technique } }];"
+        "jsCode": "const input = $('Parse Approval').item.json;\nconst state = $getWorkflowStaticData('global');\nif (!state.wf02Approvals) state.wf02Approvals = {};\nconst key = String(input.task_id) + ':' + String(input.cycle_id);\nif (!state.wf02Approvals[key]) { state.wf02Approvals[key] = { task_id: input.task_id, cycle_id: input.cycle_id, approvals: { artistic: { actor: 'nadia', decision: 'PENDING', reason: '', at: '' }, technical: { actor: 'etienne', decision: 'PENDING', reason: '', at: '' } } }; }\nconst row = state.wf02Approvals[key];\nif (row.approvals[input.role]) { row.approvals[input.role].decision = input.decision; row.approvals[input.role].reason = input.reason || ''; row.approvals[input.role].at = new Date().toISOString(); }\nconst art = row.approvals.artistic?.decision;\nconst tech = row.approvals.technical?.decision;\nconst joinReady = art !== 'PENDING' && tech !== 'PENDING';\nconst bothApproved = art === 'APPROVED' && tech === 'APPROVED';\nreturn [{ json: { task_id: row.task_id, cycle_id: row.cycle_id, joinReady, bothApproved, artistic: row.approvals.artistic, technical: row.approvals.technical } }];"
       }
     },
     {
@@ -363,7 +363,7 @@
           "value": "add_task_comment"
         },
         "inputMode": "json",
-        "jsonInput": "={{ { task_id: $(\"Update Approval State\").item.json.task_id, text: \"Double tampon obtenu. Tache approuvee et cloturee.\" } }}",
+        "jsonInput": "={{ { task_id: $(\"Update Approval State\").item.json.task_id, text: \"Both stamps received. Task approved and closed.\" } }}",
         "options": {
           "timeout": 60000
         }
@@ -428,7 +428,7 @@
           "value": "add_task_comment"
         },
         "inputMode": "json",
-        "jsonInput": "={{ { task_id: $(\"Update Approval State\").item.json.task_id, text: \"Validation incomplete/refusee. Merci de corriger puis resoumettre le document.\" } }}",
+        "jsonInput": "={{ { task_id: $(\"Update Approval State\").item.json.task_id, text: \"Validation incomplete or rejected. Please fix the document and resubmit.\" } }}",
         "options": {
           "timeout": 60000
         }
@@ -462,7 +462,7 @@
       ],
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { ok: true, status: \"pending\", message: \"Decision enregistree. En attente du second tampon.\" } }}",
+        "responseBody": "={{ { ok: true, status: \"pending\", message: \"Decision recorded. Waiting for the second stamp.\" } }}",
         "options": {
           "responseCode": 200
         }

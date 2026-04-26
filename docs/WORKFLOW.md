@@ -37,10 +37,10 @@ Per-workflow documentation lives under `workflows/wf0X-*/` (`SPEC.*.md`, `README
 
 - Portfolio overview and links: [SPEC.md](SPEC.md).
 - WF01: [workflows/wf01-email-to-task/](../workflows/wf01-email-to-task/).
-- WF02: [workflows/wf02-validation-documentaire/](../workflows/wf02-validation-documentaire/).
-- WF03: [workflows/wf03-copil-hebdomadaire/](../workflows/wf03-copil-hebdomadaire/) (includes `SPEC.technical-exo-mips.md`, `SPEC.technical-mcp.md`, `fixtures/copil-template-note.md`).
+- WF02: [workflows/wf02-document-validation/](../workflows/wf02-document-validation/).
+- WF03: [workflows/wf03-weekly-copil/](../workflows/wf03-weekly-copil/) (includes `SPEC.technical-exo-mips.md`, `SPEC.technical-mcp.md`, `fixtures/copil-template-note.md`).
 - WF04: [workflows/wf04-document-enrichment-ai/](../workflows/wf04-document-enrichment-ai/).
 - Shared: [workflows/shared/subworkflows/unwrap-mcp-json/](../workflows/shared/subworkflows/unwrap-mcp-json/).
-- Audit: [audit-code-vs-natif.md](audit-code-vs-natif.md); generated Code-node inventory: [inventory-code-nodes.json](inventory-code-nodes.json).
+- Audit: [audit-code-vs-native.md](audit-code-vs-native.md); generated Code-node inventory: [inventory-code-nodes.json](inventory-code-nodes.json).
 - Tooling: [tools/](../tools/) (see [DEVELOPMENT.md](DEVELOPMENT.md)).
 - Layout and canonical JSON: [ADR/0002-repository-layout-workflows.md](ADR/0002-repository-layout-workflows.md).

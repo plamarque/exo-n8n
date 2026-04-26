@@ -1,17 +1,17 @@
-# UTIL - Unwrap MCP JSON (sous-workflow)
+# UTIL - Unwrap MCP JSON (sub-workflow)
 
-Décode les réponses MCP eXo (souvent enveloppées) en JSON exploitable par les nœuds n8n en aval.
+Decodes eXo MCP responses (often wrapped) into JSON usable by downstream n8n nodes.
 
-## Fichiers
+## Files
 
-- `[workflow.json](workflow.json)` : export canonique à importer dans n8n.
-- `[fixtures/workflow.import.snapshot.json](fixtures/workflow.import.snapshot.json)` : variante d’import UI.
-- `[fixtures/subworkflow-unwrap-mcp-json.sdk.js](fixtures/subworkflow-unwrap-mcp-json.sdk.js)` : référence SDK (non source d’exécution seule).
+- [`workflow.json`](workflow.json) — canonical import into n8n.
+- [`fixtures/workflow.import.snapshot.json`](fixtures/workflow.import.snapshot.json) — UI import variant.
+- [`fixtures/subworkflow-unwrap-mcp-json.sdk.js`](fixtures/subworkflow-unwrap-mcp-json.sdk.js) — SDK reference (not the sole execution source).
 
-## Consommateurs
+## Consumers
 
-Utilisé notamment par [WF01 - Email to task](../../wf01-email-to-task/README.md) (`Execute Workflow`).
+Used in particular by [WF01 - Email to task](../../wf01-email-to-task/README.md) (`Execute Workflow`).
 
-## ID distant (référence)
+## Remote id (reference)
 
-- `E4OAThogWRG93MUG` (nom côté n8n : `UTIL - Unwrap MCP JSON` — vérifier sur l’instance active).
+- `E4OAThogWRG93MUG` (n8n name: `UTIL - Unwrap MCP JSON` — verify on the live instance).

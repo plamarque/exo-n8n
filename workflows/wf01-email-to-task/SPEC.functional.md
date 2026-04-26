@@ -1,59 +1,56 @@
-# Workflow 01 - Spécification fonctionnelle
+# Workflow 01 - Functional specification
 
-> Voir `[SPEC.technical.md](SPEC.technical.md)` pour l’artefact JSON, la séquence n8n et les payloads MCP. Synthèse portefeuille : `[../../docs/SPEC.md](../../docs/SPEC.md)`.
+> See `[SPEC.technical.md](SPEC.technical.md)` for the JSON artifact, n8n sequence, and MCP payloads. Portfolio summary: `[../../docs/SPEC.md](../../docs/SPEC.md)`.
 
-## 1) Objectif
+## 1) Goal
 
-Automatiser le tri des emails entrants du festival Art2Rue et creer des taches eXo uniquement pour les emails clairement actionnables.
+Automate triage of incoming Art2Rue festival emails and create eXo tasks only for messages that are clearly actionable.
 
-Le workflow final privilegie les noeuds natifs n8n pour la normalisation, les garde-fous et l'extraction des donnees. Un seul noeud Code reste utilise pour le rendu HTML controle de la description de tache.
+The final workflow prefers native n8n nodes for normalization, guardrails, and data extraction. A single **Code** node remains for controlled HTML in the task description.
 
-## 2) Contexte metier et storytelling
+## 2) Business context
 
-La ville de Chevigny prepare le festival Art2Rue. L'equipe projet centralise les echanges dans eXo, mais une partie des demandes arrive encore par email.
+The city of Chevigny is preparing the Art2Rue festival. The project team centralizes interaction in eXo, but some requests still arrive by email.
 
-Exemples de demandes utiles pour la demo:
+Useful examples for the demo:
 
-- panne VPN du prestataire billetterie;
-- demande d'acces GED pour des partenaires;
-- question urgente sur un document manquant;
-- message informatif qui ne doit pas creer de tache.
+- VPN outage for the ticketing vendor;
+- DMS access for partners;
+- urgent question on a missing document;
+- informational message that should **not** create a task.
 
-Le but est de montrer qu'un flux n8n + MCP eXo peut transformer les emails actionnables en taches assignees, tout en ignorant les emails ambigus ou purement informatifs.
+The point is to show that an n8n + eXo MCP flow can turn actionable email into assigned tasks while skipping ambiguous or purely informative mail.
 
-## 3) Fonctionnel couvert
+## 3) In-scope behavior
 
-1. Lecture des emails via `list_emails`.
-2. Decodage des enveloppes MCP via le sous-workflow `UTIL - Unwrap MCP JSON`.
-3. Normalisation des champs email: `emailId`, `subject`, `body`, `sender`, `receivedAt`.
-4. Filtrage des emails sans identifiant.
-5. Analyse IA structuree de chaque email.
-6. Creation de tache seulement si les trois conditions sont vraies:
-  - `actionRequired=true`;
-  - `responseExpected=true`;
-  - `actionConfidence >= 0.7`.
-7. Resolution native de l'assignee et de la priorite a partir de la sortie IA.
-8. Creation d'une tache eXo dans le projet cible.
-9. Extraction native du `task_id` depuis la reponse MCP.
-10. Echec explicite si la creation ne retourne pas de `task_id`.
-11. Assignation explicite de la tache avec `assign_task`.
+1. Read emails with `list_emails`.
+2. Decode MCP envelopes via sub-workflow `UTIL - Unwrap MCP JSON`.
+3. Normalize email fields: `emailId`, `subject`, `body`, `sender`, `receivedAt`.
+4. Filter emails without an identifier.
+5. Structured LLM analysis per email.
+6. Create a task only when all three are true: `actionRequired=true`, `responseExpected=true`, `actionConfidence >= 0.7`.
+7. Native resolution of assignee and priority from LLM output.
+8. Create an eXo task in the target project.
+9. Native extraction of `task_id` from the MCP response.
+10. Hard failure if creation returns no `task_id`.
+11. Assign the task with `assign_task`.
 
-## 4) Hors scope actuel
+## 4) Out of scope (current)
 
-- Pas de fallback REST.
-- Pas de resolution dynamique projet/statut par `list_projects` ou `list_project_statuses`.
-- Pas de sweep SLA, relance automatique ou escalade manager.
-- Pas d'ajout automatique de commentaire de preuve.
-- Pas d'idempotence persistante pour eviter les doublons lors de reruns.
-- Pas d'appel `get_email_by_id`: `list_emails` fournit les champs necessaires au workflow actuel.
+- No REST fallback.
+- No dynamic project/status resolution through `list_projects` or `list_project_statuses`.
+- No SLA sweep, automatic nudge, or manager escalation.
+- No automatic proof comment after task creation.
+- No persisted idempotency to avoid duplicates on re-runs.
+- No `get_email_by_id`: `list_emails` provides what this workflow needs.
 
-Ces capacites restent des ameliorations possibles, mais elles ne font pas partie du workflow final actuel.
+These may be future improvements; they are not part of the current final workflow.
 
-## 5) Criteres d'acceptation
+## 5) Acceptance criteria
 
-- Les emails clairement actionnables creent une tache eXo.
-- Les emails non actionnables ou ambigus ne creent pas de tache.
-- Les taches creees ont un titre, une description HTML, une priorite et un assignee.
-- `create_task_in_project` recoit un `project_id` valide (`WF01_PROJECT_ID` ou `3` par defaut).
-- Une reponse de creation sans `task_id` stoppe explicitement le workflow.
-- `assign_task` utilise le champ MCP attendu `username`.
+- Clearly actionable email → eXo task.
+- Non-actionable or ambiguous email → no task.
+- Created tasks have a title, HTML description, priority, and assignee.
+- `create_task_in_project` receives a valid `project_id` (`WF01_PROJECT_ID` or default `3`).
+- A create response with no `task_id` stops the workflow explicitly.
+- `assign_task` uses the expected MCP `username` field.

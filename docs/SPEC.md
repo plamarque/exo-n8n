@@ -16,8 +16,8 @@ The observable portfolio covers four workflow families:
 | Workflow | Directory | Key docs |
 | -------- | ---------- | -------- |
 | WF01 | [workflows/wf01-email-to-task/](../workflows/wf01-email-to-task/) | [SPEC.functional.md](../workflows/wf01-email-to-task/SPEC.functional.md), [SPEC.technical.md](../workflows/wf01-email-to-task/SPEC.technical.md), [workflow.json](../workflows/wf01-email-to-task/workflow.json) |
-| WF02 | [workflows/wf02-validation-documentaire/](../workflows/wf02-validation-documentaire/) | [SPEC.functional.md](../workflows/wf02-validation-documentaire/SPEC.functional.md), [SPEC.technical.md](../workflows/wf02-validation-documentaire/SPEC.technical.md), [workflow.json](../workflows/wf02-validation-documentaire/workflow.json) |
-| WF03 | [workflows/wf03-copil-hebdomadaire/](../workflows/wf03-copil-hebdomadaire/) | [SPEC.functional.md](../workflows/wf03-copil-hebdomadaire/SPEC.functional.md), [SPEC.technical-exo-mips.md](../workflows/wf03-copil-hebdomadaire/SPEC.technical-exo-mips.md), [README.md](../workflows/wf03-copil-hebdomadaire/README.md), [workflow.json](../workflows/wf03-copil-hebdomadaire/workflow.json) |
+| WF02 | [workflows/wf02-document-validation/](../workflows/wf02-document-validation/) | [SPEC.functional.md](../workflows/wf02-document-validation/SPEC.functional.md), [SPEC.technical.md](../workflows/wf02-document-validation/SPEC.technical.md), [workflow.json](../workflows/wf02-document-validation/workflow.json) |
+| WF03 | [workflows/wf03-weekly-copil/](../workflows/wf03-weekly-copil/) | [SPEC.functional.md](../workflows/wf03-weekly-copil/SPEC.functional.md), [SPEC.technical-exo-mips.md](../workflows/wf03-weekly-copil/SPEC.technical-exo-mips.md), [README.md](../workflows/wf03-weekly-copil/README.md), [workflow.json](../workflows/wf03-weekly-copil/workflow.json) |
 | WF04 | [workflows/wf04-document-enrichment-ai/](../workflows/wf04-document-enrichment-ai/) | [SPEC.functional.md](../workflows/wf04-document-enrichment-ai/SPEC.functional.md), [SPEC.technical.md](../workflows/wf04-document-enrichment-ai/SPEC.technical.md), [workflow.json](../workflows/wf04-document-enrichment-ai/workflow.json) |
 | Shared | [workflows/shared/subworkflows/unwrap-mcp-json/](../workflows/shared/subworkflows/unwrap-mcp-json/) | MCP unwrap sub-workflow used by WF01 |
 
@@ -47,23 +47,23 @@ Observable rules:
 
 - A document in the target folder can trigger task creation.
 - A task remains in progress until both approvals are received.
-- The task can move to `Done` only when both approvals are positive.
-- Refusals keep or return the item to an in-progress state and produce trace comments.
+- The task can move to `Done` only when both `APPROVED` decisions are received (artistic and technical roles in the canonical export).
+- Rejections keep or return the item to an in-progress state and produce trace comments.
 - The implemented export includes webhook-based approval handling.
 
-### WF03 - Weekly COPIL Preparation
+### WF03 - Weekly steering committee preparation (COPIL)
 
-The workflow prepares a weekly steering committee support package for the Festival Art2Rue project.
+The workflow prepares a weekly steering committee support package for the Festival Art2Rue project. **COPIL** is the French-style label used in fixtures and several n8n names; see [DOMAIN.md](DOMAIN.md) for the mapping to the English steering committee term.
 
 Observable intended behavior from specs and server export:
 
-- Create or update a weekly note from a COPIL template.
+- Create or update a weekly note from the steering committee (COPIL) template.
 - Insert a task-based progress report.
 - Generate AI suggestions for agenda and vigilance points.
 - Create or update a recurring agenda invitation that links to the note.
 - Use the reference project, note, and agenda IDs observed in the MIPS exploration material.
 
-Operational notes and file map: [workflows/wf03-copil-hebdomadaire/README.md](../workflows/wf03-copil-hebdomadaire/README.md). Remaining Code-node reduction work is tracked in [ISSUES.md](ISSUES.md).
+Operational notes and file map: [workflows/wf03-weekly-copil/README.md](../workflows/wf03-weekly-copil/README.md). Remaining Code-node reduction work is tracked in [ISSUES.md](ISSUES.md).
 
 ### WF04 - AI Document Enrichment
 

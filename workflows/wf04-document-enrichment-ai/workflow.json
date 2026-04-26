@@ -337,7 +337,7 @@
         480
       ],
       "parameters": {
-        "errorMessage": "Espace eXo introuvable (aucun espace de ce nom pour l’utilisateur)."
+        "errorMessage": "eXo space not found (no space with this name for the user)."
       }
     },
     {
@@ -549,10 +549,10 @@
       ],
       "parameters": {
         "promptType": "define",
-        "text": "=Analyze this document and provide:\n1. A concise description in 30 words or less, written in the same language as the document. If the language is uncertain, default to French.\n2. Suggest 2-3 relevant categories from the available list\n\nDocument: {{ $json.documentName }}\nContent: {{ $json.content }}\n\nAvailable categories: {{ $json.availableCategories.join(\", \") }}",
+        "text": "=Analyze this document and provide:\n1. A concise description in 30 words or less, written in the same language as the document. If the language is uncertain, default to English.\n2. Suggest 2-3 relevant categories from the available list\n\nDocument: {{ $json.documentName }}\nContent: {{ $json.content }}\n\nAvailable categories: {{ $json.availableCategories.join(\", \") }}",
         "hasOutputParser": true,
         "options": {
-          "systemMessage": "You are a document metadata expert. Return the description in the document's language; if language cannot be identified confidently, return French by default. Keep description concise (max 30 words) and suggest categories only from the provided list."
+          "systemMessage": "You are a document metadata expert. Return the description in the document's language; if language cannot be identified confidently, return English by default. Keep description concise (max 30 words) and suggest categories only from the provided list."
         }
       }
     },
@@ -1061,7 +1061,7 @@
         576
       ],
       "parameters": {
-        "errorMessage": "MCP add_content_to_category: échec."
+        "errorMessage": "MCP add_content_to_category: failed."
       }
     },
     {
@@ -1075,7 +1075,7 @@
       ],
       "parameters": {
         "errorType": "errorMessage",
-        "errorMessage": "Aucune catégorie suggérée pour le document."
+        "errorMessage": "No category suggested for the document."
       }
     },
     {
@@ -1088,7 +1088,7 @@
         480
       ],
       "parameters": {
-        "errorMessage": "MCP update_document_description: réponse d’échec."
+        "errorMessage": "MCP update_document_description: error response."
       }
     },
     {
@@ -1531,5 +1531,5 @@
   "meta": {
     "aiBuilderAssisted": true
   },
-  "description": "Enrichit les documents eXo avec IA en réduisant le JavaScript au strict minimum."
+  "description": "Enriches eXo documents with AI while keeping custom JavaScript to a minimum."
 }

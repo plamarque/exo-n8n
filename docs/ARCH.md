@@ -11,7 +11,7 @@ There is no observed application package manifest at the repository root. The ex
 - `workflows/`: one folder per portfolio workflow (WF01–WF04) plus `shared/subworkflows/` for reusable pieces (for example [unwrap MCP JSON](../workflows/shared/subworkflows/unwrap-mcp-json/)).
 - `workflows/*/` layout: `workflow.json` (canonical), `README.md`, `SPEC.functional.md`, `SPEC.technical.md` (or split technical docs for WF03), `config.env.example`, optional `fixtures/`.
 - `tools/`: minimal maintenance scripts (inventory of Code nodes, optional WF04 push to n8n API). See [DEVELOPMENT.md](DEVELOPMENT.md).
-- `docs/`: normative and tracking documentation, [audit](audit-code-vs-natif.md), and generated [inventory](inventory-code-nodes.json).
+- `docs/`: normative and tracking documentation, [audit](audit-code-vs-native.md), and generated [inventory](inventory-code-nodes.json).
 - `docs/ADR/`: architecture decision records, including [0002](ADR/0002-repository-layout-workflows.md) (layout and canonical JSON policy).
 
 ## External Systems
@@ -45,7 +45,7 @@ Workflows call eXo through MCP tools. Observed tool families include:
 AI nodes are used for:
 
 - WF01 email routing/classification.
-- WF03 COPIL signal analysis and agenda suggestions.
+- WF03 steering committee (COPIL) signal analysis and agenda suggestions.
 - WF04 document description and category suggestions.
 
 Structured output parsers are used where downstream workflow logic depends on fixed fields.
@@ -82,4 +82,3 @@ The recurring architecture is:
 - [ASSUMPTION] n8n cloud is the primary execution environment for at least some workflows, based on workflow IDs, webhook URLs, and API synchronization scripts.
 - [UNCERTAIN] The repository does not define a single package manager workflow; scripts are plain Node.js modules and may rely on the local Node version.
 - [UNCERTAIN] Some workflow exports may be snapshots of remote state rather than the authoritative source for redeploying every workflow.
-

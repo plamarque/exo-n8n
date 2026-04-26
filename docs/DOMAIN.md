@@ -13,6 +13,7 @@ The project domain is workflow automation between n8n and eXo for festival proje
 - SDK artifact: optional reference files (for example under `workflows/**/fixtures/`) that are not the primary execution artifact.
 - Data Table: n8n persistence mechanism used for tracking processed documents or workflow state.
 - Code node: n8n custom JavaScript node. The current project tries to reduce unnecessary Code nodes while keeping them where native nodes are not practical.
+- **COPIL / steering committee:** **COPIL** is conventional French project shorthand for a recurring **steering committee** (the underlying French phrase is *comité de pilotage*). In English prose, **steering committee** or **steering group** is the clearest default. **SteerCo** is informal corporate shorthand in some organizations, not a universal standard. WF03 still uses `COPIL` in several n8n node names and titles so exports stay aligned with the demo tenant.
 
 ## Actors
 
@@ -21,7 +22,7 @@ The project domain is workflow automation between n8n and eXo for festival proje
 - Document author/uploader: user who submits or updates a document for validation.
 - Direction Artistique: WF02 approval authority represented by `nadia`.
 - Direction Technique: WF02 approval authority represented by `etienne`.
-- COPIL participants: recurring meeting participants `claire`, `etienne`, `louis`, `nadia`, `antoine`, and `emma`.
+- Steering committee participants (COPIL roster in the demo): `claire`, `etienne`, `louis`, `nadia`, `antoine`, and `emma`.
 - Workflow operator: person importing, validating, activating, or running workflows in n8n.
 
 ## Main Entities
@@ -29,9 +30,10 @@ The project domain is workflow automation between n8n and eXo for festival proje
 - Email: incoming message read by WF01 through `list_emails`.
 - Task: eXo task created or updated through MCP tools such as `create_task_in_project`, `assign_task`, `add_task_comment`, and `update_task_status`.
 - Document: eXo document read, validated, enriched, or categorized by workflows.
+- DMS: document management system; English equivalent of the French acronym GED (electronic document management).
 - Approval: WF02 decision with role, actor, decision, optional reason, task, and validation cycle.
-- Note: eXo note used by WF03 as a COPIL template or generated meeting note.
-- Agenda event: eXo calendar event used by WF03 for the weekly COPIL invitation.
+- Note: eXo note used by WF03 as a steering committee (COPIL) template or generated meeting note.
+- Agenda event: eXo calendar event used by WF03 for the weekly steering committee (COPIL) invitation.
 - Category: eXo classification term used by WF04 document enrichment.
 - Processed document record: WF04 Data Table row keyed by document and last processed state.
 

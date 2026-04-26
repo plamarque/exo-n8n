@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Inventaire des nœuds Code dans les exports JSON n8n du dépôt.
- * Sortie : docs/inventory-code-nodes.json (+ stdout résumé)
+ * Inventory of Code nodes in this repo’s n8n JSON exports.
+ * Output: docs/inventory-code-nodes.json (plus a summary to stdout)
  */
 import fs from "fs";
 import path from "path";

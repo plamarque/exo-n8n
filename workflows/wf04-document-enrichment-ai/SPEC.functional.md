@@ -1,38 +1,39 @@
-# Workflow 04 - Spécification fonctionnelle
+# Workflow 04 - Functional specification
 
-> Détails d’implémentation n8n et MCP : [`SPEC.technical.md`](SPEC.technical.md). Artefact : [`workflow.json`](workflow.json).
+> n8n/MCP details: [`SPEC.technical.md`](SPEC.technical.md). Artifact: [`workflow.json`](workflow.json).
 
-## 1) Objectif
+## 1) Goal
 
-Enrichir automatiquement les documents eXo avec IA (description courte + categories suggerees), puis persister le suivi de traitement pour eviter les retraitements inutiles.
+Automatically enrich eXo documents with AI (short description + suggested categories) and persist processing state to avoid reprocessing.
 
-## 2) Contexte metier et storytelling
+## 2) Business context
 
-Le workflow cible la gouvernance documentaire de l'espace eXo, avec execution planifiee et traitement incrémental:
-- selection de l'espace par nom (`$vars.EXO_SPACE_NAME`)
-- scan des documents de l'espace
-- enrichissement IA des metadonnees
-- ecriture de la description et affectation de categories
-- tracking de l'etat de traitement dans une table n8n
+The workflow targets eXo document governance with scheduled, incremental runs:
 
-## 3) Ce qu'on cherche a demontrer
+- pick a space by name (`$vars.EXO_SPACE_NAME`)
+- scan space documents
+- run AI to enrich metadata
+- write the description and assign categories
+- track state in a n8n data table
 
-1. Orchestration n8n hybride (schedule + manuel).
-2. Utilisation MCP eXo de bout en bout.
-3. Enrichissement IA structure (schema JSON).
-4. Deduplication/incremental processing via Data Table.
-5. Pipeline robuste avec checks explicites d'erreurs sur retours MCP.
+## 3) Demo value
 
-## 4) Limites actuelles observees (produit / contrat)
+1. Hybrid n8n orchestration (schedule + manual).
+2. End-to-end eXo MCP.
+3. Structured LLM output (JSON schema).
+4. Deduplication / incremental run via a data table.
+5. Clear error handling on MCP responses.
 
-1. Pas de fallback si `EXO_SPACE_NAME` absent ou incorrect (erreur bloquante volontaire).
-2. Endpoint MCP potentiellement duplique dans plusieurs noeuds (voir technique).
-3. Limite fixe a 5 documents par run.
-4. Pas de rollback si description OK mais categories KO.
+## 4) Current product limits
 
-## 5) Criteres d'acceptation
+1. No fallback if `EXO_SPACE_NAME` is missing/invalid (hard stop on purpose).
+2. MCP endpoint may be duplicated in several nodes (see technical spec).
+3. Hard cap: 5 documents per run.
+4. No rollback if description update succeeds but category assign fails (partially handled with explicit stops).
 
-- Echec immediat si `spaceName` manquant.
-- Un document non traite est enrichi puis tracke.
-- Un document deja traite et non modifie n'est pas retraite.
-- Les categories appliquees correspondent a des `category_id` resolus.
+## 5) Acceptance criteria
+
+- Fail fast when `spaceName` is empty.
+- An unprocessed (or changed) document is enriched then tracked.
+- A document already processed and unchanged is skipped.
+- Category assignments reference resolved `category_id` values.

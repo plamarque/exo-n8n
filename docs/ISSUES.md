@@ -6,19 +6,20 @@ This document is tracking-only. It does not define expected behavior.
 
 ### WF01
 
-- Persistent email idempotence is missing. Recommended key: `email_id`, with fallback to `messageId` and `receivedDate` (previously noted in a removed `n8n/TODO.md`).
+- Persistent email idempotence is missing. Recommended key: `email_id`, with fallback to `messageId` and `receivedDate`.
 - No REST fallback exists in the latest documented workflow.
 - No SLA sweep, relance, or escalation workflow is currently part of the final WF01 behavior.
 
 ### WF02
 
 - Latest README status says a re-import/update and manual rerun are needed after correcting `getWorkflowStaticData` to `$getWorkflowStaticData`.
+- **Breaking change (repo anglicization):** approval query params and state keys are now `role=artistic|technical` with decisions `PENDING|APPROVED|REJECTED` (replaces French `artistique` / `technique` and `EN_ATTENTE` / `APPROUVE`). Update any saved approval URLs or tests.
 - The workflow uses static/demo actor mappings (`nadia`, `etienne`, fallback `claire`).
 - [UNCERTAIN] The persistence mechanism for approval state should be reviewed before production use; the audit recommends Data Table-based state for better visibility.
 
 ### WF03
 
-- **WF03**: refactor Code → native nodes (HTML composition, config dates, report body) is still to do. Progress vs native patterns is described in [audit-code-vs-natif.md](audit-code-vs-natif.md). Operational entry point: [workflows/wf03-copil-hebdomadaire/README.md](../workflows/wf03-copil-hebdomadaire/README.md).
+- **WF03**: refactor Code → native nodes (HTML composition, config dates, report body) is still to do. Progress vs native patterns is described in [audit-code-vs-native.md](audit-code-vs-native.md). Operational entry point: [workflows/wf03-weekly-copil/README.md](../workflows/wf03-weekly-copil/README.md).
 - [UNCERTAIN] Activation status and latest successful execution evidence are not documented in the same style as WF01.
 
 ### WF04
@@ -33,6 +34,5 @@ This document is tracking-only. It does not define expected behavior.
 
 - MCP response formats are heterogeneous and often require envelope parsing before business logic.
 - Some `.env.example` files contain older-looking settings that may not match the latest workflow specs.
-- Historical dual exports (import vs full export) are addressed for WF04 by [ADR 0002](ADR/0002-repository-layout-workflows.md); other workflows should keep a single `workflow.json` unless a `fixtures/*` snapshot is explicitly documented.
+- WF04’s import-shaped canonical JSON plus optional full-export snapshot under `fixtures/` is described in [ADR 0002](ADR/0002-repository-layout-workflows.md); other workflows should keep a single `workflow.json` unless a `fixtures/`* snapshot is explicitly documented.
 - Secrets and live API keys must not be committed; example config should remain placeholder-only.
-

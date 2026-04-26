@@ -1,134 +1,93 @@
-# Workflow 04 - Spécification technique
+# Workflow 04 - Technical specification
 
-> Contexte produit : [`SPEC.functional.md`](SPEC.functional.md). Export secondaire (diff serveur) : [`fixtures/workflow.export.snapshot.json`](fixtures/workflow.export.snapshot.json).
+> Product context: [`SPEC.functional.md`](SPEC.functional.md). Server diff snapshot: [`fixtures/workflow.export.snapshot.json`](fixtures/workflow.export.snapshot.json).
 
-## 1) Faisabilite MCP eXo QAUI
+## 1) eXo MCP (QAUI) feasibility
 
-### Tools MCP utilises dans le workflow reel
+### Tools used in the current workflow
 
-- `get_my_spaces`
-- `search_documents`
-- `get_document_by_id`
-- `get_category_tree`
-- `update_document_description`
-- `add_content_to_category`
+- `get_my_spaces`, `search_documents`, `get_document_by_id`, `get_category_tree`, `update_document_description`, `add_content_to_category`
 
 ### Conclusion
 
-Le workflow est deja **MCP-first natif** et ne depend pas de fallback REST dans sa version actuelle.
+The implementation is **MCP-first**; there is no REST fallback in the current version.
 
-## 2) Parametrage et prerequis
+## 2) Settings and prerequisites
 
-### 2.1 Variables / entrees
+### Variables / input
 
-- `EXO_SPACE_NAME` (via `$vars.EXO_SPACE_NAME`) obligatoire
+- `EXO_SPACE_NAME` via `$vars.EXO_SPACE_NAME` — **required**
 
-### 2.2 Connectivite
+### Connectivity
 
-- Endpoint MCP: `https://exo-qaui.meeds.io/mcp-server/mcp` (valeur observee dans la spec d’origine ; aligner sur l’environnement cible)
-- Auth n8n: `mcpOAuth2Api`
+- MCP endpoint (e.g. `https://exo-qaui.meeds.io/mcp-server/mcp` — match your target env)
+- n8n auth: `mcpOAuth2Api`
 
-### 2.3 IA
+### AI
 
-- Modele: `gpt-4o-mini`
+- Model: `gpt-4o-mini`
 - Temperature: `0.3`
-- Output parser structure: `{ description, suggestedCategories[] }`
+- Structured output: `{ description, suggestedCategories[] }`
 
-## 3) Sequence detaillee (reverse engineered)
+## 3) Detailed sequence (as observed)
 
-1. Trigger:
-- `Manual Start` ou `Daily Schedule` (heure 02:00).
+1. **Trigger** — `Manual Start` or `Daily Schedule` (02:00)
+2. **Input** — `Workflow Input` sets `spaceName`; `Validate Input` fails if empty
+3. **Tracking** — `Ensure Tracking Table` creates `exo_processed_documents` if needed
+4. **Space** — `get_my_spaces` → map `spaceName` to `spaceId` (or stop on error)
+5. **List docs** — `search_documents` (limit 500)
+6. **Normalize** — `documentId`, `updatedDate`, `description` …
+7. **Incremental** — read tracking for batch, filter new/changed, **limit 5** per run
+8. **Per item** — `get_document_by_id`, `get_category_tree`, `Prepare AI Input`
+9. **LLM** — `Analyze Document` with structured output
+10. **Write** — `update_document_description`, then `add_content_to_category` with id resolution
+11. **Stops** — error nodes on MCP/assign failures
+12. **Record** — upsert tracking with metadata and URLs
+13. **Out** — `Processing Summary` with `processedCount`
 
-2. Input & validation:
-- `Workflow Input` injecte `spaceName={{$vars.EXO_SPACE_NAME}}`.
-- `Validate Input` leve une erreur si `spaceName` est vide.
+## 4) Data structures
 
-3. Tracking store:
-- `Ensure Tracking Table` cree `exo_processed_documents` si absent.
+### Tracking table
 
-4. Resolution espace:
-- `Get Spaces` (MCP `get_my_spaces`).
-- `Resolve Space` mappe `spaceName -> spaceId` (erreur si introuvable).
+- `exo_processed_documents` for idempotency and incremental re-run
+- columns include `documentId`, `lastProcessedDate`, `description`, `categories`, `spaceName`, `documentName`, `documentUrl`, `editorUrl`
 
-5. Extraction documents:
-- `List Documents` (MCP `search_documents`, limit 500).
-- `Normalize Documents` extrait `{id, updatedDate, description}`.
-
-6. Filtrage incremental:
-- `Get Processed For Doc` lit tracking pour les IDs en lot.
-- `Filter Documents to Process` conserve docs nouveaux/modifies.
-- `Limit to 5 Documents` plafonne le batch.
-
-7. Traitement par document:
-- `Process Each Document` (Split in Batches).
-- `Read Document Content` (MCP `get_document_by_id`).
-- `List Categories` (MCP `get_category_tree`).
-- `Prepare AI Input` construit payload prompt + categorie disponibles.
-
-8. Enrichissement IA:
-- `Analyze Document` (agent) + `GPT-4o Mini Model` + `Structured Output`.
-- Sortie attendue: description <= 30 mots + 2-3 categories.
-
-9. Ecriture metadonnees:
-- `Extract Results` normalise sortie.
-- `Add Description` (MCP `update_document_description`).
-- `Check Description Result` stoppe si exception detectee.
-
-10. Classification categories:
-- `Prepare Category Assignments` mappe noms -> `category_id`.
-- `Assign Categories` (MCP `add_content_to_category`).
-- `Check Assign Result` stoppe si exception detectee.
-
-11. Persistence de suivi:
-- `Update Tracking` upsert dans `exo_processed_documents`.
-- Colonnes: `documentId,lastProcessedDate,description,categories,spaceName,documentName,documentUrl,editorUrl`.
-
-12. Sortie:
-- `Processing Summary` retourne message + `processedCount` + timestamp.
-
-## 4) Structure de donnees cle
-
-### 4.1 Table de tracking
-
-- Nom: `exo_processed_documents`
-- Role: idempotence et reprise incremental
-
-### 4.2 Output IA cible
+### LLM target shape
 
 ```json
 {
-  "description": "Description concise (<=30 mots)",
+  "description": "Short text (<=30 words)",
   "suggestedCategories": ["Category1", "Category2"]
 }
 ```
 
-## 5) Points forts techniques observes
+## 5) Technical highlights
 
-- Incremental processing solide (comparaison `updatedDate` vs `lastProcessedDate`).
-- Checkpoints explicites d'erreur apres ecriture description et categories.
-- Pipeline strictement structure autour de MCP + DataTable n8n.
+- Strong incremental check (`updatedDate` vs `lastProcessedDate`).
+- Explicit error stops after description update and after category add.
+- MCP + Data table centric.
 
-## 6) Script de demo (reverse engineered)
+## 6) Demo runbook
 
-1. Definir `EXO_SPACE_NAME`.
-2. Lancer `Manual Start`.
-3. Montrer docs identifies et ceux filtres comme deja traites.
-4. Montrer resultat IA structure.
-5. Verifier description + categories sur document eXo.
-6. Verifier la ligne upsert dans `exo_processed_documents`.
+1. Set `EXO_SPACE_NAME`.
+2. `Manual Start`.
+3. Observe which docs are new vs already processed.
+4. Check structured output.
+5. Verify in eXo: description and categories.
+6. Confirm tracking row in `exo_processed_documents`.
 
-## 7) Artefacts exportes
+## 7) Exported artifacts
 
-- Canonique (repo) : `workflows/wf04-document-enrichment-ai/workflow.json` (ex-import n8n).
-- Snapshot full export (diff) : `fixtures/workflow.export.snapshot.json`.
+- Canonical: `workflows/wf04-document-enrichment-ai/workflow.json`
+- Full server snapshot: `fixtures/workflow.export.snapshot.json`
 
-## 8) Evolutions recommandees
+## 8) Suggested follow-ups
 
-1. Externaliser endpoint MCP dans variable n8n.
-2. Ajouter fallback gracieux si `EXO_SPACE_NAME` absent (default configurable).
-3. Ajouter retry/queue sur erreurs MCP transitoires.
-4. Ajouter instrumentation de qualite IA (confidence score, audit prompt/output).
+1. Single MCP endpoint variable in n8n.
+2. Configurable default when `EXO_SPACE_NAME` is empty (if desired).
+3. Retry/queue for transient MCP errors.
+4. Quality instrumentation (LLM confidence, prompt/output audit log).
 
-## 9) Statut
+## 9) Status
 
-Reverse engineering effectue a partir du workflow n8n ID `aze2wAktXHYrTBTr`, nomme `eXo Document Enrichment with AI`, recupere via MCP le 22 avril 2026.
+Reverse engineered from n8n workflow id `aze2wAktXHYrTBTr` (`eXo Document Enrichment with AI`) via MCP on 2026-04-22.
