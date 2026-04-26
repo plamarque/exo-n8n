@@ -1,0 +1,227 @@
+# Audit « code custom » vs constructions natives n8n
+
+Ce document implémente l’analyse prévue pour les workflows du dépôt : inventaire quantitatif, taxonomie par intention, matrice de remplacement, statut d’export WF04, et spécification d’un refactor pilote (**WF01** : [workflow.json](../workflows/wf01-email-to-task/workflow.json)).
+
+## 1. Synthèse exécutive
+
+- **Constat** : la majorité du JavaScript sert à (1) déballer les réponses MCP (`content[0].text`, tableaux `{type,text}`, chaînes JSON), (2) normaliser des listes en items n8n, (3) gérer l’idempotence (`$getWorkflowStaticData` ou Data Table), (4) appliquer des règles ou filtres métier, (5) composer du HTML ou un état d’approbation.
+- **Effet « anti low-code »** : ce n’est pas n8n en soi, mais un **contrat de sortie MCP non structuré pour le graphe** qui impose du glue répété. La stratégie gagnante est : **centraliser le glue** (sous-workflow ou nœud technique unique), puis **exprimer le métier** en **Switch**, **Set**, **Filter**, **IF**, **Data Table**, **Item Lists**.
+- **Objectif réaliste** : réduire la **duplication** et rendre le **métier visible** sur le canevas ; viser **zéro Code** partout est souvent contre-productif pour HTML complexe ou machines d’état serrées.
+
+### Chiffres (dépôt au moment de l’audit)
+
+Données générées par [inventory-code-nodes.json](inventory-code-nodes.json) (script [inventory-code-nodes.mjs](../tools/inventory-code-nodes.mjs)) :
+
+
+| Métrique (régénérer le script pour valeurs à jour) | Valeur (dernier run local) |
+| -------------------------------------------- | ------ |
+| Fichiers `workflow.json` analysés (hors `fixtures/`) | 5      |
+| Nœuds `Code` recensés                        | 15     |
+| Somme des lignes `jsCode` (approx.)          | 548    |
+| Caractères `jsCode` total                    | 27 215 |
+
+
+**WF04 (état actuel)** : exports versionnés sous [workflow.json](../workflows/wf04-document-enrichment-ai/workflow.json) (canonique) et [workflow.export.snapshot.json](../workflows/wf04-document-enrichment-ai/fixtures/workflow.export.snapshot.json). Le workflow est passé de plusieurs nœuds Code à **un seul résidu** (`Prepare Category Assignments`).
+
+### Régénérer l’inventaire
+
+```bash
+node tools/inventory-code-nodes.mjs
+```
+
+Sortie : `docs/inventory-code-nodes.json`.
+
+---
+
+## 2. WF04 — export complet et refactor natif appliqué
+
+Workflow : `aze2wAktXHYrTBTr` (n8n cloud), synchronisé via `get_workflow_details`.
+
+### Ce qui a été implémenté
+
+- Export complet récupéré et versionné dans le repo (`export`, `import`, snapshot MCP).
+- Remplacement du nœud Code `Filter Documents to Process` par un nœud natif **Merge** (`mode: combineBySql`) nommé `Merge Documents to Process`.
+- Correction du warning Data Table (`condition: "in" is not supported`) en supprimant le filtre `in` sur `Get Processed For Doc`.
+
+### Résultat fonctionnel
+
+- Le workflow conserve la même intention métier : ne traiter que les documents absents de la table de suivi ou plus récents que `lastProcessedDate`.
+- Le SQL du nœud Merge implémente ce comportement via `LEFT JOIN` entre documents normalisés (`input1`) et lignes de suivi (`input2`).
+- Il ne reste qu’un nœud Code sur WF04 : `Prepare Category Assignments`.
+
+---
+
+## 3. Matrice intention → constructions n8n
+
+
+| Intention (taxonomie) | Nœuds / patterns natifs                                                                                                                                      | Limite                                                                           |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| **ParseEnvelope**     | Sous-workflow `Unwrap MCP Response` ; en tête de chaîne : **IF** sur présence de `content[0].text` puis **Set** avec `JSON.parse()` ; variantes = **Switch** | Erreurs JSON peu lisibles ; plusieurs formes d’enveloppe                         |
+| **UnwrapArray**       | **Item Lists**, **Split Out**                                                                                                                                | Schémas très imbriqués                                                           |
+| **MapTransform**      | **Set** (assignations), parfois **Edit Fields**                                                                                                              | Logique `find()` sur grandes listes : acceptable en une expression ou petit Code |
+| **FilterBusiness**    | **Filter**, **IF**                                                                                                                                           | Règles « premier match » : **Switch** (rules)                                    |
+| **DedupeStatic**      | Préférer **Data Table** + clé stable (comme WF04)                                                                                                            | Static data peu visible pour un non-tech                                         |
+| **DedupeDataTable**   | Déjà pattern WF04 ; **Merge** (enrich) avec résultat lookup                                                                                                  | Ops : schéma table                                                               |
+| **Aggregate**         | **Aggregate** (si activé sur l’instance) ou **Item Lists**                                                                                                   | —                                                                                |
+| **HtmlTemplate**      | Sous-workflow dédié « Render … » ; **Set** avec morceaux ; parfois **HTML** si disponible                                                                    | n8n n’est pas un moteur de template riche                                        |
+| **StateMerge**        | **Data Table** par `(task_id, cycle_id)` ; ou **Merge** de branches + **IF** final                                                                           | Deux validations parallèles : lisibilité vs nombre de nœuds                      |
+| **ErrorGuard**        | **IF** / **Stop and Error** sur champs d’erreur MCP ; **Error Trigger** workflow                                                                             | Selon forme exacte des erreurs MCP                                               |
+
+
+---
+
+## 4. Tableau détaillé par nœud Code
+
+Légende **Priorité** : P1 = gain rapide / forte duplication ; P3 = résidu acceptable ou modularisation.
+
+### WF01 — [workflow.json](../workflows/wf01-email-to-task/workflow.json)
+
+
+| Nœud                        | LOC | Intention principale                       | Remplacement natif / architecture                                                                                                                                       | Priorité |
+| --------------------------- | --- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| Parse + Deduplicate Emails  | 28  | ParseEnvelope + UnwrapArray + DedupeStatic | Sous-workflow **Unwrap MCP** → **Split Out** emails ; idempotence : **Data Table** `email_id` (comme WF04) au lieu de `getWorkflowStaticData`                           | P1       |
+| Normalize + Qualify         | 46  | MapTransform + FilterBusiness              | **Switch** sur `subject`+`body` (contains) en branches → **Set** pour `priority`, `assignee`, `slaHours` ; date d’échéance : **Date & Time** ou expression dans **Set** | P1       |
+| Resolve Project             | 20  | ParseEnvelope + MapTransform               | Unwrap partagé puis **Item Lists** + **Filter** (`name` égal / contient) + **Limit** 1 + **Set** `projectId`                                                            | P1       |
+| Resolve Status              | 17  | ParseEnvelope + MapTransform               | Idem pour statuts « todo » / **Filter** + **Set** `statusId`                                                                                                            | P1       |
+| Normalize Create Result     | 20  | ParseEnvelope + MapTransform               | **Set** avec expressions sur payload déjà unwrap (si sortie MCP stable) ; sinon mini sous-workflow « Extract task_id »                                                  | P2       |
+| Detect Overdue + Escalation | 36  | ParseEnvelope + FilterBusiness             | Unwrap `tasks` → **Split Out** ; **Filter** sur `dueDate` ; **Set** `overdueHours` ; **IF** `needsEscalation`                                                           | P2       |
+
+
+### WF01 — variante historique `workflow-01-email-to-task.live.*` (non versionnée)
+
+> Les exports intermédiaires `*.live.*` ne sont plus dans le dépôt ; l’analyse ci-dessous reste valable pour mémoire.
+
+
+| Nœud                    | LOC | Intention                                 | Remplacement                                                                                                                           | Priorité |
+| ----------------------- | --- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| Parse MCP Envelope      | 8   | ParseEnvelope + UnwrapArray               | Même sous-workflow Unwrap + **Item Lists**                                                                                             | P1       |
+| Build Payload From AI   | 23  | MapTransform + ErrorGuard (garde-fous IA) | Partiellement **Switch** / **IF** sur champs structurés ; garde strict (confidence) souvent plus lisible en **IF** multiples + **Set** | P2       |
+| Extract Task For Assign | 10  | ParseEnvelope + ErrorGuard                | **Set** + **Stop and Error** si pas de `task_id`                                                                                       | P2       |
+
+
+### WF02 — [workflow.json](../workflows/wf02-validation-documentaire/workflow.json)
+
+
+| Nœud                     | LOC | Intention                                   | Remplacement                                                                                                              | Priorité |
+| ------------------------ | --- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | -------- |
+| Parse + Deduplicate Docs | 21  | ParseEnvelope + DedupeStatic + UnwrapArray  | Unwrap MCP partagé ; dédup : **Data Table** clé `docId:updatedDate` ; **Filter** vs table                                 | P1       |
+| Build Task Payload       | 19  | ParseEnvelope + HtmlTemplate + MapTransform | Unwrap + **Set** champs texte ; description HTML : **Set** multi-champs ou sous-workflow « Build validation description » | P2       |
+| Extract Task ID          | 8   | ParseEnvelope                               | Sous-workflow **Extract MCP entity id**                                                                                   | P1       |
+| Register Approval State  | 5   | StateMerge + DedupeStatic                   | **Data Table** ligne par `task_id:cycle_id` avec colonnes `art`, `tech` ; ou garder Code minimal                          | P2       |
+| Parse Approval           | 10  | MapTransform                                | **Set** depuis `$json.body` / `$json.query` si webhook fixe ; **IF** validation champs                                    | P1       |
+| Update Approval State    | 12  | StateMerge                                  | **Data Table** + **Set** / **IF** pour `joinReady`, `bothApproved` ; alternative : deux webhooks → **Merge** puis **IF**  | P2       |
+
+
+### WF03 — [workflow.json](../workflows/wf03-copil-hebdomadaire/workflow.json) (et snapshot API : [api-response.snapshot.json](../workflows/wf03-copil-hebdomadaire/fixtures/api-response.snapshot.json))
+
+
+| Nœud                                        | LOC       | Intention                            | Remplacement                                                                                                                              | Priorité |
+| ------------------------------------------- | --------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| Prepare COPIL Config                        | 41        | MapTransform (dates)                 | **Date & Time** + **Set** pour `meeting_date`, `next_meeting_date`, etc. ; liste participants : **Set** avec `split()` en expression      | P2       |
+| Build Report Context                        | 142       | composite (Parse + Html + Aggregate) | Unwrap MCP ; projection lignes : **Item Lists** ; `status_counts` : **Aggregate** ; HTML tableau : sous-workflow ou résidu Code documenté | P3       |
+| Compose COPIL Note                          | 194       | HtmlTemplate                         | Sous-workflow unique « Compose COPIL HTML » (réduit la dispersion) ; morceaux statiques en **Set**                                        | P3       |
+| Decide Note Upsert                          | 30        | ParseEnvelope + MapTransform         | Unwrap + **Filter** / **IF** sur titre ; **Set** `should_update_note`                                                                     | P2       |
+| Prepare Agenda Update After Update / Create | 15 chacun | ParseEnvelope + HtmlTemplate         | Factoriser en **un** sous-workflow « Post-save note → agenda input » (duplication actuelle)                                               | P1       |
+
+
+### WF04 — [workflow.json](../workflows/wf04-document-enrichment-ai/workflow.json)
+
+
+| Nœud                         | LOC (repo) | Intention (spec) | Remplacement probable                                              | Priorité |
+| ---------------------------- | ---------- | ---------------- | ------------------------------------------------------------------ | -------- |
+| Validate Input               | 0          | ErrorGuard       | **Déjà remplacé** par **IF** + **Stop and Error**                  | Fait     |
+| Resolve Space                | 0          | MapTransform     | **Déjà remplacé** par **Set** + **IF** (résolution + garde)        | Fait     |
+| Normalize Documents          | 0          | UnwrapArray      | **Déjà remplacé** par **Split Out** + **Filter** + **Set**         | Fait     |
+| Filter Documents to Process  | 0          | FilterBusiness   | **Déjà remplacé** par **Merge (SQL)** natif                        | Fait     |
+| Check Description Result     | 0          | ErrorGuard       | **Déjà remplacé** par **IF** + **Set**                             | Fait     |
+| Prepare Category Assignments | 19         | MapTransform     | **Reste en Code** (mapping hiérarchie catégories -> `category_id`) | Résidu   |
+| Check Assign Result          | 0          | ErrorGuard       | **Déjà remplacé** par **IF** + **noOp**                            | Fait     |
+
+
+---
+
+## 5. Sous-workflows réutilisables proposés
+
+
+| Nom                         | Entrée                                                | Sortie                                     | Consommateurs                         |
+| --------------------------- | ----------------------------------------------------- | ------------------------------------------ | ------------------------------------- |
+| **Unwrap MCP JSON**         | Item brut MCP / HTTP                                  | JSON métier parsé (un item)                | WF01, WF02, WF03, WF04                |
+| **MCP list → items**        | Objet avec `emails` / `documents` / `tasks` / `notes` | N items normalisés                         | Selon outil MCP                       |
+| **Extract task_id**         | Réponse `create_task`                                 | `task_id` numérique + passe-through champs | WF01, WF02                            |
+| **Post note save → agenda** | `saved_note`, contexte COPIL                          | `agendaUpdateInput`                        | WF03 (supprime doublon Update/Create) |
+
+
+---
+
+## 6. Pilote de refactor : WF01 (`workflows/wf01-email-to-task/workflow.json`)
+
+**Choix** : WF01 fichier « MCP-first » — duplication maximale de `parseMaybeEnvelope`, règles de qualification lisibles, pas de machine d’état webhook comme WF02.
+
+### Graphe cible (logique)
+
+```mermaid
+flowchart TD
+  subgraph intake [Intake]
+    T1[Schedule / Manual]
+    S1[Set Intake Config]
+    M1[MCP list_emails]
+  end
+  subgraph unwrap [Glue technique]
+    SW[Subworkflow Unwrap MCP JSON]
+    SO[Split Out emails]
+  end
+  subgraph dedupe [Idempotence]
+    DT[Data Table lookup processed_email]
+    F1[Filter not processed]
+  end
+  subgraph qualify [Métier visible]
+    M2[MCP get_email_by_id]
+    SW2[Unwrap MCP]
+    SC[Switch rules keyword]
+    ST[Set task fields]
+  end
+  subgraph project [Résolution]
+    M3[MCP list_projects]
+    UW3[Unwrap]
+    IL1[Item Lists + Filter project]
+    M4[MCP list_statuses]
+    UW4[Unwrap]
+    IL2[Item Lists + Filter status]
+  end
+  T1 --> S1 --> M1 --> SW --> SO --> DT --> F1 --> M2 --> SW2 --> SC --> ST
+  ST --> M3 --> UW3 --> IL1 --> M4 --> UW4 --> IL2
+```
+
+
+
+### Étapes concrètes (ordre recommandé)
+
+1. Créer le sous-workflow **Unwrap MCP JSON** (une entrée, une sortie) ; remplacer chaque premier bloc parse des réponses MCP par un appel **Execute Workflow**.
+2. Remplacer **Parse + Deduplicate Emails** par : Unwrap → **Split Out** → **Data Table** (lookup batch ou par item selon perf) → **Filter**.
+3. Remplacer **Normalize + Qualify** par un **Switch** (ex. règles sur concat `subject` + `body`) relié à des **Set** pour priorité, assigné, SLA.
+4. Remplacer **Resolve Project** / **Resolve Status** par **Item Lists** + **Filter** + **Set** (en conservant les nœuds MCP existants).
+5. **Detect Overdue** : unwrap `list_tasks` → **Split Out** → **Filter** dates → **Set** métriques → **IF** escalade (déjà partiellement présent après le Code).
+
+### Ce qui peut rester en Code (résidu justifié)
+
+- Enveloppes MCP **très** hétérogènes si le serveur change souvent (mieux isolé dans le sous-workflow).
+- Expressions `find()` complexes sur listes volumineuses si **Item Lists** devient verbeux sans gain clarté.
+
+---
+
+## 7. Références internes
+
+
+| Artefact                | Chemin                                                                               |
+| ----------------------- | ------------------------------------------------------------------------------------ |
+| Inventaire machine      | [inventory-code-nodes.json](inventory-code-nodes.json)                               |
+| Script d’inventaire     | [inventory-code-nodes.mjs](../tools/inventory-code-nodes.mjs)                        |
+| Spec WF04 (technique)   | [SPEC.technical.md](../workflows/wf04-document-enrichment-ai/SPEC.technical.md)        |
+| Spec fonctionnelle WF04 | [SPEC.functional.md](../workflows/wf04-document-enrichment-ai/SPEC.functional.md)     |
+
+
+---
+
+## 8. Conclusion
+
+L’argument « low-code » tient si le **graphe expose les décisions métier** (Switch, Filter, Data Table) et si le **glue MCP** est **une brique réutilisable** plutôt que six copies du même `parseMaybeEnvelope`. La prochaine itération concrète du dépôt peut commencer par le **sous-workflow Unwrap** + **pilote WF01** ci-dessus, puis aligner WF02 sur le même modèle d’idempotence que WF04.
