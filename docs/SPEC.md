@@ -13,13 +13,15 @@ The observable portfolio covers four workflow families:
 
 ## Per-Workflow Artifacts and Specs (source map)
 
-| Workflow | Directory | Key docs |
-| -------- | ---------- | -------- |
-| WF01 | [workflows/wf01-email-to-task/](../workflows/wf01-email-to-task/) | [SPEC.functional.md](../workflows/wf01-email-to-task/SPEC.functional.md), [SPEC.technical.md](../workflows/wf01-email-to-task/SPEC.technical.md), [workflow.json](../workflows/wf01-email-to-task/workflow.json) |
-| WF02 | [workflows/wf02-document-validation/](../workflows/wf02-document-validation/) | [SPEC.functional.md](../workflows/wf02-document-validation/SPEC.functional.md), [SPEC.technical.md](../workflows/wf02-document-validation/SPEC.technical.md), [workflow.json](../workflows/wf02-document-validation/workflow.json) |
-| WF03 | [workflows/wf03-weekly-copil/](../workflows/wf03-weekly-copil/) | [SPEC.functional.md](../workflows/wf03-weekly-copil/SPEC.functional.md), [SPEC.technical-exo-mips.md](../workflows/wf03-weekly-copil/SPEC.technical-exo-mips.md), [README.md](../workflows/wf03-weekly-copil/README.md), [workflow.json](../workflows/wf03-weekly-copil/workflow.json) |
-| WF04 | [workflows/wf04-document-enrichment-ai/](../workflows/wf04-document-enrichment-ai/) | [SPEC.functional.md](../workflows/wf04-document-enrichment-ai/SPEC.functional.md), [SPEC.technical.md](../workflows/wf04-document-enrichment-ai/SPEC.technical.md), [workflow.json](../workflows/wf04-document-enrichment-ai/workflow.json) |
-| Shared | [workflows/shared/subworkflows/unwrap-mcp-json/](../workflows/shared/subworkflows/unwrap-mcp-json/) | MCP unwrap sub-workflow used by WF01 |
+
+| Workflow | Directory                                                                                           | Key docs                                                                                                                                                                                                                                                                               |
+| -------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| WF01     | [workflows/wf01-email-to-task/](../workflows/wf01-email-to-task/)                                   | [SPEC.functional.md](../workflows/wf01-email-to-task/SPEC.functional.md), [SPEC.technical.md](../workflows/wf01-email-to-task/SPEC.technical.md), [workflow.json](../workflows/wf01-email-to-task/workflow.json)                                                                       |
+| WF02     | [workflows/wf02-document-validation/](../workflows/wf02-document-validation/)                       | [SPEC.functional.md](../workflows/wf02-document-validation/SPEC.functional.md), [SPEC.technical.md](../workflows/wf02-document-validation/SPEC.technical.md), [workflow.json](../workflows/wf02-document-validation/workflow.json)                                                     |
+| WF03     | [workflows/wf03-weekly-copil/](../workflows/wf03-weekly-copil/)                                     | [SPEC.functional.md](../workflows/wf03-weekly-copil/SPEC.functional.md), [SPEC.technical-exo-mips.md](../workflows/wf03-weekly-copil/SPEC.technical-exo-mips.md), [README.md](../workflows/wf03-weekly-copil/README.md), [workflow.json](../workflows/wf03-weekly-copil/workflow.json) |
+| WF04     | [workflows/wf04-document-enrichment-ai/](../workflows/wf04-document-enrichment-ai/)                 | [SPEC.functional.md](../workflows/wf04-document-enrichment-ai/SPEC.functional.md), [SPEC.technical.md](../workflows/wf04-document-enrichment-ai/SPEC.technical.md), [workflow.json](../workflows/wf04-document-enrichment-ai/workflow.json)                                            |
+| Shared   | [workflows/shared/subworkflows/unwrap-mcp-json/](../workflows/shared/subworkflows/unwrap-mcp-json/) | MCP unwrap sub-workflow used by WF01                                                                                                                                                                                                                                                   |
+
 
 ## Main Capabilities
 
