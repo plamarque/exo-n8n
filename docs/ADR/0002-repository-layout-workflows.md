@@ -20,7 +20,7 @@ The repository is a collection of four n8n workflows integrating eXo via MCP, wi
   - **WF03**: raw n8n API responses may wrap the workflow in an object with a `workflow` key. The canonical `workflow.json` is the **inner workflow** object only (n8n import format). A copy of a raw API response is preserved under `fixtures/api-response.snapshot.json` for traceability.
   - **WF01, WF02**: `workflow.json` is the single canonical export per workflow folder.
 3. **Tools**
-  - Small automation helpers live under `tools/` (for example `inventory-code-nodes.mjs`, `wf04-push-to-n8n-api.mjs`). Document new scripts in [DEVELOPMENT.md](../DEVELOPMENT.md).
+  - Small automation helpers live under `tools/` (for example `inventory-code-nodes.mjs`, `push-workflow-to-n8n-api.mjs`, `validate-workflow-json.mjs`). Document new scripts in [DEVELOPMENT.md](../DEVELOPMENT.md).
 4. **Documentation**
   - Portfolio-level contract stays in `docs/SPEC.md`, `docs/ARCH.md`, etc. Per-workflow detail lives under `workflows/wf**/` and links back to the global docs.
 

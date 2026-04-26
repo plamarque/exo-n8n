@@ -12,6 +12,7 @@ This document is tracking-only. It does not define expected behavior.
 
 ### WF02
 
+- [UNCERTAIN] Remote n8n workflow id for WF02 is not recorded in repository evidence; set `N8N_WORKFLOW_ID_WF02` in the repository root `.env` after confirming the live id on your tenant (see [SPEC.technical.md](../workflows/wf02-document-validation/SPEC.technical.md)).
 - Latest README status says a re-import/update and manual rerun are needed after correcting `getWorkflowStaticData` to `$getWorkflowStaticData`.
 - **Breaking change (repo anglicization):** approval query params and state keys are now `role=artistic|technical` with decisions `PENDING|APPROVED|REJECTED` (replaces French `artistique` / `technique` and `EN_ATTENTE` / `APPROUVE`). Update any saved approval URLs or tests.
 - The workflow uses static/demo actor mappings (`nadia`, `etienne`, fallback `claire`).

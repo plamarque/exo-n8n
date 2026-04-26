@@ -6,12 +6,14 @@
   "description": "Canonical n8n workflow JSON and tooling for eXo integrations.",
   "scripts": {
     "validate:workflow": "node tools/validate-workflow-json.mjs",
-    "validate:workflows": "node tools/validate-workflow-json.mjs --all"
+    "validate:workflows": "node tools/validate-workflow-json.mjs --all",
+    "deploy:workflow": "node tools/push-workflow-to-n8n-api.mjs"
   },
   "engines": {
     "node": ">=18"
   },
   "devDependencies": {
-    "@n8n/workflow-sdk": "^0.10.2"
+    "@n8n/workflow-sdk": "^0.10.2",
+    "dotenv": "^16.4.7"
   }
 }

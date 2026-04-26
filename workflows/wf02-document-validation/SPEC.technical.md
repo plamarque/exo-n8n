@@ -2,6 +2,11 @@
 
 > Product rules: [SPEC.functional.md](SPEC.functional.md).
 
+## n8n artifacts (repository)
+
+- Canonical export in git: `workflows/wf02-document-validation/workflow.json`.
+- Remote n8n workflow id: **[UNCERTAIN]** — not yet recorded in repository evidence. Set `N8N_WORKFLOW_ID_WF02` in the repository root `.env` when you have the live workflow id on your tenant (see [docs/ISSUES.md](../../docs/ISSUES.md)).
+
 ## 11) MCP exploration (QAUI) and evidence level
 
 1. Session (2026-04-22, after MCP reauth):

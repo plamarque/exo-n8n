@@ -4,6 +4,11 @@
 > This document describes the **production-oriented** MCP host (`mcp__exo_mips__`) and the business ids validated for the WF03 steering committee (COPIL) workflow.  
 > A separate file documents QAUI exploration: [SPEC.technical-mcp.md](SPEC.technical-mcp.md).
 
+## n8n artifact (repository)
+
+- Canonical export: `workflows/wf03-weekly-copil/workflow.json`.
+- Remote n8n workflow id on the reference instance: `1suyxKutB174p7b4` (same as [README.md](README.md); name on instance: `WF03 - Weekly COPIL preparation`).
+
 ## 1) Purpose
 
 - Summarize the MCP response envelope every node must parse.  

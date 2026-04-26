@@ -8,7 +8,7 @@ This document is tracking-only. It does not define expected behavior.
 - **WF01**: canonical JSON and split specs; persistent email idempotence still open (see [ISSUES](ISSUES.md)).
 - **WF02**: canonical JSON, split specs; audit of Code → native not finished; last README notes re-import for MCP/credential issues.
 - **WF03**: canonical `workflow.json` + API snapshot in `fixtures/`; **Code-node reduction** still pending (contrast: WF01/WF04 more advanced).
-- **WF04**: canonical `workflow.json` + `fixtures/workflow.export.snapshot.json`; one Code node may remain for category mapping; optional API push via `tools/wf04-push-to-n8n-api.mjs`.
+- **WF04**: canonical `workflow.json` + `fixtures/workflow.export.snapshot.json`; one Code node may remain for category mapping; optional API push via `tools/push-workflow-to-n8n-api.mjs` / `npm run deploy:workflow`.
 
 ## Near-Term Tasks
 

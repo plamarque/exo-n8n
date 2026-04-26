@@ -8,9 +8,9 @@ This repository is primarily an n8n/eXo workflow artifact workspace. It contains
 
 ## Node toolchain (workflow SDK)
 
-- Root [package.json](../package.json) pins **`@n8n/workflow-sdk`** for **local** validation and optional codegen of MCP-oriented SDK bundles.
+- Root [package.json](../package.json) pins **`@n8n/workflow-sdk`** for **local** validation and optional codegen of MCP-oriented SDK bundles, and **`dotenv`** so REST deploy scripts load a **repository-root** `.env` (see [Root `.env` for repository tooling](#root-env-for-repository-tooling)).
 - After cloning: `npm install` from the repository root.
-- **Source of truth** remains each canonical **`workflow.json`**. Generated files under `work/` are **git-ignored** scratch output (optional `--emit-sdk`).
+- **Source of truth** remains each canonical `**workflow.json`**. Generated files under `work/` are **git-ignored** scratch output (optional `--emit-sdk`).
 
 ### Where validation runs
 
@@ -26,13 +26,28 @@ This repository is primarily an n8n/eXo workflow artifact workspace. It contains
 
 Publishing workflows must follow the **deployment validation policy** in [WORKFLOW.md — Deployment validation policy](WORKFLOW.md#deployment-validation-policy): **local `validateWorkflow` on `workflow.json` is mandatory** before any publish; **MCP `validate_workflow` on the final SDK `code` is recommended** when you deploy via MCP `update_workflow` / `create_workflow_from_code`. JSON-only UI/API import still requires local validation; MCP structural validation does not apply to that path.
 
+**Deploy channel (choose deliberately):**
+
+- **REST + canonical `workflow.json`** (default for parity with git and for CI): `./deploy.sh <wf01|…|unwrap>` or `npm run deploy:workflow -- <same>` after filling root `.env` (see below). Pushes the same graph you validate locally (the deploy script strips export-only fields the n8n API rejects).
+- **n8n MCP + SDK `code`:** use when you are already in Cursor with MCP configured: `--emit-sdk` then `validate_workflow` → `update_workflow`. Does not replace gate (1) on `workflow.json`.
+
 ## Local Prerequisites
 
-- Node.js **18+** with `npm install` at the repo root (ES modules in `tools/` plus `@n8n/workflow-sdk` for validation).
-- Access to the target n8n instance when synchronizing workflows through the n8n API (optional; MCP n8n is the preferred path when available in Cursor).
+- Node.js **18+** with `npm install` at the repo root (ES modules in `tools/` plus `@n8n/workflow-sdk` and `dotenv` for validation and REST deploy).
+- Access to the target n8n instance when synchronizing workflows through the n8n **REST API** (root `.env` with `N8N_BASE_URL` / `N8N_API_KEY`) **or** through the **n8n MCP** in Cursor (separate bearer token in `.cursor/mcp.json`); pick one path per operation so the published artifact matches intent.
 - eXo MCP credentials configured in n8n for workflow execution. Demo endpoint (reference): `https://exo-mips-ft.meeds.io/mcp-server/mcp` — always match `EXO_MCP_ENDPOINT` to the environment under test.
 - OpenAI or compatible credentials configured in n8n for workflows using AI nodes.
 - (Optional) **Cursor + MCP:** to use the n8n and eXo MCP servers from Cursor, see [Cursor and MCP (recommended)](#cursor-and-mcp-recommended).
+
+## Root `.env` for repository tooling
+
+Optional **local-only** file at the repository root (git-ignored). Use it for **n8n instance API** credentials consumed by [push-workflow-to-n8n-api.mjs](../tools/push-workflow-to-n8n-api.mjs), not for n8n workflow runtime variables (those stay in n8n **Variables** / per-workflow `config.env.example`).
+
+1. Copy [`.env.example`](../.env.example) → `.env` at the repo root.
+2. Set `N8N_BASE_URL`, `N8N_API_KEY`, and each `N8N_WORKFLOW_ID_*` for workflows you push (see per-workflow `SPEC.technical.md` / `README.md` for reference ids).
+3. **CI / pipelines:** do not commit `.env`; inject the **same variable names** as protected secrets in your runner.
+
+Per-workflow [`config.env.example`](../workflows/wf02-document-validation/config.env.example) files document **execution-time** values inside n8n (webhook URLs, space names, etc.). They are **not** a substitute for `N8N_API_KEY`.
 
 ## Cursor and MCP (recommended)
 
@@ -40,34 +55,37 @@ This section is the **recommended setup for [Cursor](https://cursor.com/)** in t
 
 **Why two MCP servers**
 
-| Server (name in config) | Role in this project |
-| ---------------------- | -------------------- |
-| `n8n-mcp` | n8n Workflow SDK validation and workflow create/update (see [Policy (normative)](#policy-normative)); depends on your **n8n Cloud tenant**. |
-| `eXo MCP` | eXo platform tools used by the workflows; depends on your **eXo / tenant** MCP base URL. |
+
+| Server (name in config) | Role in this project                                                                                                                        |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `n8n-mcp`               | n8n Workflow SDK validation and workflow create/update (see [Policy (normative)](#policy-normative)); depends on your **n8n Cloud tenant**. |
+| `eXo MCP`               | eXo platform tools used by the workflows; depends on your **eXo / tenant** MCP base URL.                                                    |
+
 
 **Setup (forks and new machines)**
 
-1. Copy the committed example: **`.cursor/mcp.json.example`** → **`.cursor/mcp.json`** in your clone (the real file is git-ignored; never add an exception for it).
+1. Copy the committed example: `**.cursor/mcp.json.example`** → `**.cursor/mcp.json`** in your clone (the real file is git-ignored; never add an exception for it).
 2. Replace the placeholders in `.cursor/mcp.json`:
 
-| Placeholder | Replace with |
-|-------------|----------------|
-| `YOUR_N8N_TENANT_SUBDOMAIN` | Your n8n Cloud **tenant** subdomain (the part before `.app.n8n.cloud` in the URL). **Not** a workflow name. |
-| `YOUR_N8N_MCP_BEARER_TOKEN` | Bearer token issued for MCP access to that n8n instance (from n8n; rotate if leaked). |
-| `YOUR_EXO_MCP_HOST` | Hostname for your eXo MCP server (and path as deployed; the example path `/mcp-server/mcp` matches a common eXo MCP URL shape — align to your environment). |
 
-3. Restart Cursor (or reload MCP) so the servers connect.
-4. **Do not** commit `.cursor/mcp.json`, bearer tokens, or production hostnames. Only the committed [`.cursor/mcp.json.example`](../.cursor/mcp.json.example) (placeholders) should be in git.
+| Placeholder                 | Replace with                                                                                                                                                |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `YOUR_N8N_TENANT_SUBDOMAIN` | Your n8n Cloud **tenant** subdomain (the part before `.app.n8n.cloud` in the URL). **Not** a workflow name.                                                 |
+| `YOUR_N8N_MCP_BEARER_TOKEN` | Bearer token issued for MCP access to that n8n instance (from n8n; rotate if leaked).                                                                       |
+| `YOUR_EXO_MCP_HOST`         | Hostname for your eXo MCP server (and path as deployed; the example path `/mcp-server/mcp` matches a common eXo MCP URL shape — align to your environment). |
 
-**Related:** project runbook in [`.cursor/skills/n8n-workflow-deploy-gate/SKILL.md`](../.cursor/skills/n8n-workflow-deploy-gate/SKILL.md) (deploy/validation sequence).
+
+1. Restart Cursor (or reload MCP) so the servers connect.
+2. **Do not** commit `.cursor/mcp.json`, bearer tokens, or production hostnames. Only the committed `[.cursor/mcp.json.example](../.cursor/mcp.json.example)` (placeholders) should be in git.
+
+**Related:** project runbook in `[.cursor/skills/n8n-workflow-deploy-gate/SKILL.md](../.cursor/skills/n8n-workflow-deploy-gate/SKILL.md)` (deploy/validation sequence).
 
 ## Workflow lifecycle (expected)
 
 1. **Edit** the canonical JSON in the repo: `workflows/wf0X-.../workflow.json`.
 2. **Validate locally** (mandatory before publish; see [WORKFLOW.md — Deployment validation policy](WORKFLOW.md#deployment-validation-policy)) with `npm run validate:workflows`, `npm run validate:workflow -- <path>`, or `./tools/validate-workflow.sh wf0X` (see [Convenience shell](#convenience-shell)). Optionally emit an MCP-ready SDK file: `node tools/validate-workflow-json.mjs <path> --emit-sdk work/<name>.mjs` or `./tools/validate-workflow.sh wf01 --emit-sdk` (ignored by git). When deploying that SDK via MCP, run `validate_workflow` on the same `code` before `update_workflow` / `create_workflow_from_code` (recommended second gate).
-3. **Deploy** to n8n: import JSON (UI or REST API), or use MCP `update_workflow` / `create_workflow_from_code` with validated SDK `code` if you generated it in step 2.
+3. **Deploy** to n8n: **(a)** `./deploy.sh wf0X` (or `unwrap`) / `npm run deploy:workflow -- …` to `PUT` via the REST API (see [REST deploy to n8n](#rest-deploy-to-n8n)), **(b)** manual UI import, or **(c)** MCP `update_workflow` / `create_workflow_from_code` with validated SDK `code` if you generated it in step 2.
 4. **Run** on the instance and **inspect executions** in n8n for debugging.
-5. Optional: push a known workflow back from local file via the API (WF04) using [wf04-push-to-n8n-api.mjs](../tools/wf04-push-to-n8n-api.mjs) when you need a quick sync without using MCP for that step.
 
 ## Useful scripts
 
@@ -123,12 +141,22 @@ python3 tools/patch_wf03_english.py
 
 (The script also refreshes the **Build Report Context** English literals and should be re-run when those nodes change in isolation.)
 
-WF04 only — push canonical JSON to a remote n8n instance (requires API key):
+### REST deploy to n8n
 
-- Script: [tools/wf04-push-to-n8n-api.mjs](../tools/wf04-push-to-n8n-api.mjs)
-- Environment: `N8N_BASE_URL`, `N8N_API_KEY`
-- Source file: [workflows/wf04-document-enrichment-ai/workflow.json](../workflows/wf04-document-enrichment-ai/workflow.json)
-- Target workflow id (built into script): `aze2wAktXHYrTBTr`
+Implementation: [tools/push-workflow-to-n8n-api.mjs](../tools/push-workflow-to-n8n-api.mjs). Short wrapper at the repo root: [deploy.sh](../deploy.sh). Same portfolio ids as [validate-workflow.sh](../tools/validate-workflow.sh) (`wf01` … `wf04`, `unwrap`).
+
+```bash
+./deploy.sh wf04
+./deploy.sh wf04 --dry-run
+./deploy.sh wf01 --skip-validate
+# equivalent:
+npm run deploy:workflow -- wf04
+```
+
+- Loads [`.env`](../.env.example) from the **repository root** (see [Root `.env` for repository tooling](#root-env-for-repository-tooling)).
+- By default runs local `validateWorkflow` on the target `workflow.json` before `PUT`. Use `--skip-validate` only with care.
+- `--dry-run` prints the target URL and exits without calling n8n.
+- The script sends a **schema-safe** subset of the export (n8n rejects extra top-level fields, `id` and `tags` in the body, and some `settings` keys such as `availableInMCP` / `binaryMode`). After a push, confirm **Available in MCP** and other UI-only options in n8n if your workflow relied on them.
 
 ## Configuration
 

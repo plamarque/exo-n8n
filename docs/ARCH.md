@@ -10,14 +10,14 @@ There is no observed application package manifest at the repository root. The ex
 
 - `workflows/`: one folder per portfolio workflow (WF01–WF04) plus `shared/subworkflows/` for reusable pieces (for example [unwrap MCP JSON](../workflows/shared/subworkflows/unwrap-mcp-json/)).
 - `workflows/*/` layout: `workflow.json` (canonical), `README.md`, `SPEC.functional.md`, `SPEC.technical.md` (or split technical docs for WF03), `config.env.example`, optional `fixtures/`.
-- `tools/`: minimal maintenance scripts (inventory of Code nodes, optional WF04 push to n8n API). See [DEVELOPMENT.md](DEVELOPMENT.md).
+- `tools/`: minimal maintenance scripts (inventory of Code nodes, optional REST push of canonical `workflow.json` to n8n via [push-workflow-to-n8n-api.mjs](../tools/push-workflow-to-n8n-api.mjs)). See [DEVELOPMENT.md](DEVELOPMENT.md).
 - `docs/`: normative and tracking documentation, [audit](audit-code-vs-native.md), and generated [inventory](inventory-code-nodes.json).
 - `docs/ADR/`: architecture decision records, including [0002](ADR/0002-repository-layout-workflows.md) (layout and canonical JSON policy).
 
 ## External Systems
 
 - **eXo (demo MCP)**: project exploration and tool contracts were validated against a demo server; a current reference base URL is `https://exo-mips-ft.meeds.io/mcp-server/mcp` (always align credentials and `EXO_MCP_ENDPOINT` in n8n to the target tenant).
-- **n8n**: workflows are edited and executed in n8n; this repository holds JSON exports. The Cursor environment can use the **n8n MCP** to validate, create/update workflows, and inspect executions. **Normative gates before publish** (mandatory local `validateWorkflow` on `workflow.json`; recommended MCP `validate_workflow` when publishing SDK `code` via MCP) are defined in [WORKFLOW.md](WORKFLOW.md#deployment-validation-policy). Optional Cursor MCP connection uses [`.cursor/mcp.json.example`](../.cursor/mcp.json.example) (copy locally; see [DEVELOPMENT.md](DEVELOPMENT.md#cursor-and-mcp-recommended)); real `mcp.json` is not committed.
+- **n8n**: workflows are edited and executed in n8n; this repository holds JSON exports. **Publish paths:** (1) REST `PUT` of canonical `workflow.json` via [push-workflow-to-n8n-api.mjs](../tools/push-workflow-to-n8n-api.mjs) and root `.env` credentials; (2) **n8n MCP** in Cursor to validate, create/update workflows, and inspect executions. **Normative gates before publish** (mandatory local `validateWorkflow` on `workflow.json`; recommended MCP `validate_workflow` when publishing SDK `code` via MCP) are defined in [WORKFLOW.md](WORKFLOW.md#deployment-validation-policy). Optional Cursor MCP connection uses [`.cursor/mcp.json.example`](../.cursor/mcp.json.example) (copy locally; see [DEVELOPMENT.md](DEVELOPMENT.md#cursor-and-mcp-recommended)); real `mcp.json` is not committed.
 
 ## High-Level Components
 

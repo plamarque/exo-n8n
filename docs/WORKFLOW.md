@@ -14,7 +14,7 @@ This document defines how project documentation is maintained. It is normative f
 - `docs/PLAN.md`: delivery tracking only.
 - `docs/ISSUES.md`: known bugs, limitations, inconsistencies, and deferred work.
 - `docs/DEVELOPMENT.md`: local setup, tooling, validation, and operational notes (including **Cursor and MCP (recommended)** for optional IDE MCP config).
-- `.cursor/skills/n8n-workflow-deploy-gate/SKILL.md`: project **Cursor skill** (agent runbook: local validate, optional `--emit-sdk`, then n8n MCP `validate_workflow` / `update_workflow`); normative policy remains in this file’s *Deployment validation policy*.
+- `.cursor/skills/n8n-workflow-deploy-gate/SKILL.md`: project **Cursor skill** (agent runbook: local validate, optional `--emit-sdk`, REST JSON deploy via [push-workflow-to-n8n-api.mjs](../tools/push-workflow-to-n8n-api.mjs), or n8n MCP `validate_workflow` / `update_workflow`); normative policy remains in this file’s *Deployment validation policy*.
 - [`.cursor/mcp.json.example`](../.cursor/mcp.json.example): committed **placeholder-only** template for the two MCP servers (n8n + eXo); the real [`.cursor/mcp.json`](../.cursor/mcp.json) (secrets) is git-ignored and not in the repository.
 
 Per-workflow documentation lives under `workflows/wf0X-*/` (`SPEC.*.md`, `README.md`). It should not contradict the normative governance docs.
@@ -31,7 +31,7 @@ Normative for contributors and AI agents whenever portfolio workflows are change
 
 2. **Recommended — MCP `validate_workflow`:** When publishing **through MCP** using **SDK `code`** (for example output from `--emit-sdk`), also run MCP **`validate_workflow`** on the **exact same `code`** you pass to `update_workflow` / `create_workflow_from_code`. This is a second line of defense when SDK or node-type versions may differ between the workspace and the MCP host, or when the `code` was not produced by the standard local path.
 
-3. **JSON-only publish:** Importing **`workflow.json`** via the n8n UI or REST API does **not** go through MCP `validate_workflow`; gate (1) remains mandatory. MCP codegen is optional for that path.
+3. **JSON-only publish:** Importing **`workflow.json`** via the n8n UI or REST API does **not** go through MCP `validate_workflow`; gate (1) remains mandatory. MCP codegen is optional for that path. For automated JSON-only publish from this repository, use [tools/push-workflow-to-n8n-api.mjs](../tools/push-workflow-to-n8n-api.mjs) (`npm run deploy:workflow`), which runs local validation before `PUT` unless explicitly skipped.
 
 4. **Runtime:** Passing local or MCP structural validation does **not** replace execution checks on the target instance (credentials, quotas, eXo responses).
 
