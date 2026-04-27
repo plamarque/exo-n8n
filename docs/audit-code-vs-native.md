@@ -1,6 +1,6 @@
 # Audit: custom **Code** vs native n8n patterns
 
-This document records the analysis for the repository workflows: quantitative inventory, intent taxonomy, replacement matrix, WF04 export status, and a pilot refactor plan (**WF01**: [workflow.json](../workflows/wf01-email-to-task/workflow.json)).
+This document records the analysis for the repository workflows: quantitative inventory, intent taxonomy, replacement matrix, WF04 export status, and a pilot refactor plan (**WF01**: [workflow.json](../workflows/wf01-email-dispatch/workflow.json)).
 
 ## 1. Executive summary
 
@@ -19,7 +19,7 @@ Generated from [inventory-code-nodes.json](inventory-code-nodes.json) (script [i
 | Approx. sum of `jsCode` lines | 551 |
 | Total `jsCode` characters | ≈27k |
 
-**WF04 (current)** — versioned exports under [workflow.json](../workflows/wf04-document-enrichment-ai/workflow.json) (canonical) and [workflow.export.snapshot.json](../workflows/wf04-document-enrichment-ai/fixtures/workflow.export.snapshot.json). The workflow was reduced to **one** remaining Code node (`Prepare Category Assignments`).
+**WF04 (current)** — versioned exports under [workflow.json](../workflows/wf04-metadata-enrichment/workflow.json) (canonical) and [workflow.export.snapshot.json](../workflows/wf04-metadata-enrichment/fixtures/workflow.export.snapshot.json). The workflow was reduced to **one** remaining Code node (`Prepare Category Assignments`).
 
 ### Regenerate the inventory
 
@@ -70,7 +70,7 @@ Workflow id: `aze2wAktXHYrTBTr` (n8n cloud), synced with `get_workflow_details`.
 
 **Priority** legend: P1 = quick win / high duplication; P3 = acceptable residue or should be modularized.
 
-### WF01 — [workflow.json](../workflows/wf01-email-to-task/workflow.json)
+### WF01 — [workflow.json](../workflows/wf01-email-dispatch/workflow.json)
 
 | Node | LOC | Main intent | Native / architecture | Priority |
 | ---- | --- | ----------- | ---------------------- | -------- |
@@ -87,7 +87,7 @@ Workflow id: `aze2wAktXHYrTBTr` (n8n cloud), synced with `get_workflow_details`.
 | Parse Approval | 10 | Map from webhook | **Set** from `$json.body` / `query` + **IF** validation | P1 |
 | Update Approval State | 12 | State merge + join | **Data Table** or minimal Code for join math | P2 |
 
-### WF03 — [workflow.json](../workflows/wf03-weekly-copil/workflow.json) (see [api-response.snapshot.json](../workflows/wf03-weekly-copil/fixtures/api-response.snapshot.json))
+### WF03 — [workflow.json](../workflows/wf03-weekly-steering/workflow.json) (see [api-response.snapshot.json](../workflows/wf03-weekly-steering/fixtures/api-response.snapshot.json))
 
 | Node | LOC | Main intent | Native / architecture | Priority |
 | ---- | --- | ----------- | ---------------------- | -------- |
@@ -97,7 +97,7 @@ Workflow id: `aze2wAktXHYrTBTr` (n8n cloud), synced with `get_workflow_details`.
 | Decide Note Upsert | 30 | Unwrap + pick existing | Unwrap + **IF** on title; **Set** `should_update_note` | P2 |
 | Prepare Agenda (×2) | 15 each | Unwrap + HTML string for agenda | One shared sub-workflow *post-save → agenda* | P1 |
 
-### WF04 — [workflow.json](../workflows/wf04-document-enrichment-ai/workflow.json)
+### WF04 — [workflow.json](../workflows/wf04-metadata-enrichment/workflow.json)
 
 | Node | LOC | Intent | Replacement | Priority |
 | ---- | --- | ------ | ----------- | -------- |
@@ -117,7 +117,7 @@ Workflow id: `aze2wAktXHYrTBTr` (n8n cloud), synced with `get_workflow_details`.
 
 ---
 
-## 6. Pilot: WF01 refactor (`workflows/wf01-email-to-task/workflow.json`)
+## 6. Pilot: WF01 refactor (`workflows/wf01-email-dispatch/workflow.json`)
 
 **Rationale** — “MCP-first” file, repeated parse blocks, no webhook state machine (unlike WF02).
 
@@ -162,8 +162,8 @@ flowchart TD
 | -------- | ---- |
 | Machine inventory | [inventory-code-nodes.json](inventory-code-nodes.json) |
 | Inventory script | [inventory-code-nodes.mjs](../tools/inventory-code-nodes.mjs) |
-| WF04 technical | [SPEC.technical.md](../workflows/wf04-document-enrichment-ai/SPEC.technical.md) |
-| WF04 functional | [SPEC.functional.md](../workflows/wf04-document-enrichment-ai/SPEC.functional.md) |
+| WF04 technical | [SPEC.technical.md](../workflows/wf04-metadata-enrichment/SPEC.technical.md) |
+| WF04 functional | [SPEC.functional.md](../workflows/wf04-metadata-enrichment/SPEC.functional.md) |
 
 ---
 

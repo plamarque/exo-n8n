@@ -1,4 +1,4 @@
-# Workflow 04 - eXo document enrichment with AI (reverse engineered)
+# Workflow 04 - Metadata enrichment
 
 ## Specifications
 

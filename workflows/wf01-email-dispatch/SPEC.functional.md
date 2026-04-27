@@ -1,4 +1,4 @@
-# Workflow 01 - Functional specification
+# Workflow 01 - Email dispatch (functional specification)
 
 > See `[SPEC.technical.md](SPEC.technical.md)` for the JSON artifact, n8n sequence, and MCP payloads. Portfolio summary: `[../../docs/SPEC.md](../../docs/SPEC.md)`.
 

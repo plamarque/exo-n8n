@@ -38,7 +38,7 @@ From the repository root, after `npm install`:
 
 ### 2a. REST: push canonical JSON (default for repo parity)
 
-1. Ensure `.env` at the repo root lists the correct `N8N_WORKFLOW_ID_WF…` for the portfolio id (see per-workflow `SPEC.technical.md` / `README.md`, e.g. [wf01 SPEC.technical.md](../../../workflows/wf01-email-to-task/SPEC.technical.md), [wf03 README.md](../../../workflows/wf03-weekly-copil/README.md), [wf04 SPEC.technical.md](../../../workflows/wf04-document-enrichment-ai/SPEC.technical.md); unwrap id in wf01 spec).
+1. Ensure `.env` at the repo root lists the correct `N8N_WORKFLOW_ID_WF…` for the portfolio id (see per-workflow `SPEC.technical.md` / `README.md`, e.g. [wf01 SPEC.technical.md](../../../workflows/wf01-email-dispatch/SPEC.technical.md), [wf03 README.md](../../../workflows/wf03-weekly-steering/README.md), [wf04 SPEC.technical.md](../../../workflows/wf04-metadata-enrichment/SPEC.technical.md); unwrap id in wf01 spec).
 2. Run `./deploy.sh wf0X` (runs local validation again before `PUT` by default). Use `--dry-run` to print the target URL without writing. Use `--skip-validate` only with care.
 
 MCP `validate_workflow` does **not** apply to this path.

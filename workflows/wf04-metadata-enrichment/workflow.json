@@ -1,5 +1,5 @@
 {
-  "name": "eXo Document Enrichment with AI",
+  "name": "WF04 - Metadata enrichment",
   "nodes": [
     {
       "id": "680684fc-47a7-4d46-bebf-f7ca97c732ca",
@@ -1531,5 +1531,5 @@
   "meta": {
     "aiBuilderAssisted": true
   },
-  "description": "Enriches eXo documents with AI while keeping custom JavaScript to a minimum."
+  "description": "Uses AI to enrich eXo document metadata (descriptions, suggested categories) while keeping custom JavaScript to a minimum."
 }

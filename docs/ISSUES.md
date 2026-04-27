@@ -20,7 +20,7 @@ This document is tracking-only. It does not define expected behavior.
 
 ### WF03
 
-- **WF03**: refactor Code → native nodes (HTML composition, config dates, report body) is still to do. Progress vs native patterns is described in [audit-code-vs-native.md](audit-code-vs-native.md). Operational entry point: [workflows/wf03-weekly-copil/README.md](../workflows/wf03-weekly-copil/README.md).
+- **WF03**: refactor Code → native nodes (HTML composition, config dates, report body) is still to do. Progress vs native patterns is described in [audit-code-vs-native.md](audit-code-vs-native.md). Operational entry point: [workflows/wf03-weekly-steering/README.md](../workflows/wf03-weekly-steering/README.md).
 - [UNCERTAIN] Activation status and latest successful execution evidence are not documented in the same style as WF01.
 
 ### WF04

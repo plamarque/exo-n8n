@@ -1,4 +1,4 @@
-# Workflow 04 - Technical specification
+# Workflow 04 - Metadata enrichment (technical specification)
 
 > Product context: [`SPEC.functional.md`](SPEC.functional.md). Server diff snapshot: [`fixtures/workflow.export.snapshot.json`](fixtures/workflow.export.snapshot.json).
 
@@ -78,7 +78,7 @@ The implementation is **MCP-first**; there is no REST fallback in the current ve
 
 ## 7) Exported artifacts
 
-- Canonical: `workflows/wf04-document-enrichment-ai/workflow.json`
+- Canonical: `workflows/wf04-metadata-enrichment/workflow.json`
 - Full server snapshot: `fixtures/workflow.export.snapshot.json`
 
 ## 8) Suggested follow-ups
@@ -90,4 +90,4 @@ The implementation is **MCP-first**; there is no REST fallback in the current ve
 
 ## 9) Status
 
-Reverse engineered from n8n workflow id `aze2wAktXHYrTBTr` (`eXo Document Enrichment with AI`) via MCP on 2026-04-22.
+Reverse engineered from n8n workflow id `aze2wAktXHYrTBTr` (historically titled `eXo Document Enrichment with AI`; repository canonical name `WF04 - Metadata enrichment`) via MCP on 2026-04-22.

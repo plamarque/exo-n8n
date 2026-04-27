@@ -1,6 +1,6 @@
-# Workflow 03 — Automated weekly steering committee preparation (COPIL)
+# Workflow 03 — Weekly steering preparation
 
-> Technical exploration: [SPEC.technical-exo-mips.md](SPEC.technical-exo-mips.md) (MIPS) and [SPEC.technical-mcp.md](SPEC.technical-mcp.md) (QAUI). Note model: [fixtures/copil-template-note.md](fixtures/copil-template-note.md). Portfolio: [`../../docs/SPEC.md`](../../docs/SPEC.md).
+> Technical exploration: [SPEC.technical-exo-mips.md](SPEC.technical-exo-mips.md) (MIPS) and [SPEC.technical-mcp.md](SPEC.technical-mcp.md) (QAUI). Note model: [fixtures/steering-template-note.md](fixtures/steering-template-note.md). Portfolio: [`../../docs/SPEC.md`](../../docs/SPEC.md).
 
 ## 1) Goal
 
@@ -112,7 +112,7 @@ Default: Thursday 10:00. The run should land **before** the slot so the pack is 
 ...
 ```
 
-(Exact headings in production follow `fixtures/copil-template-note.md` and the Code composer.)
+(Exact headings in production follow `fixtures/steering-template-note.md` and the Code composer.)
 
 ## 10) Acceptance (functional)
 

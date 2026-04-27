@@ -98,7 +98,7 @@ npm run validate:workflows
 Validates every `workflows/**/workflow.json` except under `fixtures/`, using `@n8n/workflow-sdk`’s `validateWorkflow`.
 
 ```bash
-npm run validate:workflow -- workflows/wf01-email-to-task/workflow.json
+npm run validate:workflow -- workflows/wf01-email-dispatch/workflow.json
 ```
 
 Single-file validation. Add `--emit-sdk work/wf01.generated.mjs` to write an SDK module (under `work/`, git-ignored) for MCP or experiments.
@@ -160,10 +160,10 @@ Example `config.env.example` files live **next to each workflow** (for example [
 
 ## Validation notes
 
-- **WF01**: import [workflows/wf01-email-to-task/workflow.json](../workflows/wf01-email-to-task/workflow.json); ensure shared [unwrap sub-workflow](../workflows/shared/subworkflows/unwrap-mcp-json/workflow.json); verify MCP eXo and OpenAI credentials; run `Manual Start`. See [wf01 README](../workflows/wf01-email-to-task/README.md).
+- **WF01**: import [workflows/wf01-email-dispatch/workflow.json](../workflows/wf01-email-dispatch/workflow.json); ensure shared [unwrap sub-workflow](../workflows/shared/subworkflows/unwrap-mcp-json/workflow.json); verify MCP eXo and OpenAI credentials; run `Manual Start`. See [wf01 README](../workflows/wf01-email-dispatch/README.md).
 - **WF02**: import [workflows/wf02-document-validation/workflow.json](../workflows/wf02-document-validation/workflow.json); set variables from [config.env.example](../workflows/wf02-document-validation/config.env.example); test webhook. See [wf02 README](../workflows/wf02-document-validation/README.md).
-- **WF03**: use [workflows/wf03-weekly-copil/README.md](../workflows/wf03-weekly-copil/README.md) and technical specs for IDs, notes, and agenda. Canonical JSON: [workflows/wf03-weekly-copil/workflow.json](../workflows/wf03-weekly-copil/workflow.json); raw API snapshot: [api-response.snapshot.json](../workflows/wf03-weekly-copil/fixtures/api-response.snapshot.json).
-- **WF04**: set `$vars.EXO_SPACE_NAME`; verify MCP OAuth, OpenAI, and Data Table; see [wf04 README](../workflows/wf04-document-enrichment-ai/README.md).
+- **WF03**: use [workflows/wf03-weekly-steering/README.md](../workflows/wf03-weekly-steering/README.md) and technical specs for IDs, notes, and agenda. Canonical JSON: [workflows/wf03-weekly-steering/workflow.json](../workflows/wf03-weekly-steering/workflow.json); raw API snapshot: [api-response.snapshot.json](../workflows/wf03-weekly-steering/fixtures/api-response.snapshot.json).
+- **WF04**: set `$vars.EXO_SPACE_NAME`; verify MCP OAuth, OpenAI, and Data Table; see [wf04 README](../workflows/wf04-metadata-enrichment/README.md).
 
 ## Operational safety
 

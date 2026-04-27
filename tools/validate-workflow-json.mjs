@@ -4,9 +4,9 @@
  * Source of truth remains workflow.json; this runs locally before API/UI import to n8n.
  *
  * Usage:
- *   node tools/validate-workflow-json.mjs workflows/wf01-email-to-task/workflow.json
+ *   node tools/validate-workflow-json.mjs workflows/wf01-email-dispatch/workflow.json
  *   node tools/validate-workflow-json.mjs --all
- *   node tools/validate-workflow-json.mjs workflows/wf01-email-to-task/workflow.json --emit-sdk work/wf01.generated.mjs
+ *   node tools/validate-workflow-json.mjs workflows/wf01-email-dispatch/workflow.json --emit-sdk work/wf01.generated.mjs
  */
 import fs from "fs";
 import path from "path";
@@ -173,7 +173,7 @@ function usage() {
   node tools/validate-workflow-json.mjs <path> --emit-sdk <output.mjs>
 
 Examples:
-  npm run validate:workflow -- workflows/wf01-email-to-task/workflow.json
+  npm run validate:workflow -- workflows/wf01-email-dispatch/workflow.json
   npm run validate:workflows
 `);
 }

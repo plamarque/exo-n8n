@@ -1,6 +1,6 @@
-# Workflow 03 - Weekly steering (COPIL) preparation
+# Workflow 03 - Weekly steering preparation
 
-**Terminology:** **COPIL** is French project shorthand for a **steering committee** (*comité de pilotage*). In English, *steering committee* (or *steering group*) is the clearest wording; *SteerCo* is informal jargon in some companies, not a universal acronym. This workflow’s export still uses `COPIL` in several node names to match the demo environment.
+**Terminology:** **COPIL** is French project shorthand for a **steering committee** (*comité de pilotage*). In English, *steering committee* (or *steering group*) is the clearest wording; *SteerCo* is informal jargon in some companies, not a universal acronym. This workflow’s export still uses `COPIL` in several **node names** to match the demo environment; the portfolio workflow title uses English *steering*.
 
 ## Files
 
@@ -11,12 +11,12 @@
 | [`SPEC.functional.md`](SPEC.functional.md) | Goals, rules, and acceptance criteria. |
 | [`SPEC.technical-exo-mips.md`](SPEC.technical-exo-mips.md) | eXo MIPS MCP contract (notes, projects, agenda, etc.). |
 | [`SPEC.technical-mcp.md`](SPEC.technical-mcp.md) | eXo QAUI MCP exploration (phase 1). |
-| [`fixtures/copil-template-note.md`](fixtures/copil-template-note.md) | Note template (editorial reference). |
+| [`fixtures/steering-template-note.md`](fixtures/steering-template-note.md) | Note template (editorial reference). |
 | [`config.env.example`](config.env.example) | Example n8n variables. |
 
 ## Identifiers (from spec)
 
-- n8n workflow: `1suyxKutB174p7b4` (name on the instance: `WF03 - Weekly COPIL preparation`).
+- n8n workflow: `1suyxKutB174p7b4` (name on the instance: `WF03 - Weekly steering preparation`).
 
 ## Code vs native audit
 

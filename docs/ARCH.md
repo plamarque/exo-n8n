@@ -46,7 +46,7 @@ AI nodes are used for:
 
 - WF01 email routing/classification.
 - WF03 steering committee (COPIL) signal analysis and agenda suggestions.
-- WF04 document description and category suggestions.
+- WF04 document metadata (descriptions and category suggestions).
 
 Structured output parsers are used where downstream workflow logic depends on fixed fields.
 

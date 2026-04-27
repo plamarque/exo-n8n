@@ -6,8 +6,8 @@
 
 ## n8n artifact (repository)
 
-- Canonical export: `workflows/wf03-weekly-copil/workflow.json`.
-- Remote n8n workflow id on the reference instance: `1suyxKutB174p7b4` (same as [README.md](README.md); name on instance: `WF03 - Weekly COPIL preparation`).
+- Canonical export: `workflows/wf03-weekly-steering/workflow.json`.
+- Remote n8n workflow id on the reference instance: `1suyxKutB174p7b4` (same as [README.md](README.md); name on instance: `WF03 - Weekly steering preparation`).
 
 ## 1) Purpose
 
@@ -26,12 +26,12 @@ After a dataset reset, a minimal set was re-created. **Current stable references
 - `project_id=3` — `Festival Art2Rue` (task board for the report)  
 - `template_note_id=25` — steering committee note template (HTML; labeled COPIL in the demo)  
 - `reports_parent_note_id=6` — parent note that holds weekly reports  
-- `agenda_parent_event_id=13` — standing agenda anchor (UI title may still show `Weekly COPIL`)  
+- `agenda_parent_event_id=13` — standing agenda anchor (UI title may still show a legacy *Weekly COPIL* label on older tenants)  
 - `task` samples exist for `list_tasks` and comment threads.
 
 ### 2.1 Template `25` validation (MIPS)
 
-- `get_note` / `get_space_note_tree` show template `25` with headings matching `fixtures/copil-template-note.md` (or the HTML the workflow strips).  
+- `get_note` / `get_space_note_tree` show template `25` with headings matching `fixtures/steering-template-note.md` (or the HTML the workflow strips).  
 - `child_notes` under the reports parent are consistent with a weekly **child** per meeting.
 
 ## 3) MCP response envelope (critical for n8n)

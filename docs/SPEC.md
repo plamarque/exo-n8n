@@ -6,26 +6,26 @@ This repository documents and stores n8n workflows that automate eXo platform sc
 
 The observable portfolio covers four workflow families:
 
-1. Email intake to eXo task creation.
+1. Email intake and dispatch to eXo tasks.
 2. Document validation with two parallel approvals.
 3. Weekly steering committee preparation.
-4. AI-assisted eXo document enrichment.
+4. AI-assisted eXo document metadata enrichment.
 
 ## Per-Workflow Artifacts and Specs (source map)
 
 
 | Workflow | Directory                                                                                           | Key docs                                                                                                                                                                                                                                                                               |
 | -------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| WF01     | [workflows/wf01-email-to-task/](../workflows/wf01-email-to-task/)                                   | [SPEC.functional.md](../workflows/wf01-email-to-task/SPEC.functional.md), [SPEC.technical.md](../workflows/wf01-email-to-task/SPEC.technical.md), [workflow.json](../workflows/wf01-email-to-task/workflow.json)                                                                       |
+| WF01     | [workflows/wf01-email-dispatch/](../workflows/wf01-email-dispatch/)                                   | [SPEC.functional.md](../workflows/wf01-email-dispatch/SPEC.functional.md), [SPEC.technical.md](../workflows/wf01-email-dispatch/SPEC.technical.md), [workflow.json](../workflows/wf01-email-dispatch/workflow.json)                                                                       |
 | WF02     | [workflows/wf02-document-validation/](../workflows/wf02-document-validation/)                       | [SPEC.functional.md](../workflows/wf02-document-validation/SPEC.functional.md), [SPEC.technical.md](../workflows/wf02-document-validation/SPEC.technical.md), [workflow.json](../workflows/wf02-document-validation/workflow.json)                                                     |
-| WF03     | [workflows/wf03-weekly-copil/](../workflows/wf03-weekly-copil/)                                     | [SPEC.functional.md](../workflows/wf03-weekly-copil/SPEC.functional.md), [SPEC.technical-exo-mips.md](../workflows/wf03-weekly-copil/SPEC.technical-exo-mips.md), [README.md](../workflows/wf03-weekly-copil/README.md), [workflow.json](../workflows/wf03-weekly-copil/workflow.json) |
-| WF04     | [workflows/wf04-document-enrichment-ai/](../workflows/wf04-document-enrichment-ai/)                 | [SPEC.functional.md](../workflows/wf04-document-enrichment-ai/SPEC.functional.md), [SPEC.technical.md](../workflows/wf04-document-enrichment-ai/SPEC.technical.md), [workflow.json](../workflows/wf04-document-enrichment-ai/workflow.json)                                            |
+| WF03     | [workflows/wf03-weekly-steering/](../workflows/wf03-weekly-steering/)                                     | [SPEC.functional.md](../workflows/wf03-weekly-steering/SPEC.functional.md), [SPEC.technical-exo-mips.md](../workflows/wf03-weekly-steering/SPEC.technical-exo-mips.md), [README.md](../workflows/wf03-weekly-steering/README.md), [workflow.json](../workflows/wf03-weekly-steering/workflow.json) |
+| WF04     | [workflows/wf04-metadata-enrichment/](../workflows/wf04-metadata-enrichment/)                 | [SPEC.functional.md](../workflows/wf04-metadata-enrichment/SPEC.functional.md), [SPEC.technical.md](../workflows/wf04-metadata-enrichment/SPEC.technical.md), [workflow.json](../workflows/wf04-metadata-enrichment/workflow.json)                                            |
 | Shared   | [workflows/shared/subworkflows/unwrap-mcp-json/](../workflows/shared/subworkflows/unwrap-mcp-json/) | MCP unwrap sub-workflow used by WF01                                                                                                                                                                                                                                                   |
 
 
 ## Main Capabilities
 
-### WF01 - Email to Task
+### WF01 - Email dispatch
 
 The workflow reads incoming emails through eXo MCP, normalizes MCP responses, classifies emails with AI, and creates eXo tasks only for clearly actionable emails.
 
@@ -53,21 +53,21 @@ Observable rules:
 - Rejections keep or return the item to an in-progress state and produce trace comments.
 - The implemented export includes webhook-based approval handling.
 
-### WF03 - Weekly steering committee preparation (COPIL)
+### WF03 - Weekly steering preparation
 
-The workflow prepares a weekly steering committee support package for the Festival Art2Rue project. **COPIL** is the French-style label used in fixtures and several n8n names; see [DOMAIN.md](DOMAIN.md) for the mapping to the English steering committee term.
+The workflow prepares a weekly steering committee support package for the Festival Art2Rue project. **COPIL** is the French-style label still used in several n8n **node names**; see [DOMAIN.md](DOMAIN.md) for the mapping to the English steering committee term.
 
 Observable intended behavior from specs and server export:
 
-- Create or update a weekly note from the steering committee (COPIL) template.
+- Create or update a weekly note from the steering committee template ([fixtures/steering-template-note.md](../workflows/wf03-weekly-steering/fixtures/steering-template-note.md)).
 - Insert a task-based progress report.
 - Generate AI suggestions for agenda and vigilance points.
 - Create or update a recurring agenda invitation that links to the note.
 - Use the reference project, note, and agenda IDs observed in the MIPS exploration material.
 
-Operational notes and file map: [workflows/wf03-weekly-copil/README.md](../workflows/wf03-weekly-copil/README.md). Remaining Code-node reduction work is tracked in [ISSUES.md](ISSUES.md).
+Operational notes and file map: [workflows/wf03-weekly-steering/README.md](../workflows/wf03-weekly-steering/README.md). Remaining Code-node reduction work is tracked in [ISSUES.md](ISSUES.md).
 
-### WF04 - AI Document Enrichment
+### WF04 - Metadata enrichment
 
 The workflow enriches eXo documents with AI-generated metadata and tracks processed documents to avoid unnecessary reprocessing.
 

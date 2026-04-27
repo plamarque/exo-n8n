@@ -1,4 +1,4 @@
-# Weekly COPIL note template
+# Weekly steering note template
 
 > This file is a reference note model for workflow 03.
 > The workflow should duplicate this structure weekly, rename the note for the target date, auto-insert the progress report in the reserved section, and propose an AI-suggested agenda.
@@ -8,9 +8,9 @@
 > - generated notes are child notes of `6`
 > - the progress report must reflect global project state for project `3`
 > - standing invitees: `claire`, `etienne`, `louis`, `nadia`, `antoine`, `emma`
-> - recurring COPIL slot: every Thursday at `10:00`
+> - recurring steering slot: every Thursday at `10:00`
 
-# COPIL Project - [[MEETING_DATE]]
+# Steering meeting - [[MEETING_DATE]]
 
 ## Meeting information
 - Date: [[MEETING_DATE]]
@@ -61,7 +61,7 @@
 [REPORT_AVANCEMENT_START]
 | Task | Owner | Status | Due | Priority | Blocker / comment |
 |---|---|---|---|---|---|
-| Example — weekly COPIL prep | Claire | In Progress | [[MEETING_DATE]] | High | Waiting for validation |
+| Example — weekly steering prep | Claire | In Progress | [[MEETING_DATE]] | High | Waiting for validation |
 | Example — planning update | Louis | To Do | [[MEETING_DATE_PLUS_2]] | Normal | None |
 [REPORT_AVANCEMENT_END]
 
@@ -109,7 +109,7 @@
 ## Annexes
 ### Useful links
 [ANNEXES_LIENS_START]
-<!-- Workflow inserts project + COPIL agenda links here -->
+<!-- Workflow inserts project + steering agenda links here -->
 [ANNEXES_LIENS_END]
 - Reference documents:
   - 

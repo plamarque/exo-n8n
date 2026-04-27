@@ -1,4 +1,4 @@
-# Workflow 04 - Functional specification
+# Workflow 04 - Metadata enrichment (functional specification)
 
 > n8n/MCP details: [`SPEC.technical.md`](SPEC.technical.md). Artifact: [`workflow.json`](workflow.json).
 

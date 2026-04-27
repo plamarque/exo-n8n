@@ -1,9 +1,7 @@
 {
-  "source": "user-n8n-mcp.get_workflow_details",
-  "exportedAt": "2026-04-25T16:29:58.959Z",
   "workflow": {
     "id": "aze2wAktXHYrTBTr",
-    "name": "eXo Document Enrichment with AI",
+    "name": "WF04 - Metadata enrichment",
     "active": false,
     "isArchived": false,
     "versionId": "d0261770-8d06-4c53-abc7-5f06706cd6b1",

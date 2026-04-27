@@ -55,10 +55,10 @@ Normative for contributors and AI agents whenever portfolio workflows are change
 ## Current Source Map
 
 - Portfolio overview and links: [SPEC.md](SPEC.md).
-- WF01: [workflows/wf01-email-to-task/](../workflows/wf01-email-to-task/).
+- WF01: [workflows/wf01-email-dispatch/](../workflows/wf01-email-dispatch/).
 - WF02: [workflows/wf02-document-validation/](../workflows/wf02-document-validation/).
-- WF03: [workflows/wf03-weekly-copil/](../workflows/wf03-weekly-copil/) (includes `SPEC.technical-exo-mips.md`, `SPEC.technical-mcp.md`, `fixtures/copil-template-note.md`).
-- WF04: [workflows/wf04-document-enrichment-ai/](../workflows/wf04-document-enrichment-ai/).
+- WF03: [workflows/wf03-weekly-steering/](../workflows/wf03-weekly-steering/) (includes `SPEC.technical-exo-mips.md`, `SPEC.technical-mcp.md`, `fixtures/steering-template-note.md`).
+- WF04: [workflows/wf04-metadata-enrichment/](../workflows/wf04-metadata-enrichment/).
 - Shared: [workflows/shared/subworkflows/unwrap-mcp-json/](../workflows/shared/subworkflows/unwrap-mcp-json/).
 - Audit: [audit-code-vs-native.md](audit-code-vs-native.md); generated Code-node inventory: [inventory-code-nodes.json](inventory-code-nodes.json).
 - Tooling: [tools/](../tools/) (see [DEVELOPMENT.md](DEVELOPMENT.md)).

@@ -1,11 +1,11 @@
-# Workflow 01 - Technical specification
+# Workflow 01 - Email dispatch (technical specification)
 
 > See `[SPEC.functional.md](SPEC.functional.md)` for product context and rules. n8n artifact: `[workflow.json](workflow.json)` ; shared sub-workflow: `[../shared/subworkflows/unwrap-mcp-json/](../shared/subworkflows/unwrap-mcp-json/)`.
 
 ## 1) Reference artifacts
 
-- Final workflow (repo): `workflows/wf01-email-to-task/workflow.json`.
-- Remote n8n workflow: `zeVd0scWqU5vcOUq` (`WF01 - Email to Task (SDK)`).
+- Final workflow (repo): `workflows/wf01-email-dispatch/workflow.json`.
+- Remote n8n workflow: `zeVd0scWqU5vcOUq` (`WF01 - Email dispatch`).
 - Utility sub-workflow: `UTIL - Unwrap MCP JSON` (`E4OAThogWRG93MUG`).
 - Local sub-workflow: `workflows/shared/subworkflows/unwrap-mcp-json/workflow.json`.
 
