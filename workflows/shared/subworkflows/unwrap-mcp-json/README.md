@@ -1,6 +1,6 @@
 # UTIL - Unwrap MCP JSON (sub-workflow)
 
-Decodes eXo MCP responses (often wrapped) into JSON usable by downstream n8n nodes.
+Decodes eXo MCP responses (often wrapped) into JSON usable by downstream n8n nodes. The Code step unwraps common LangChain shapes: single `output`, `content[]` text blocks (last parseable JSON wins), fenced ```json strings, and string fields `response` / `result` / `text`.
 
 ## Files
 
