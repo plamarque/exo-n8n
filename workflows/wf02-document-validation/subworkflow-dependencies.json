@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "dependencies": [
+    {
+      "path": "../shared/subworkflows/unwrap-mcp-json/workflow.json",
+      "remoteIdEnv": "N8N_WORKFLOW_ID_UNWRAP",
+      "parentExecuteWorkflowNodeNames": [
+        "Unwrap MCP Search Folder Docs",
+        "Unwrap MCP Get Document",
+        "Unwrap MCP Create Task"
+      ]
+    }
+  ]
+}

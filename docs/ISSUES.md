@@ -12,11 +12,11 @@ This document is tracking-only. It does not define expected behavior.
 
 ### WF02
 
-- [UNCERTAIN] Remote n8n workflow id for WF02 is not recorded in repository evidence; set `N8N_WORKFLOW_ID_WF02` in the repository root `.env` after confirming the live id on your tenant (see [SPEC.technical.md](../workflows/wf02-document-validation/SPEC.technical.md)).
-- Latest README status says a re-import/update and manual rerun are needed after correcting `getWorkflowStaticData` to `$getWorkflowStaticData`.
+- Remote n8n workflow id for WF02 is pinned in the repository root `.env` as `N8N_WORKFLOW_ID_WF02`; the repository deploys it via `./deploy.sh wf02` with the new [subworkflow-dependencies.json](../workflows/wf02-document-validation/subworkflow-dependencies.json) (auto-deploys the shared unwrap sub-workflow first and injects its remote id into the three `Unwrap MCP …` Execute Workflow nodes).
 - **Breaking change (repo anglicization):** approval query params and state keys are now `role=artistic|technical` with decisions `PENDING|APPROVED|REJECTED` (replaces French `artistique` / `technique` and `EN_ATTENTE` / `APPROUVE`). Update any saved approval URLs or tests.
 - The workflow uses static/demo actor mappings (`nadia`, `etienne`, fallback `claire`).
-- [UNCERTAIN] The persistence mechanism for approval state should be reviewed before production use; the audit recommends Data Table-based state for better visibility.
+- **Resolved (2026-04-27):** approval state and intake idempotency now persist in two n8n Data Tables (`wf02_approvals`, `wf02_processed_documents`) instead of `$getWorkflowStaticData`; the workflow self-bootstraps via `Ensure Tracking Table` / `Ensure Approvals Table`. See [SPEC.technical.md](../workflows/wf02-document-validation/SPEC.technical.md) section 12.5 and [audit-code-vs-native.md](audit-code-vs-native.md). New tenant prerequisite: the n8n Data Tables feature must be enabled (already required by WF04).
+- Production hardening still open: short-lived signed approval tokens, strict role checks, idempotent re-stamp protection, and dynamic `status_id` resolution via `list_project_statuses`.
 
 ### WF03
 

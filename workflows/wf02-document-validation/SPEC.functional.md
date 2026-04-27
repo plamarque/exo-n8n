@@ -34,7 +34,7 @@ Document scope (reference):
 
 - Space: `Festival Art de Rue`
 - Watched folder: `/Documents/Festivak_Art2Rue_2026/00_Programmation`
-- `parent_folder_id`: `b468cb5639805e11480baa56164da90c`
+- `parent_folder_id` on **exo-mips-ft**: `ced6e9c539805e114bd65696b26bd073` (legacy exo-qaui id was `b468cb5639805e11480baa56164da90c`; override with n8n variable `WF02_PARENT_FOLDER_ID` if your tree differs)
 
 Expected content on the task:
 
@@ -101,7 +101,7 @@ On rejection:
 - eXo project: `Programmation Festival` — `project_id` for tasks: `117`
 - Document space: `Festival Art de Rue`
 - Path: `/Documents/Festivak_Art2Rue_2026/00_Programmation`
-- `parent_folder_id`: `b468cb5639805e11480baa56164da90c`
+- `parent_folder_id` on **exo-mips-ft**: `ced6e9c539805e114bd65696b26bd073` (legacy exo-qaui id was `b468cb5639805e11480baa56164da90c`; override with n8n variable `WF02_PARENT_FOLDER_ID` if your tree differs)
 
 ### 9.2 Actors (demo)
 
@@ -111,9 +111,15 @@ On rejection:
 
 ### 9.3 Example trigger files
 
+Three sample Word documents are kept under [fixtures/](fixtures/) for **manual integration testing**:
+
 1. `Parade_Nocturne_Place_Centrale.docx`
 2. `Deambulation_Jeune_Public_Quartier_Nord.docx`
 3. `Performance_Feu_et_Lumiere_Esplanade.docx`
+
+**How to use them:** upload (or copy) these files into the eXo folder **`00_Programmation`** — the path `/Documents/Festivak_Art2Rue_2026/00_Programmation` on **exo-mips-ft**, whose `parent_folder_id` is the default in the n8n workflow (`ced6e9c539805e114bd65696b26bd073`, overridable via `WF02_PARENT_FOLDER_ID`). Then run WF02 intake (manual trigger or schedule). The workflow’s `search_documents` call targets that folder id; an empty folder yields no downstream items (no error).
+
+See [README.md](README.md) (*Testing with sample documents*) for the same pointer in operational form.
 
 ### 9.4 Task title examples
 

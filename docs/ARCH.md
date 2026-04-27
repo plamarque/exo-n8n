@@ -55,7 +55,7 @@ Structured output parsers are used where downstream workflow logic depends on fi
 Observed persistence patterns:
 
 - WF04 uses n8n Data Table `exo_processed_documents` for incremental document processing.
-- WF02 uses workflow/static state patterns in Code nodes for approval state in the observed JSON export.
+- WF02 (refactored 2026-04-27) uses two n8n Data Tables — `wf02_processed_documents` for intake idempotency (parity with WF04) and `wf02_approvals` for split/join approval state, replacing the previous `$getWorkflowStaticData` map. Both tables are self-bootstrapped at the top of the intake branch via `Ensure Tracking Table` / `Ensure Approvals Table` (`createIfNotExists`, `onError: continueRegularOutput`).
 - WF01 persistent email idempotence is identified as missing.
 
 ## Integration Pattern

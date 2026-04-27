@@ -37,16 +37,106 @@
       }
     },
     {
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00001",
+      "name": "Ensure Tracking Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        400,
+        200
+      ],
+      "parameters": {
+        "resource": "table",
+        "operation": "create",
+        "tableName": "wf02_processed_documents",
+        "columns": {
+          "column": [
+            {
+              "name": "documentId"
+            },
+            {
+              "name": "lastProcessedDate",
+              "type": "date"
+            },
+            {
+              "name": "cycleId"
+            }
+          ]
+        },
+        "options": {
+          "createIfNotExists": true
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00002",
+      "name": "Ensure Approvals Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        580,
+        200
+      ],
+      "parameters": {
+        "resource": "table",
+        "operation": "create",
+        "tableName": "wf02_approvals",
+        "columns": {
+          "column": [
+            {
+              "name": "cycleKey"
+            },
+            {
+              "name": "task_id",
+              "type": "number"
+            },
+            {
+              "name": "cycle_id"
+            },
+            {
+              "name": "document_id"
+            },
+            {
+              "name": "author_username"
+            },
+            {
+              "name": "artistic_decision"
+            },
+            {
+              "name": "artistic_reason"
+            },
+            {
+              "name": "artistic_at"
+            },
+            {
+              "name": "technical_decision"
+            },
+            {
+              "name": "technical_reason"
+            },
+            {
+              "name": "technical_at"
+            }
+          ]
+        },
+        "options": {
+          "createIfNotExists": true
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
       "id": "9d6d0ca6-a0de-46f3-bbfa-3565e44f10d0",
       "name": "MCP Search Folder Docs",
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        480,
+        760,
         200
       ],
       "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo-mips-ft.meeds.io/mcp-server/mcp\"}}",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -54,24 +144,159 @@
           "value": "search_documents"
         },
         "inputMode": "json",
-        "jsonInput": "={{ { query: \"\", parent_folder_id: ($vars.WF02_PARENT_FOLDER_ID || \"b468cb5639805e11480baa56164da90c\"), limit: 100, offset: 0 } }}",
+        "jsonInput": "={{ { query: \"\", parent_folder_id: (($vars.WF02_PARENT_FOLDER_ID && String($vars.WF02_PARENT_FOLDER_ID).trim()) || \"ced6e9c539805e114bd65696b26bd073\"), limit: 100, offset: 0 } }}",
         "options": {
           "timeout": 60000
         }
       }
     },
     {
-      "id": "251c94a2-f04d-4f66-98ab-ff1deb110e81",
-      "name": "Parse + Deduplicate Docs",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00003",
+      "name": "Unwrap MCP Search Folder Docs",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
       "position": [
-        740,
+        940,
         200
       ],
       "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const seen = $getWorkflowStaticData('global');\nif (!Array.isArray(seen.wf02ProcessedDocKeys)) seen.wf02ProcessedDocKeys = [];\n\nconst first = $input.first().json;\nlet payload = first;\nif (first?.content?.[0]?.text !== undefined) payload = first.content[0].text;\nif (Array.isArray(payload) && payload[0]?.type === 'text' && typeof payload[0]?.text === 'string') payload = JSON.parse(payload[0].text);\nelse if (typeof payload === 'string') payload = JSON.parse(payload);\n\nconst docs = Array.isArray(payload) ? payload : (payload?.documents || []);\nconst out = [];\nfor (const doc of docs) {\n  const docId = String(doc.document_id || '').trim();\n  if (!docId) continue;\n  const key = docId + ':' + String(doc.updated_date || '');\n  if (seen.wf02ProcessedDocKeys.includes(key)) continue;\n  seen.wf02ProcessedDocKeys.push(key);\n  out.push({ json: { document_id: docId, cycle_id: key } });\n}\nif (seen.wf02ProcessedDocKeys.length > 5000) seen.wf02ProcessedDocKeys = seen.wf02ProcessedDocKeys.slice(-5000);\nreturn out;"
+        "workflowId": "E4OAThogWRG93MUG",
+        "options": {}
+      }
+    },
+    {
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00004",
+      "name": "Split Out Documents",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        200
+      ],
+      "parameters": {
+        "fieldToSplitOut": "payload.documents",
+        "options": {}
+      }
+    },
+    {
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00005",
+      "name": "Filter - Has document_id",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        1300,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "has_doc_id",
+              "leftValue": "={{ String($json.document_id || '') }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00006",
+      "name": "Normalize Docs",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1480,
+        200
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id",
+              "name": "id",
+              "value": "={{ String($json.document_id) }}",
+              "type": "string"
+            },
+            {
+              "id": "updatedDate",
+              "name": "updatedDate",
+              "value": "={{ String($json.updated_date || '') }}",
+              "type": "string"
+            },
+            {
+              "id": "name",
+              "name": "name",
+              "value": "={{ String($json.name || '') }}",
+              "type": "string"
+            },
+            {
+              "id": "url",
+              "name": "url",
+              "value": "={{ String($json.url || '') }}",
+              "type": "string"
+            },
+            {
+              "id": "uploader",
+              "name": "uploader",
+              "value": "={{ String($json.created_username && $json.created_username.username ? $json.created_username.username : '') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00007",
+      "name": "Get Processed Docs",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1480,
+        360
+      ],
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "wf02_processed_documents"
+        },
+        "returnAll": true
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00008",
+      "name": "Merge Docs to Process",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1700,
+        200
+      ],
+      "parameters": {
+        "mode": "combineBySql",
+        "query": "SELECT input1.id, input1.updatedDate, input1.name, input1.url, input1.uploader\nFROM input1\nLEFT JOIN input2 ON input1.id = input2.documentId\nWHERE input2.documentId IS NULL\n   OR input2.lastProcessedDate IS NULL\n   OR input2.lastProcessedDate = ''\n   OR input1.updatedDate > input2.lastProcessedDate",
+        "options": {
+          "emptyQueryResult": "empty"
+        }
       }
     },
     {
@@ -80,11 +305,11 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        980,
+        1880,
         200
       ],
       "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo-mips-ft.meeds.io/mcp-server/mcp\"}}",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -92,24 +317,99 @@
           "value": "get_document_by_id"
         },
         "inputMode": "json",
-        "jsonInput": "={{ { document_id: $json.document_id } }}",
+        "jsonInput": "={{ { document_id: $json.id } }}",
         "options": {
           "timeout": 60000
         }
       }
     },
     {
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00009",
+      "name": "Unwrap MCP Get Document",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        2060,
+        200
+      ],
+      "parameters": {
+        "workflowId": "E4OAThogWRG93MUG",
+        "options": {}
+      }
+    },
+    {
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b0000a",
+      "name": "Build Task Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2240,
+        200
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "document_id",
+              "name": "document_id",
+              "value": "={{ String($json.payload && $json.payload.document_id ? $json.payload.document_id : ($('Merge Docs to Process').item.json.id || '')) }}",
+              "type": "string"
+            },
+            {
+              "id": "updatedDate",
+              "name": "updatedDate",
+              "value": "={{ String($json.payload && $json.payload.updated_date ? $json.payload.updated_date : ($('Merge Docs to Process').item.json.updatedDate || $now.toISO())) }}",
+              "type": "string"
+            },
+            {
+              "id": "cycle_id",
+              "name": "cycle_id",
+              "value": "={{ String($json.payload && $json.payload.document_id ? $json.payload.document_id : $('Merge Docs to Process').item.json.id) + ':' + String($json.payload && $json.payload.updated_date ? $json.payload.updated_date : ($('Merge Docs to Process').item.json.updatedDate || $now.toISO())) }}",
+              "type": "string"
+            },
+            {
+              "id": "docName",
+              "name": "docName",
+              "value": "={{ String(($json.payload && $json.payload.name) || $('Merge Docs to Process').item.json.name || 'Untitled document') }}",
+              "type": "string"
+            },
+            {
+              "id": "title",
+              "name": "title",
+              "value": "={{ ('Validation - ' + String(($json.payload && $json.payload.name) || $('Merge Docs to Process').item.json.name || 'Untitled document').replace(/\\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim()).slice(0, 140) }}",
+              "type": "string"
+            },
+            {
+              "id": "author_username",
+              "name": "author_username",
+              "value": "={{ String((($json.payload && $json.payload.created_username && $json.payload.created_username.username) || $('Merge Docs to Process').item.json.uploader || 'claire')).trim() || 'claire' }}",
+              "type": "string"
+            },
+            {
+              "id": "docUrl",
+              "name": "docUrl",
+              "value": "={{ (() => { const u = String(($json.payload && $json.payload.url) || $('Merge Docs to Process').item.json.url || ''); return u.startsWith('http') ? u : ('https://exo-mips-ft.meeds.io' + u); })() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
       "id": "aa5b4f7c-41dd-4cce-85f1-9fa7756b7c1e",
-      "name": "Build Task Payload",
+      "name": "Render Task Description HTML",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1240,
+        2420,
         200
       ],
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const fromList = $('Parse + Deduplicate Docs').item.json;\nlet payload = $json;\nif ($json?.content?.[0]?.text !== undefined) payload = $json.content[0].text;\nif (Array.isArray(payload) && payload[0]?.type === 'text' && typeof payload[0]?.text === 'string') payload = JSON.parse(payload[0].text);\nelse if (typeof payload === 'string') payload = JSON.parse(payload);\n\nconst doc = payload || {};\nconst documentId = String(doc.document_id || fromList.document_id || '').trim();\nif (!documentId) throw new Error('Missing document_id');\nconst cycleId = fromList.cycle_id || (documentId + ':' + String(doc.updated_date || new Date().toISOString()));\nconst titleCore = String(doc.name || 'Untitled document').replace(/\\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();\nconst title = ('Validation - ' + titleCore).slice(0, 140);\nconst author = String(doc?.created_username?.username || 'claire').trim() || 'claire';\nconst docUrl = (doc.url && String(doc.url).startsWith('http')) ? String(doc.url) : ('https://exo-mips-ft.meeds.io' + String(doc.url || ''));\n\nconst description = '<p><strong>Source document:</strong> <a href=\"' + docUrl + '\" target=\"_blank\" rel=\"noopener noreferrer\">' + String(doc.name || documentId) + '</a></p>' + '<p><strong>Cycle:</strong> ' + cycleId + '</p>' + '<p><strong>Validation:</strong> use the approval links in the first task comment.</p>' + '<p>Rule: move to Done only when both stamps are APPROVED.</p>';\n\nreturn { document_id: documentId, cycle_id: cycleId, author_username: author, createTaskInput: { project_id: Number($vars.WF02_PROJECT_ID || 117), title, description, assignee: author, coworkers: ['nadia','etienne'], status_id: Number($vars.WF02_INPROGRESS_STATUS_ID || 475), priority: 'NORMAL' } };\n"
+        "jsCode": "const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;');\nconst description = '<p><strong>Source document:</strong> <a href=\"' + esc($json.docUrl) + '\" target=\"_blank\" rel=\"noopener noreferrer\">' + esc($json.docName) + '</a></p>' + '<p><strong>Cycle:</strong> ' + esc($json.cycle_id) + '</p>' + '<p><strong>Validation:</strong> use the approval links in the first task comment.</p>' + '<p>Rule: move to Done only when both stamps are APPROVED.</p>';\nreturn { ...$json, createTaskInput: { project_id: Number($vars.WF02_PROJECT_ID || 117), title: $json.title, description, assignee: $json.author_username, coworkers: ['nadia', 'etienne'], status_id: Number($vars.WF02_INPROGRESS_STATUS_ID || 475), priority: 'NORMAL' } };\n"
       }
     },
     {
@@ -118,11 +418,11 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        1500,
+        2600,
         200
       ],
       "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo-mips-ft.meeds.io/mcp-server/mcp\"}}",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -137,17 +437,110 @@
       }
     },
     {
-      "id": "5420c9d5-210d-4d01-9417-d860286d14e2",
-      "name": "Extract Task ID",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b0000b",
+      "name": "Unwrap MCP Create Task",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
       "position": [
-        1760,
+        2780,
         200
       ],
       "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const fromBuild = $('Build Task Payload').item.json;\nlet payload = $json;\nif ($json?.content?.[0]?.text !== undefined) payload = $json.content[0].text;\nif (Array.isArray(payload) && payload[0]?.type === 'text' && typeof payload[0]?.text === 'string') payload = JSON.parse(payload[0].text);\nelse if (typeof payload === 'string') payload = JSON.parse(payload);\nconst taskId = Number(payload?.task_id || payload?.id || payload?.task?.task_id || 0);\nif (!taskId) throw new Error('No task_id');\nreturn { ...fromBuild, task_id: taskId };"
+        "workflowId": "E4OAThogWRG93MUG",
+        "options": {}
+      }
+    },
+    {
+      "id": "5420c9d5-210d-4d01-9417-d860286d14e2",
+      "name": "Extract Task ID",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2960,
+        200
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "task_id",
+              "name": "task_id",
+              "value": "={{ Number(($json.payload && ($json.payload.task_id || $json.payload.id || ($json.payload.task && $json.payload.task.task_id))) || 0) }}",
+              "type": "number"
+            },
+            {
+              "id": "cycle_id",
+              "name": "cycle_id",
+              "value": "={{ $('Build Task Fields').item.json.cycle_id }}",
+              "type": "string"
+            },
+            {
+              "id": "document_id",
+              "name": "document_id",
+              "value": "={{ $('Build Task Fields').item.json.document_id }}",
+              "type": "string"
+            },
+            {
+              "id": "author_username",
+              "name": "author_username",
+              "value": "={{ $('Build Task Fields').item.json.author_username }}",
+              "type": "string"
+            },
+            {
+              "id": "raw_create_payload",
+              "name": "raw_create_payload",
+              "value": "={{ JSON.stringify($json.payload || {}).slice(0, 800) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b0000c",
+      "name": "IF Has Task ID",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3140,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has_task_id",
+              "leftValue": "={{$json.task_id}}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b0000d",
+      "name": "Stop - Missing task_id",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        3320,
+        320
+      ],
+      "parameters": {
+        "errorMessage": "=create_task_in_project failed or returned no task_id. payload={{$json.raw_create_payload}}"
       }
     },
     {
@@ -156,11 +549,11 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        2020,
-        200
+        3320,
+        100
       ],
       "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo-mips-ft.meeds.io/mcp-server/mcp\"}}",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -168,7 +561,7 @@
           "value": "add_task_comment"
         },
         "inputMode": "json",
-        "jsonInput": "={{ (() => { const base = String($vars.WF02_APPROVAL_BASE_URL || \"https://meeds.app.n8n.cloud/webhook/wf02-doc-validation/approve\").replace(/\\/$/, \"\"); const art = base + \"?task_id=\" + $json.task_id + \"&cycle_id=\" + encodeURIComponent($json.cycle_id) + \"&role=artistic&actor=nadia\"; const tech = base + \"?task_id=\" + $json.task_id + \"&cycle_id=\" + encodeURIComponent($json.cycle_id) + \"&role=technical&actor=etienne\"; const text = \"<p><strong>Validation started</strong> (cycle: \" + $json.cycle_id + \").</p><p><a href=\\\"\" + art + \"\\\" target=\\\"_blank\\\" rel=\\\"noopener noreferrer\\\">Approve — Artistic (Nadia)</a></p><p><a href=\\\"\" + tech + \"\\\" target=\\\"_blank\\\" rel=\\\"noopener noreferrer\\\">Approve — Technical (Etienne)</a></p>\"; return { task_id: $json.task_id, text }; })() }}",
+        "jsonInput": "={{ (() => { const base = String($vars.WF02_APPROVAL_BASE_URL || \"https://meeds.app.n8n.cloud/webhook/wf02-doc-validation/approve\").replace(/\\/$/, \"\"); const art = base + \"?task_id=\" + $('Extract Task ID').item.json.task_id + \"&cycle_id=\" + encodeURIComponent($('Extract Task ID').item.json.cycle_id) + \"&role=artistic&actor=nadia\"; const tech = base + \"?task_id=\" + $('Extract Task ID').item.json.task_id + \"&cycle_id=\" + encodeURIComponent($('Extract Task ID').item.json.cycle_id) + \"&role=technical&actor=etienne\"; const text = \"<p><strong>Validation started</strong> (cycle: \" + $('Extract Task ID').item.json.cycle_id + \").</p><p><a href=\\\"\" + art + \"\\\" target=\\\"_blank\\\" rel=\\\"noopener noreferrer\\\">Approve - Artistic (Nadia)</a></p><p><a href=\\\"\" + tech + \"\\\" target=\\\"_blank\\\" rel=\\\"noopener noreferrer\\\">Approve - Technical (Etienne)</a></p>\"; return { task_id: $('Extract Task ID').item.json.task_id, text }; })() }}",
         "options": {
           "timeout": 60000
         }
@@ -176,16 +569,230 @@
     },
     {
       "id": "56693cbc-0d87-42de-952f-c74efef6f95e",
-      "name": "Register Approval State",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "name": "Seed Approval Row",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
       "position": [
-        2280,
-        200
+        3500,
+        100
       ],
       "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const state = $getWorkflowStaticData('global');\nif (!state.wf02Approvals) state.wf02Approvals = {};\nconst key = String($json.task_id) + ':' + String($json.cycle_id);\nstate.wf02Approvals[key] = { task_id: $json.task_id, cycle_id: $json.cycle_id, document_id: $json.document_id, author_username: $json.author_username, approvals: { artistic: { actor: 'nadia', decision: 'PENDING', reason: '', at: '' }, technical: { actor: 'etienne', decision: 'PENDING', reason: '', at: '' } } };\nreturn $json;"
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "wf02_approvals"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "cycleKey",
+              "keyValue": "={{ String($('Extract Task ID').item.json.task_id) + ':' + String($('Extract Task ID').item.json.cycle_id) }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "cycleKey": "={{ String($('Extract Task ID').item.json.task_id) + ':' + String($('Extract Task ID').item.json.cycle_id) }}",
+            "task_id": "={{ Number($('Extract Task ID').item.json.task_id) }}",
+            "cycle_id": "={{ $('Extract Task ID').item.json.cycle_id }}",
+            "document_id": "={{ $('Extract Task ID').item.json.document_id }}",
+            "author_username": "={{ $('Extract Task ID').item.json.author_username }}",
+            "artistic_decision": "PENDING",
+            "artistic_reason": "",
+            "artistic_at": "",
+            "technical_decision": "PENDING",
+            "technical_reason": "",
+            "technical_at": ""
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "cycleKey",
+              "displayName": "cycleKey",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "task_id",
+              "displayName": "task_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "cycle_id",
+              "displayName": "cycle_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "document_id",
+              "displayName": "document_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "author_username",
+              "displayName": "author_username",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "artistic_decision",
+              "displayName": "artistic_decision",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "artistic_reason",
+              "displayName": "artistic_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "artistic_at",
+              "displayName": "artistic_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "technical_decision",
+              "displayName": "technical_decision",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "technical_reason",
+              "displayName": "technical_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "technical_at",
+              "displayName": "technical_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b0000e",
+      "name": "Update Tracking Doc",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        3680,
+        100
+      ],
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "wf02_processed_documents"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "documentId",
+              "keyValue": "={{ $('Extract Task ID').item.json.document_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "documentId": "={{ $('Extract Task ID').item.json.document_id }}",
+            "lastProcessedDate": "={{ $now.toISO() }}",
+            "cycleId": "={{ $('Extract Task ID').item.json.cycle_id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "documentId",
+              "displayName": "documentId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "lastProcessedDate",
+              "displayName": "lastProcessedDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "cycleId",
+              "displayName": "cycleId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
       }
     },
     {
@@ -208,15 +815,127 @@
     {
       "id": "349ac036-e76f-43fb-9df4-2d126eaabc50",
       "name": "Parse Approval",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
       "position": [
-        480,
+        400,
         620
       ],
       "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const input = $input.first().json || {};\nconst body = input.body || {};\nconst query = input.query || {};\nconst task_id = Number(body.task_id ?? query.task_id ?? 0);\nconst cycle_id = String(body.cycle_id ?? query.cycle_id ?? '');\nconst role = String(body.role ?? query.role ?? '').toLowerCase();\nconst decision = String(body.decision ?? query.decision ?? '').toUpperCase();\nconst reason = String(body.reason ?? query.reason ?? '');\nif (!task_id || !cycle_id || !role || !decision) throw new Error('Invalid approval payload');\nreturn [{ json: { task_id, cycle_id, role, decision, reason } }];"
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "task_id",
+              "name": "task_id",
+              "value": "={{ Number(($json.body && $json.body.task_id) || ($json.query && $json.query.task_id) || 0) }}",
+              "type": "number"
+            },
+            {
+              "id": "cycle_id",
+              "name": "cycle_id",
+              "value": "={{ String(($json.body && $json.body.cycle_id) || ($json.query && $json.query.cycle_id) || '') }}",
+              "type": "string"
+            },
+            {
+              "id": "role",
+              "name": "role",
+              "value": "={{ String(($json.body && $json.body.role) || ($json.query && $json.query.role) || '').toLowerCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "decision",
+              "name": "decision",
+              "value": "={{ String(($json.body && $json.body.decision) || ($json.query && $json.query.decision) || '').toUpperCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "reason",
+              "name": "reason",
+              "value": "={{ String(($json.body && $json.body.reason) || ($json.query && $json.query.reason) || '') }}",
+              "type": "string"
+            },
+            {
+              "id": "cycleKey",
+              "name": "cycleKey",
+              "value": "={{ String(Number(($json.body && $json.body.task_id) || ($json.query && $json.query.task_id) || 0)) + ':' + String(($json.body && $json.body.cycle_id) || ($json.query && $json.query.cycle_id) || '') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b0000f",
+      "name": "IF Valid Approval",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        580,
+        620
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "task_id_valid",
+              "leftValue": "={{$json.task_id}}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            },
+            {
+              "id": "cycle_id_set",
+              "leftValue": "={{$json.cycle_id}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            },
+            {
+              "id": "role_set",
+              "leftValue": "={{$json.role}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            },
+            {
+              "id": "decision_set",
+              "leftValue": "={{$json.decision}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00010",
+      "name": "Stop - Invalid approval payload",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        580,
+        800
+      ],
+      "parameters": {
+        "errorMessage": "Invalid approval payload: missing task_id, cycle_id, role, or decision."
       }
     },
     {
@@ -225,11 +944,11 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        740,
+        760,
         620
       ],
       "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo-mips-ft.meeds.io/mcp-server/mcp\"}}",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -244,17 +963,323 @@
       }
     },
     {
-      "id": "0c1f8ed6-0edb-4388-9329-81270cc588fc",
-      "name": "Update Approval State",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00011",
+      "name": "Get Approval Rows",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
       "position": [
-        1000,
+        940,
         620
       ],
       "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const input = $('Parse Approval').item.json;\nconst state = $getWorkflowStaticData('global');\nif (!state.wf02Approvals) state.wf02Approvals = {};\nconst key = String(input.task_id) + ':' + String(input.cycle_id);\nif (!state.wf02Approvals[key]) { state.wf02Approvals[key] = { task_id: input.task_id, cycle_id: input.cycle_id, approvals: { artistic: { actor: 'nadia', decision: 'PENDING', reason: '', at: '' }, technical: { actor: 'etienne', decision: 'PENDING', reason: '', at: '' } } }; }\nconst row = state.wf02Approvals[key];\nif (row.approvals[input.role]) { row.approvals[input.role].decision = input.decision; row.approvals[input.role].reason = input.reason || ''; row.approvals[input.role].at = new Date().toISOString(); }\nconst art = row.approvals.artistic?.decision;\nconst tech = row.approvals.technical?.decision;\nconst joinReady = art !== 'PENDING' && tech !== 'PENDING';\nconst bothApproved = art === 'APPROVED' && tech === 'APPROVED';\nreturn [{ json: { task_id: row.task_id, cycle_id: row.cycle_id, joinReady, bothApproved, artistic: row.approvals.artistic, technical: row.approvals.technical } }];"
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "wf02_approvals"
+        },
+        "returnAll": true
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "0c1f8ed6-0edb-4388-9329-81270cc588fc",
+      "name": "Merge Decision",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1120,
+        620
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cycleKey",
+              "name": "cycleKey",
+              "value": "={{ $('Parse Approval').item.json.cycleKey }}",
+              "type": "string"
+            },
+            {
+              "id": "task_id",
+              "name": "task_id",
+              "value": "={{ Number($('Parse Approval').item.json.task_id) }}",
+              "type": "number"
+            },
+            {
+              "id": "cycle_id",
+              "name": "cycle_id",
+              "value": "={{ $('Parse Approval').item.json.cycle_id }}",
+              "type": "string"
+            },
+            {
+              "id": "document_id",
+              "name": "document_id",
+              "value": "={{ (($('Get Approval Rows').all().find(r => r.json.cycleKey === $('Parse Approval').item.json.cycleKey) || {json:{}}).json.document_id) || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "author_username",
+              "name": "author_username",
+              "value": "={{ (($('Get Approval Rows').all().find(r => r.json.cycleKey === $('Parse Approval').item.json.cycleKey) || {json:{}}).json.author_username) || 'claire' }}",
+              "type": "string"
+            },
+            {
+              "id": "artistic_decision",
+              "name": "artistic_decision",
+              "value": "={{ $('Parse Approval').item.json.role === 'artistic' ? $('Parse Approval').item.json.decision : ((($('Get Approval Rows').all().find(r => r.json.cycleKey === $('Parse Approval').item.json.cycleKey) || {json:{}}).json.artistic_decision) || 'PENDING') }}",
+              "type": "string"
+            },
+            {
+              "id": "artistic_reason",
+              "name": "artistic_reason",
+              "value": "={{ $('Parse Approval').item.json.role === 'artistic' ? $('Parse Approval').item.json.reason : ((($('Get Approval Rows').all().find(r => r.json.cycleKey === $('Parse Approval').item.json.cycleKey) || {json:{}}).json.artistic_reason) || '') }}",
+              "type": "string"
+            },
+            {
+              "id": "artistic_at",
+              "name": "artistic_at",
+              "value": "={{ $('Parse Approval').item.json.role === 'artistic' ? $now.toISO() : ((($('Get Approval Rows').all().find(r => r.json.cycleKey === $('Parse Approval').item.json.cycleKey) || {json:{}}).json.artistic_at) || '') }}",
+              "type": "string"
+            },
+            {
+              "id": "technical_decision",
+              "name": "technical_decision",
+              "value": "={{ $('Parse Approval').item.json.role === 'technical' ? $('Parse Approval').item.json.decision : ((($('Get Approval Rows').all().find(r => r.json.cycleKey === $('Parse Approval').item.json.cycleKey) || {json:{}}).json.technical_decision) || 'PENDING') }}",
+              "type": "string"
+            },
+            {
+              "id": "technical_reason",
+              "name": "technical_reason",
+              "value": "={{ $('Parse Approval').item.json.role === 'technical' ? $('Parse Approval').item.json.reason : ((($('Get Approval Rows').all().find(r => r.json.cycleKey === $('Parse Approval').item.json.cycleKey) || {json:{}}).json.technical_reason) || '') }}",
+              "type": "string"
+            },
+            {
+              "id": "technical_at",
+              "name": "technical_at",
+              "value": "={{ $('Parse Approval').item.json.role === 'technical' ? $now.toISO() : ((($('Get Approval Rows').all().find(r => r.json.cycleKey === $('Parse Approval').item.json.cycleKey) || {json:{}}).json.technical_at) || '') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00012",
+      "name": "Upsert Approval Row",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1300,
+        620
+      ],
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "wf02_approvals"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "cycleKey",
+              "keyValue": "={{ $json.cycleKey }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "cycleKey": "={{ $json.cycleKey }}",
+            "task_id": "={{ Number($json.task_id) }}",
+            "cycle_id": "={{ $json.cycle_id }}",
+            "document_id": "={{ $json.document_id }}",
+            "author_username": "={{ $json.author_username }}",
+            "artistic_decision": "={{ $json.artistic_decision }}",
+            "artistic_reason": "={{ $json.artistic_reason }}",
+            "artistic_at": "={{ $json.artistic_at }}",
+            "technical_decision": "={{ $json.technical_decision }}",
+            "technical_reason": "={{ $json.technical_reason }}",
+            "technical_at": "={{ $json.technical_at }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "cycleKey",
+              "displayName": "cycleKey",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "task_id",
+              "displayName": "task_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "cycle_id",
+              "displayName": "cycle_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "document_id",
+              "displayName": "document_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "author_username",
+              "displayName": "author_username",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "artistic_decision",
+              "displayName": "artistic_decision",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "artistic_reason",
+              "displayName": "artistic_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "artistic_at",
+              "displayName": "artistic_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "technical_decision",
+              "displayName": "technical_decision",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "technical_reason",
+              "displayName": "technical_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "technical_at",
+              "displayName": "technical_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00013",
+      "name": "Compute Join",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1480,
+        620
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "task_id",
+              "name": "task_id",
+              "value": "={{ Number($json.task_id) }}",
+              "type": "number"
+            },
+            {
+              "id": "cycle_id",
+              "name": "cycle_id",
+              "value": "={{ $json.cycle_id }}",
+              "type": "string"
+            },
+            {
+              "id": "artistic_decision",
+              "name": "artistic_decision",
+              "value": "={{ $json.artistic_decision }}",
+              "type": "string"
+            },
+            {
+              "id": "technical_decision",
+              "name": "technical_decision",
+              "value": "={{ $json.technical_decision }}",
+              "type": "string"
+            },
+            {
+              "id": "joinReady",
+              "name": "joinReady",
+              "value": "={{ $json.artistic_decision !== 'PENDING' && $json.technical_decision !== 'PENDING' }}",
+              "type": "boolean"
+            },
+            {
+              "id": "bothApproved",
+              "name": "bothApproved",
+              "value": "={{ $json.artistic_decision === 'APPROVED' && $json.technical_decision === 'APPROVED' }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
       }
     },
     {
@@ -263,7 +1288,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1240,
+        1660,
         620
       ],
       "parameters": {
@@ -295,7 +1320,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1480,
+        1840,
         560
       ],
       "parameters": {
@@ -327,11 +1352,11 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        1720,
+        2020,
         500
       ],
       "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo-mips-ft.meeds.io/mcp-server/mcp\"}}",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -351,11 +1376,11 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        1960,
+        2200,
         500
       ],
       "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo-mips-ft.meeds.io/mcp-server/mcp\"}}",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -363,7 +1388,7 @@
           "value": "add_task_comment"
         },
         "inputMode": "json",
-        "jsonInput": "={{ { task_id: $(\"Update Approval State\").item.json.task_id, text: \"Both stamps received. Task approved and closed.\" } }}",
+        "jsonInput": "={{ { task_id: $('Compute Join').item.json.task_id, text: \"Both stamps received. Task approved and closed.\" } }}",
         "options": {
           "timeout": 60000
         }
@@ -375,7 +1400,7 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        2200,
+        2380,
         500
       ],
       "parameters": {
@@ -392,11 +1417,11 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        1720,
+        2020,
         660
       ],
       "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo-mips-ft.meeds.io/mcp-server/mcp\"}}",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -416,11 +1441,11 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        1960,
+        2200,
         660
       ],
       "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo-mips-ft.meeds.io/mcp-server/mcp\"}}",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -428,7 +1453,7 @@
           "value": "add_task_comment"
         },
         "inputMode": "json",
-        "jsonInput": "={{ { task_id: $(\"Update Approval State\").item.json.task_id, text: \"Validation incomplete or rejected. Please fix the document and resubmit.\" } }}",
+        "jsonInput": "={{ { task_id: $('Compute Join').item.json.task_id, text: \"Validation incomplete or rejected. Please fix the document and resubmit.\" } }}",
         "options": {
           "timeout": 60000
         }
@@ -440,7 +1465,7 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        2200,
+        2380,
         660
       ],
       "parameters": {
@@ -457,7 +1482,7 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        1480,
+        1840,
         760
       ],
       "parameters": {
@@ -474,7 +1499,7 @@
       "main": [
         [
           {
-            "node": "MCP Search Folder Docs",
+            "node": "Ensure Tracking Table",
             "type": "main",
             "index": 0
           }
@@ -482,6 +1507,28 @@
       ]
     },
     "Schedule Intake (5m)": {
+      "main": [
+        [
+          {
+            "node": "Ensure Tracking Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ensure Tracking Table": {
+      "main": [
+        [
+          {
+            "node": "Ensure Approvals Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ensure Approvals Table": {
       "main": [
         [
           {
@@ -496,14 +1543,74 @@
       "main": [
         [
           {
-            "node": "Parse + Deduplicate Docs",
+            "node": "Unwrap MCP Search Folder Docs",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Parse + Deduplicate Docs": {
+    "Unwrap MCP Search Folder Docs": {
+      "main": [
+        [
+          {
+            "node": "Split Out Documents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out Documents": {
+      "main": [
+        [
+          {
+            "node": "Filter - Has document_id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter - Has document_id": {
+      "main": [
+        [
+          {
+            "node": "Normalize Docs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Docs": {
+      "main": [
+        [
+          {
+            "node": "Merge Docs to Process",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Processed Docs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Processed Docs": {
+      "main": [
+        [
+          {
+            "node": "Merge Docs to Process",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Docs to Process": {
       "main": [
         [
           {
@@ -518,14 +1625,36 @@
       "main": [
         [
           {
-            "node": "Build Task Payload",
+            "node": "Unwrap MCP Get Document",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Build Task Payload": {
+    "Unwrap MCP Get Document": {
+      "main": [
+        [
+          {
+            "node": "Build Task Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Task Fields": {
+      "main": [
+        [
+          {
+            "node": "Render Task Description HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render Task Description HTML": {
       "main": [
         [
           {
@@ -540,6 +1669,17 @@
       "main": [
         [
           {
+            "node": "Unwrap MCP Create Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unwrap MCP Create Task": {
+      "main": [
+        [
+          {
             "node": "Extract Task ID",
             "type": "main",
             "index": 0
@@ -551,7 +1691,25 @@
       "main": [
         [
           {
+            "node": "IF Has Task ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Has Task ID": {
+      "main": [
+        [
+          {
             "node": "MCP Add Initial Comment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop - Missing task_id",
             "type": "main",
             "index": 0
           }
@@ -562,7 +1720,18 @@
       "main": [
         [
           {
-            "node": "Register Approval State",
+            "node": "Seed Approval Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Seed Approval Row": {
+      "main": [
+        [
+          {
+            "node": "Update Tracking Doc",
             "type": "main",
             "index": 0
           }
@@ -584,7 +1753,25 @@
       "main": [
         [
           {
+            "node": "IF Valid Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Valid Approval": {
+      "main": [
+        [
+          {
             "node": "MCP Add Decision Comment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop - Invalid approval payload",
             "type": "main",
             "index": 0
           }
@@ -595,14 +1782,47 @@
       "main": [
         [
           {
-            "node": "Update Approval State",
+            "node": "Get Approval Rows",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Update Approval State": {
+    "Get Approval Rows": {
+      "main": [
+        [
+          {
+            "node": "Merge Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Decision": {
+      "main": [
+        [
+          {
+            "node": "Upsert Approval Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Approval Row": {
+      "main": [
+        [
+          {
+            "node": "Compute Join",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Join": {
       "main": [
         [
           {

@@ -5,7 +5,8 @@
 ## n8n artifacts (repository)
 
 - Canonical export in git: `workflows/wf02-document-validation/workflow.json`.
-- Remote n8n workflow id: **[UNCERTAIN]** — not yet recorded in repository evidence. Set `N8N_WORKFLOW_ID_WF02` in the repository root `.env` when you have the live workflow id on your tenant (see [docs/ISSUES.md](../../docs/ISSUES.md)).
+- Sub-workflow dependency manifest: `workflows/wf02-document-validation/subworkflow-dependencies.json` declares the shared unwrap (`workflows/shared/subworkflows/unwrap-mcp-json/workflow.json`) for the three `Unwrap MCP …` nodes; `./deploy.sh wf02` deploys the dependency first and injects its remote id from `N8N_WORKFLOW_ID_UNWRAP` into the parent at PUT time.
+- Remote n8n workflow id: pinned in repository root `.env` as `N8N_WORKFLOW_ID_WF02`. Tenant-bound; see [docs/DEVELOPMENT.md](../../docs/DEVELOPMENT.md#rest-deploy-to-n8n) and [.env.example](../../.env.example).
 
 ## 11) MCP exploration (QAUI) and evidence level
 
@@ -49,7 +50,7 @@ Responses are often an array of `{ "type": "text", "text": "{...json string...}"
 **List documents in programming folder**
 
 ```json
-{ "query": "", "parent_folder_id": "b468cb5639805e11480baa56164da90c", "limit": 200, "offset": 0 }
+{ "query": "", "parent_folder_id": "ced6e9c539805e114bd65696b26bd073", "limit": 200, "offset": 0 }
 ```
 
 **Read a document** — `get_document_by_id` with `document_id`.
@@ -76,38 +77,73 @@ Responses are often an array of `{ "type": "text", "text": "{...json string...}"
 
 ### 12.4 n8n orchestration (as implemented in repo `workflow.json`)
 
-1. **Triggers** — `Manual Start`, or schedule every 5 minutes.
-2. **List** — `search_documents` with `parent_folder_id` (variable or default).
-3. **Dedup** — global static list of `document_id:updated_date` keys.
-4. **Load** — `get_document_by_id`.
-5. **Build task** — `Build Task Payload` (Code): title, HTML description, author/coworkers, status `InProgress`.
-6. **Create** — `create_task_in_project`; extract `task_id`.
-7. **Initial comment** — `add_task_comment` with two links:
-   - `...&role=artistic&actor=nadia`
-   - `...&role=technical&actor=etienne`
-8. **Register state** — `workflow` static data key `task_id:cycle_id` with empty stamps `PENDING` for `artistic` and `technical`.
-9. **Webhook** — `POST` `/webhook/wf02-doc-validation/approve` (path fixed in the node) with `task_id`, `cycle_id`, `role`, `decision`, `reason` (from body or query).
-10. **Parse** — normalize payload.
-11. **Comment decision** — `add_task_comment` with text `Stamp <role>: <decision>`.
-12. **Update state** — merge decision; compute `joinReady` and `bothApproved` where decisions are not `PENDING` and both match `APPROVED`.
-13. **If join and both approved** — `update_task_status` → `Done` + final comment in English in current export.
-14. **If join and not both approved** — keep `InProgress` + rejection-style comment.
-15. **If one decision still pending** — `Respond to Webhook` with `status: pending`.
+Refactored 2026-04-27 to push 6 Code nodes down to a single justified residue (`Render Task Description HTML`, ~5 LOC). The unwrap step reuses the shared sub-workflow [workflows/shared/subworkflows/unwrap-mcp-json/workflow.json](../shared/subworkflows/unwrap-mcp-json/workflow.json) (parity with WF01); idempotency uses an n8n **Data Table** + **Merge (combineBySql)** (parity with WF04). See [docs/audit-code-vs-native.md](../../docs/audit-code-vs-native.md) section *WF02 native refactor*.
 
-### 12.5 Minimal state model (implementation)
+**Intake branch (Manual Start / Schedule 5m)**
 
-```json
-{
-  "task_id": 0,
-  "cycle_id": "docId:version",
-  "approvals": {
-    "artistic": { "actor": "nadia", "decision": "PENDING|APPROVED|REJECTED", "reason": "", "at": "" },
-    "technical": { "actor": "etienne", "decision": "PENDING|APPROVED|REJECTED", "reason": "", "at": "" }
-  }
-}
-```
+1. **Triggers** — `Manual Start` or `Schedule Intake (5m)`.
+2. **Bootstrap tables** — `Ensure Tracking Table` (Data Table create `wf02_processed_documents` with `createIfNotExists`) → `Ensure Approvals Table` (Data Table create `wf02_approvals` with `createIfNotExists`); both `onError: continueRegularOutput` so re-running is safe.
+3. **List** — `MCP Search Folder Docs` (`search_documents`). `parent_folder_id` resolves from n8n variable `WF02_PARENT_FOLDER_ID` when non-empty; otherwise it defaults to the **exo-mips-ft** programming folder id `ced6e9c539805e114bd65696b26bd073`. All MCP Client nodes use `endpointUrl` = `$vars.EXO_MCP_ENDPOINT` with the same **fallback** as WF03 (`https://exo-mips-ft.meeds.io/mcp-server/mcp`) when the variable is unset.
+4. **Unwrap MCP envelope** — `Unwrap MCP Search Folder Docs` (Execute Workflow → shared unwrap sub-workflow) returns `{ payload: { documents: [...] } }`.
+5. **Split + filter** — `Split Out Documents` (`fieldToSplitOut: payload.documents`) → `Filter - Has document_id`. If `documents` is empty (no files in the folder), **no items** are emitted downstream: the execution finishes without error and without creating a task (expected).
+6. **Normalize** — `Normalize Docs` (Set: `id`, `updatedDate`, `name`, `url`, `uploader`).
+7. **Dedup join** — `Get Processed Docs` (Data Table get all rows from `wf02_processed_documents`, `executeOnce`, `alwaysOutputData`) feeds input2; `Normalize Docs` also feeds input1 of `Merge Docs to Process` (combineBySql LEFT JOIN, same shape as WF04 — keeps rows where the doc is unseen or the `updatedDate` is newer than the stored `lastProcessedDate`).
+8. **Load** — `MCP Get Document By ID` (`get_document_by_id`) → `Unwrap MCP Get Document` (Execute Workflow).
+9. **Build task fields** — `Build Task Fields` (Set: `document_id`, `cycle_id` = `documentId:updatedDate`, `docName`, `title`, `author_username`, `docUrl`).
+10. **Render description** — `Render Task Description HTML` (residual Code, ~5 LOC, HTML-only): builds the description string and the final `createTaskInput`, parity with WF01.
+11. **Create task** — `MCP Create Task` (`create_task_in_project`) → `Unwrap MCP Create Task` → `Extract Task ID` (Set, mirrors WF01 `Extract Task Assignment`; reads `payload.task_id || payload.id || payload.task.task_id` and pulls `cycle_id`/`document_id`/`author_username` from `Build Task Fields`).
+12. **Guard** — `IF Has Task ID` (true → continue; false → `Stop - Missing task_id` with `raw_create_payload`).
+13. **Initial comment** — `MCP Add Initial Comment` (`add_task_comment`) with two approval links:
+    - `...&role=artistic&actor=nadia`
+    - `...&role=technical&actor=etienne`
+14. **Seed approval row** — `Seed Approval Row` (Data Table upsert on `wf02_approvals` keyed by `cycleKey = task_id:cycle_id`; `artistic_decision` / `technical_decision` default `PENDING`).
+15. **Mark processed** — `Update Tracking Doc` (Data Table upsert on `wf02_processed_documents`; sets `lastProcessedDate = $now.toISO()` so subsequent intake cycles skip the doc until its `updated_date` advances).
 
-`role` in the webhook must match the keys `artistic` and `technical`.
+**Webhook branch (`POST /webhook/wf02-doc-validation/approve`)**
+
+1. **Webhook** — `Approval Webhook` accepts `task_id`, `cycle_id`, `role`, `decision`, `reason` from body or query.
+2. **Parse** — `Parse Approval` (Set: reads `body.* ?? query.*`, normalizes `role` lower-case and `decision` upper-case, also exposes `cycleKey`).
+3. **Validate** — `IF Valid Approval` (requires `task_id > 0`, non-empty `cycle_id`, `role`, `decision`); invalid → `Stop - Invalid approval payload`.
+4. **Comment decision** — `MCP Add Decision Comment` (`add_task_comment`).
+5. **Read state** — `Get Approval Rows` (Data Table get, `returnAll`, `executeOnce`) returns the full approvals table; the next Set node finds the row by `cycleKey` via `find()` on `$('Get Approval Rows').all()`.
+6. **Merge decision** — `Merge Decision` (Set, role-conditional assignments: writes the new `<role>_decision`/`<role>_reason`/`<role>_at = $now.toISO()`, keeps the other role's columns from the stored row).
+7. **Write state** — `Upsert Approval Row` (Data Table upsert on `wf02_approvals` keyed by `cycleKey`).
+8. **Compute join** — `Compute Join` (Set: `joinReady` if both decisions are not `PENDING`; `bothApproved` if both are `APPROVED`).
+9. **Branch** — `IF Join Ready` (false → `Respond Pending`); when ready, `IF Both Approved`:
+   - **true** — `MCP Set Done` (`update_task_status` → `WF02_DONE_STATUS_ID`) → `MCP Final Comment Approved` → `Respond Approved`.
+   - **false** — `MCP Keep InProgress` (`update_task_status` → `WF02_INPROGRESS_STATUS_ID`) → `MCP Final Comment Rejected` → `Respond Rejected`.
+
+### 12.5 State model (Data Tables, replaces previous `$getWorkflowStaticData` keys)
+
+The workflow now persists state in two n8n **Data Tables** (created by `Ensure Tracking Table` / `Ensure Approvals Table` with `createIfNotExists` so the workflow is self-bootstrapping on a fresh tenant).
+
+**`wf02_processed_documents`** — intake idempotency (parity with WF04 `exo_processed_documents`).
+
+| Column              | Type     | Notes                                                                 |
+| ------------------- | -------- | --------------------------------------------------------------------- |
+| `documentId`        | string   | Match key for upsert.                                                 |
+| `lastProcessedDate` | dateTime | `$now.toISO()` written when the cycle's task is created (step 15).   |
+| `cycleId`           | string   | `documentId:updatedDate` — last cycle this document went through.    |
+
+**`wf02_approvals`** — per-cycle approval state.
+
+| Column               | Type     | Notes                                                                 |
+| -------------------- | -------- | --------------------------------------------------------------------- |
+| `cycleKey`           | string   | Composite primary key `task_id:cycle_id`; matching column for upsert. |
+| `task_id`            | number   | n8n task id from `create_task_in_project`.                            |
+| `cycle_id`           | string   | `document_id:updated_date`.                                           |
+| `document_id`        | string   | Source document id.                                                   |
+| `author_username`    | string   | Document uploader (defaulted to `claire`).                            |
+| `artistic_decision`  | string   | `PENDING` \| `APPROVED` \| `REJECTED`.                                |
+| `artistic_reason`    | string   | Optional free text; default `""`.                                     |
+| `artistic_at`        | string   | ISO timestamp when the artistic stamp was written; default `""`.      |
+| `technical_decision` | string   | Same enum as artistic.                                                |
+| `technical_reason`   | string   | Optional free text.                                                   |
+| `technical_at`       | string   | ISO timestamp.                                                        |
+
+`role` in the webhook must match `artistic` or `technical` (case-insensitive — `Parse Approval` lower-cases the value).
+
+Approval state is now visible on the n8n canvas (Data Table rows) instead of the opaque `$getWorkflowStaticData` map used previously. This addresses the open follow-up tracked in [docs/ISSUES.md](../../docs/ISSUES.md).
 
 ### 12.6 Webhook URL (reference)
 
@@ -122,18 +158,26 @@ Responses are often an array of `{ "type": "text", "text": "{...json string...}"
 
 ### 12.8 Risks and mitigations
 
-- **Heterogeneous MCP** — single parse helper in Code nodes.
-- **Duplicate file processing** — `document_id + updated_date` dedup.
-- **Double submit same role** — last write wins in current logic (can be hardened).
-- **Author** — default `claire` if uploader is missing.
+- **Heterogeneous MCP** — unwrapped through the shared sub-workflow [workflows/shared/subworkflows/unwrap-mcp-json/workflow.json](../shared/subworkflows/unwrap-mcp-json/workflow.json) (no more per-workflow Code parser; parity with WF01).
+- **Duplicate file processing** — `wf02_processed_documents` Data Table + `Merge (combineBySql)` LEFT JOIN (parity with WF04).
+- **Data Table prerequisite** — the n8n Data Tables feature must be available on the target tenant. The workflow self-bootstraps via `Ensure Tracking Table` / `Ensure Approvals Table` (`createIfNotExists`, `onError: continueRegularOutput`); on a fresh tenant the first run is the one that materialises the schema.
+- **Double submit same role** — last write wins in `Merge Decision` (can be hardened by an extra `IF` checking `<role>_decision !== 'PENDING'`).
+- **Author** — default `claire` if uploader is missing (computed in `Build Task Fields`).
 - **Status id drift** — `list_project_statuses` for dynamic resolution in future iterations.
+- **Approval webhook hardening** — production should add short-lived signed tokens, strict role checks, and idempotent comment/status side-effects (not implemented in the demo JSON).
 
 ## 13) n8n node map (abridged)
 
-- **MCP client** for all `search_documents`, `get_document_by_id`, `create_task_in_project`, `add_task_comment`, `update_task_status`.
-- **Code** for deduplication, payload, approval state, webhook parsing, join logic.
-- **Webhook** + **Respond to Webhook** for async approvals.
-- **IF** for join and both-approved.
+- **MCP Client** for `search_documents`, `get_document_by_id`, `create_task_in_project`, `add_task_comment`, `update_task_status`.
+- **Execute Workflow** (3×) calling the shared `Unwrap MCP JSON` sub-workflow after each MCP call.
+- **Data Table** (5×) — `Ensure Tracking Table` / `Ensure Approvals Table` (create with `createIfNotExists`), `Get Processed Docs` and `Get Approval Rows` (get with `returnAll` + `executeOnce`), `Update Tracking Doc` / `Seed Approval Row` / `Upsert Approval Row` (upsert).
+- **Merge (combineBySql)** — `Merge Docs to Process` LEFT JOIN for intake idempotency.
+- **Set** (5×) — `Normalize Docs`, `Build Task Fields`, `Extract Task ID`, `Parse Approval`, `Merge Decision`, `Compute Join`.
+- **IF** — `IF Has Task ID`, `IF Valid Approval`, `IF Join Ready`, `IF Both Approved`.
+- **Filter** — `Filter - Has document_id` (drops MCP results without `document_id`).
+- **Split Out** — `Split Out Documents` expands `payload.documents`.
+- **Code** — single residual `Render Task Description HTML` (~5 LOC, HTML-only, parity with WF01).
+- **Webhook** + **Respond to Webhook** + **Stop and Error** — async approvals + structured rejection of invalid payloads.
 
 ### Design notes
 

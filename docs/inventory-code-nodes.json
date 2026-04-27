@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-27T10:47:33.232Z",
+  "generatedAt": "2026-04-27T12:00:10.826Z",
   "workflowsDir": "workflows/",
   "files": [
     {
@@ -12,12 +12,12 @@
           "id": "273f3214-6f2d-49a8-bf4b-74125d3f45ff",
           "mode": "runOnceForEachItem",
           "typeVersion": 2,
-          "linesOfCode": 18,
-          "chars": 587,
+          "linesOfCode": 89,
+          "chars": 2637,
           "hasParseEnvelope": false,
           "hasGetWorkflowStaticData": false,
           "hasHtml": false,
-          "hasMcpContentText": true,
+          "hasMcpContentText": false,
           "hasJsCode": true,
           "missingJsCodeInRepo": false
         }
@@ -47,88 +47,18 @@
     {
       "file": "workflows/wf02-document-validation/workflow.json",
       "workflowName": "WF02 - Document validation (split / join)",
-      "codeNodeCount": 6,
+      "codeNodeCount": 1,
       "codeNodes": [
         {
-          "name": "Parse + Deduplicate Docs",
-          "id": "251c94a2-f04d-4f66-98ab-ff1deb110e81",
-          "mode": "runOnceForAllItems",
-          "typeVersion": 2,
-          "linesOfCode": 21,
-          "chars": 1008,
-          "hasParseEnvelope": false,
-          "hasGetWorkflowStaticData": true,
-          "hasHtml": false,
-          "hasMcpContentText": true,
-          "hasJsCode": true,
-          "missingJsCodeInRepo": false
-        },
-        {
-          "name": "Build Task Payload",
+          "name": "Render Task Description HTML",
           "id": "aa5b4f7c-41dd-4cce-85f1-9fa7756b7c1e",
           "mode": "runOnceForEachItem",
           "typeVersion": 2,
-          "linesOfCode": 19,
-          "chars": 1722,
+          "linesOfCode": 4,
+          "chars": 789,
           "hasParseEnvelope": false,
           "hasGetWorkflowStaticData": false,
           "hasHtml": true,
-          "hasMcpContentText": true,
-          "hasJsCode": true,
-          "missingJsCodeInRepo": false
-        },
-        {
-          "name": "Extract Task ID",
-          "id": "5420c9d5-210d-4d01-9417-d860286d14e2",
-          "mode": "runOnceForEachItem",
-          "typeVersion": 2,
-          "linesOfCode": 8,
-          "chars": 531,
-          "hasParseEnvelope": false,
-          "hasGetWorkflowStaticData": false,
-          "hasHtml": false,
-          "hasMcpContentText": true,
-          "hasJsCode": true,
-          "missingJsCodeInRepo": false
-        },
-        {
-          "name": "Register Approval State",
-          "id": "56693cbc-0d87-42de-952f-c74efef6f95e",
-          "mode": "runOnceForEachItem",
-          "typeVersion": 2,
-          "linesOfCode": 5,
-          "chars": 492,
-          "hasParseEnvelope": false,
-          "hasGetWorkflowStaticData": true,
-          "hasHtml": false,
-          "hasMcpContentText": false,
-          "hasJsCode": true,
-          "missingJsCodeInRepo": false
-        },
-        {
-          "name": "Parse Approval",
-          "id": "349ac036-e76f-43fb-9df4-2d126eaabc50",
-          "mode": "runOnceForAllItems",
-          "typeVersion": 2,
-          "linesOfCode": 10,
-          "chars": 590,
-          "hasParseEnvelope": false,
-          "hasGetWorkflowStaticData": false,
-          "hasHtml": false,
-          "hasMcpContentText": false,
-          "hasJsCode": true,
-          "missingJsCodeInRepo": false
-        },
-        {
-          "name": "Update Approval State",
-          "id": "0c1f8ed6-0edb-4388-9329-81270cc588fc",
-          "mode": "runOnceForAllItems",
-          "typeVersion": 2,
-          "linesOfCode": 12,
-          "chars": 1105,
-          "hasParseEnvelope": false,
-          "hasGetWorkflowStaticData": true,
-          "hasHtml": false,
           "hasMcpContentText": false,
           "hasJsCode": true,
           "missingJsCodeInRepo": false
@@ -145,8 +75,8 @@
           "id": "9b230c6a-502c-42ad-b9a1-b270945991fb",
           "mode": "runOnceForEachItem",
           "typeVersion": 2,
-          "linesOfCode": 131,
-          "chars": 4911,
+          "linesOfCode": 176,
+          "chars": 6181,
           "hasParseEnvelope": false,
           "hasGetWorkflowStaticData": false,
           "hasHtml": true,
@@ -166,8 +96,8 @@
           "id": "efe8542e-5253-4ad5-ad8f-004bbcdab6ba",
           "mode": "runOnceForEachItem",
           "typeVersion": 2,
-          "linesOfCode": 197,
-          "chars": 8629,
+          "linesOfCode": 209,
+          "chars": 9014,
           "hasParseEnvelope": false,
           "hasGetWorkflowStaticData": false,
           "hasHtml": true,
@@ -188,7 +118,7 @@
           "mode": "runOnceForEachItem",
           "typeVersion": 2,
           "linesOfCode": 17,
-          "chars": 563,
+          "chars": 561,
           "hasParseEnvelope": false,
           "hasGetWorkflowStaticData": false,
           "hasHtml": false,
@@ -221,8 +151,8 @@
     }
   ],
   "totals": {
-    "codeNodes": 12,
-    "linesOfCode": 456,
-    "chars": 22481
+    "codeNodes": 7,
+    "linesOfCode": 513,
+    "chars": 21525
   }
 }
