@@ -12,12 +12,14 @@ This document records the analysis for the repository workflows: quantitative in
 
 Generated from [inventory-code-nodes.json](inventory-code-nodes.json) (script [inventory-code-nodes.mjs](../tools/inventory-code-nodes.mjs)):
 
-| Metric (re-run the script)                            | Value (last local run, 2026-04-27) |
-| ----------------------------------------------------- | ---------------------------------- |
-| `workflow.json` files scanned (excl. `fixtures/`)      | 7 (incl. shared unwrap and WF03 portfolio-local UTILs) |
-| **Code** nodes counted                                 | 7 (1 per workflow / sub-workflow)   |
-| Approx. sum of `jsCode` lines                          | 513                                 |
-| Total `jsCode` characters                              | ≈21.5k                              |
+
+| Metric (re-run the script)                        | Value (last local run, 2026-04-27)                     |
+| ------------------------------------------------- | ------------------------------------------------------ |
+| `workflow.json` files scanned (excl. `fixtures/`) | 7 (incl. shared unwrap and WF03 portfolio-local UTILs) |
+| **Code** nodes counted                            | 7 (1 per workflow / sub-workflow)                      |
+| Approx. sum of `jsCode` lines                     | 513                                                    |
+| Total `jsCode` characters                         | ≈21.5k                                                 |
+
 
 **WF04 (current)** — versioned exports under [workflow.json](../workflows/wf04-metadata-enrichment/workflow.json) (canonical) and [workflow.export.snapshot.json](../workflows/wf04-metadata-enrichment/fixtures/workflow.export.snapshot.json). The workflow was reduced to **one** remaining Code node (`Prepare Category Assignments`).
 
@@ -51,18 +53,20 @@ Workflow id: `aze2wAktXHYrTBTr` (n8n cloud), synced with `get_workflow_details`.
 
 ## 3. Intent → n8n pattern matrix
 
-| Intent (taxonomy) | Native pattern | Limit |
-| ----------------- | -------------- | ----- |
-| **ParseEnvelope** | Sub-workflow *Unwrap MCP*; at chain head: **IF** for `content[0].text` then **Set** with `JSON.parse()`; branches via **Switch** | JSON errors are opaque; multiple envelope shapes |
-| **UnwrapArray** | **Item Lists**, **Split Out** | Deep nesting |
-| **MapTransform** | **Set** (assignments), sometimes **Edit Fields** | Large `find()` on lists: sometimes still ok in one expression or small Code |
-| **FilterBusiness** | **Filter**, **IF** | “First match” rules: **Switch** (rules mode) |
-| **DedupeStatic** | Prefer **Data Table** + stable key (WF04) | Static data is less visible to non-coders |
-| **DedupeDataTable** | WF04 pattern; **Merge** (enrich) with lookup | Table schema ops |
-| **Aggregate** | **Aggregate** (if enabled) or **Item Lists** | — |
-| **HtmlTemplate** | Dedicated *Render…* sub-workflow; **Set** chunks; **HTML** node if available | n8n is not a full template engine |
-| **StateMerge** | **Data Table** on `(task_id, cycle_id)`; or **Merge** + final **IF** | Parallel approvers: canvas clutter vs visibility |
-| **ErrorGuard** | **IF** / **Stop and Error** on MCP error fields; **Error Trigger** on workflow | Depends on exact MCP error shape |
+
+| Intent (taxonomy)   | Native pattern                                                                                                                   | Limit                                                                       |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| **ParseEnvelope**   | Sub-workflow *Unwrap MCP*; at chain head: **IF** for `content[0].text` then **Set** with `JSON.parse()`; branches via **Switch** | JSON errors are opaque; multiple envelope shapes                            |
+| **UnwrapArray**     | **Item Lists**, **Split Out**                                                                                                    | Deep nesting                                                                |
+| **MapTransform**    | **Set** (assignments), sometimes **Edit Fields**                                                                                 | Large `find()` on lists: sometimes still ok in one expression or small Code |
+| **FilterBusiness**  | **Filter**, **IF**                                                                                                               | “First match” rules: **Switch** (rules mode)                                |
+| **DedupeStatic**    | Prefer **Data Table** + stable key (WF04)                                                                                        | Static data is less visible to non-coders                                   |
+| **DedupeDataTable** | WF04 pattern; **Merge** (enrich) with lookup                                                                                     | Table schema ops                                                            |
+| **Aggregate**       | **Aggregate** (if enabled) or **Item Lists**                                                                                     | —                                                                           |
+| **HtmlTemplate**    | Dedicated *Render…* sub-workflow; **Set** chunks; **HTML** node if available                                                     | n8n is not a full template engine                                           |
+| **StateMerge**      | **Data Table** on `(task_id, cycle_id)`; or **Merge** + final **IF**                                                             | Parallel approvers: canvas clutter vs visibility                            |
+| **ErrorGuard**      | **IF** / **Stop and Error** on MCP error fields; **Error Trigger** on workflow                                                   | Depends on exact MCP error shape                                            |
+
 
 ---
 
@@ -72,50 +76,60 @@ Workflow id: `aze2wAktXHYrTBTr` (n8n cloud), synced with `get_workflow_details`.
 
 ### WF01 — [workflow.json](../workflows/wf01-email-dispatch/workflow.json)
 
-| Node | LOC | Main intent | Native / architecture | Priority |
-| ---- | --- | ----------- | ---------------------- | -------- |
-| Parse + Deduplicate | 28 | Envelope + array + static dedupe | *Unwrap MCP* → **Split Out**; idempotency: **Data Table** `email_id` instead of `getWorkflowStaticData` | P1 |
+
+| Node                | LOC | Main intent                      | Native / architecture                                                                                   | Priority |
+| ------------------- | --- | -------------------------------- | ------------------------------------------------------------------------------------------------------- | -------- |
+| Parse + Deduplicate | 28  | Envelope + array + static dedupe | *Unwrap MCP* → **Split Out**; idempotency: **Data Table** `email_id` instead of `getWorkflowStaticData` | P1       |
+
 
 ### WF02 — [workflow.json](../workflows/wf02-document-validation/workflow.json)
 
-Refactor completed 2026-04-27 — see [WF02 native refactor](#wf02-native-refactor-2026-04-27) below. Resulting Code surface: **`Render Task Description HTML`** (~5 LOC, HTML-only) + **`Ensure Merge Processed Input`** (~8 LOC, AlaSQL/`combineBySql` guard when `wf02_processed_documents` has zero rows). Earlier rows kept as historical traceability:
+Refactor completed 2026-04-27 — see [WF02 native refactor](#wf02-native-refactor-2026-04-27) below. Resulting Code surface: `**Render Task Description HTML`** (~~5 LOC, HTML-only) + `**Ensure Merge Processed Input**` (~~8 LOC, AlaSQL/`combineBySql` guard when `wf02_processed_documents` has zero rows). Earlier rows kept as historical traceability:
 
-| Node (historical) | LOC | Main intent | Replacement (2026-04-27) | Priority | Status |
-| ----------------- | --- | ----------- | ------------------------- | -------- | ------ |
-| Parse + Deduplicate Docs | 21 | Envelope + static dedupe | Shared **Unwrap MCP JSON** sub-workflow + **Split Out** + **Filter** + **Set** + Data Table `wf02_processed_documents` + **Merge (combineBySql)** LEFT JOIN | P1 | Done |
-| Build Task Payload | 19 | Envelope + HTML | Shared unwrap + **Set** (`Build Task Fields`) + residual ~5-LOC `Render Task Description HTML` Code (HTML only, parity with WF01) | P2 | Done |
-| Extract Task ID | 8 | Envelope | Shared unwrap + **Set** (`Extract Task ID`, mirrors WF01 `Extract Task Assignment`) + **IF** + **Stop and Error** | P1 | Done |
-| Register Approval | 5 | State in static | Data Table `wf02_approvals` (`Ensure Approvals Table` + `Seed Approval Row` upsert keyed by `cycleKey = task_id:cycle_id`) | P2 | Done |
-| Parse Approval | 10 | Map from webhook | **Set** (`Parse Approval`) + **IF Valid Approval** + **Stop and Error** | P1 | Done |
-| Update Approval State | 12 | State merge + join | Data Table get + **Code** (`Merge Decision`, `runOnceForAllItems`) + Data Table upsert + **Set** (`Compute Join`) — boolean expressions feed existing `IF Join Ready` / `IF Both Approved` | P2 | Done |
+
+| Node (historical)        | LOC | Main intent              | Replacement (2026-04-27)                                                                                                                                                                   | Priority | Status |
+| ------------------------ | --- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- | ------ |
+| Parse + Deduplicate Docs | 21  | Envelope + static dedupe | Shared **Unwrap MCP JSON** sub-workflow + **Split Out** + **Filter** + **Set** + Data Table `wf02_processed_documents` + **Merge (combineBySql)** LEFT JOIN                                | P1       | Done   |
+| Build Task Payload       | 19  | Envelope + HTML          | Shared unwrap + **Set** (`Build Task Fields`) + residual ~5-LOC `Render Task Description HTML` Code (HTML only, parity with WF01)                                                          | P2       | Done   |
+| Extract Task ID          | 8   | Envelope                 | Shared unwrap + **Set** (`Extract Task ID`, mirrors WF01 `Extract Task Assignment`) + **IF** + **Stop and Error**                                                                          | P1       | Done   |
+| Register Approval        | 5   | State in static          | Data Table `wf02_approvals` (`Ensure Approvals Table` + `Seed Approval Row` upsert keyed by `cycleKey = task_id:cycle_id`)                                                                 | P2       | Done   |
+| Parse Approval           | 10  | Map from webhook         | **Set** (`Parse Approval`) + **IF Valid Approval** + **Stop and Error**                                                                                                                    | P1       | Done   |
+| Update Approval State    | 12  | State merge + join       | Data Table get + **Code** (`Merge Decision`, `runOnceForAllItems`) + Data Table upsert + **Set** (`Compute Join`) — boolean expressions feed existing `IF Join Ready` / `IF Both Approved` | P2       | Done   |
+
 
 ### WF03 — [workflow.json](../workflows/wf03-weekly-steering/workflow.json) (see [api-response.snapshot.json](../workflows/wf03-weekly-steering/fixtures/api-response.snapshot.json))
 
-| Node | LOC | Main intent | Native / architecture | Priority |
-| ---- | --- | ----------- | ---------------------- | -------- |
-| Prepare COPIL Config | — | Dates + env → flat config | **Set** (Luxon `$now` / `Europe/Paris` expressions) | Done |
-| Build Report Context | — | Parse + HTML + aggregate | **Execute Workflow** → [UTIL - WF03 build report context](../workflows/wf03-weekly-steering/subworkflows/wf03-build-report-context/workflow.json) (Code); parent: Unwrap + **Set** bundle | Done |
-| Compose COPIL Note | — | HTML template | **Execute Workflow** → [UTIL - WF03 compose steering note HTML](../workflows/wf03-weekly-steering/subworkflows/wf03-compose-steering-note-html/workflow.json) (Code); parent **Set** bundle | Done |
-| Decide Note Upsert | ~15 | Pick existing note id | Unwrap + small **Code** on `payload` (no duplicate MCP parse) | Residual |
-| Prepare Agenda (×2) | — | Agenda body after save | **Unwrap** + **Set** `agendaUpdateInput` / `note_url` | Done |
+
+| Node                 | LOC | Main intent               | Native / architecture                                                                                                                                                                       | Priority |
+| -------------------- | --- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| Prepare COPIL Config | —   | Dates + env → flat config | **Set** (Luxon `$now` / `Europe/Paris` expressions)                                                                                                                                         | Done     |
+| Build Report Context | —   | Parse + HTML + aggregate  | **Execute Workflow** → [UTIL - WF03 build report context](../workflows/wf03-weekly-steering/subworkflows/wf03-build-report-context/workflow.json) (Code); parent: Unwrap + **Set** bundle   | Done     |
+| Compose COPIL Note   | —   | HTML template             | **Execute Workflow** → [UTIL - WF03 compose steering note HTML](../workflows/wf03-weekly-steering/subworkflows/wf03-compose-steering-note-html/workflow.json) (Code); parent **Set** bundle | Done     |
+| Decide Note Upsert   | ~15 | Pick existing note id     | Unwrap + small **Code** on `payload` (no duplicate MCP parse)                                                                                                                               | Residual |
+| Prepare Agenda (×2)  | —   | Agenda body after save    | **Unwrap** + **Set** `agendaUpdateInput` / `note_url`                                                                                                                                       | Done     |
+
 
 ### WF04 — [workflow.json](../workflows/wf04-metadata-enrichment/workflow.json)
 
-| Node | LOC | Intent | Replacement | Priority |
-| ---- | --- | ------ | ----------- | -------- |
-| Many earlier Code nodes | 0 | — | Replaced with **IF**, **Set**, **Split Out**, **Merge (SQL)**, see repo history | Done |
-| Prepare Category Assignments | 19 | Map category name → `category_id` | Remains **Code** (hierarchy match) | Residual |
+
+| Node                         | LOC | Intent                            | Replacement                                                                     | Priority |
+| ---------------------------- | --- | --------------------------------- | ------------------------------------------------------------------------------- | -------- |
+| Many earlier Code nodes      | 0   | —                                 | Replaced with **IF**, **Set**, **Split Out**, **Merge (SQL)**, see repo history | Done     |
+| Prepare Category Assignments | 19  | Map category name → `category_id` | Remains **Code** (hierarchy match)                                              | Residual |
+
 
 ---
 
 ## 5. Proposed reusable sub-workflows
 
-| Name | Input | Output | Consumers |
-| ---- | ----- | ------ | ---------- |
-| **Unwrap MCP JSON** | raw MCP / HTTP | parsed JSON item | WF01–04 |
-| **MCP list → items** | object w/ `emails` / `tasks` / … | normalized items | tool-specific |
-| **Extract task_id** | `create_task` response | `task_id` + passthrough | WF01, WF02 |
-| **Post note save → agenda** | saved note + context | `agendaUpdateInput` | WF03: **Unwrap** + **Set** on both branches (no duplicate Code) |
+
+| Name                        | Input                            | Output                  | Consumers                                                       |
+| --------------------------- | -------------------------------- | ----------------------- | --------------------------------------------------------------- |
+| **Unwrap MCP JSON**         | raw MCP / HTTP                   | parsed JSON item        | WF01–04                                                         |
+| **MCP list → items**        | object w/ `emails` / `tasks` / … | normalized items        | tool-specific                                                   |
+| **Extract task_id**         | `create_task` response           | `task_id` + passthrough | WF01, WF02                                                      |
+| **Post note save → agenda** | saved note + context             | `agendaUpdateInput`     | WF03: **Unwrap** + **Set** on both branches (no duplicate Code) |
+
 
 ---
 
@@ -130,7 +144,7 @@ Iterates on the WF01 pattern (shared unwrap sub-workflow) plus the WF04 pattern 
 
 ### Mapping (current → target)
 
-- `Parse + Deduplicate Docs` (Code, 21 LOC) → `Unwrap MCP Search Folder Docs` (Execute Workflow → shared unwrap) + `Coalesce Documents List` (Set: normalises `payload.documents` vs `payload.content` / JSON-in-text) + `Split Out Documents` (`documents`) + `Filter - Has document_id` + `Normalize Docs` (Set: `id`, `updatedDate`, `name`, `url`, `uploader`) + `Get Processed Docs` (Data Table get-all on `wf02_processed_documents`, `executeOnce`) + **`Ensure Merge Processed Input`** (Code — sentinel row when table empty) + `Merge Docs to Process` (Merge `combineBySql` LEFT JOIN, same SQL shape as WF04 `Merge Documents to Process`).
+- `Parse + Deduplicate Docs` (Code, 21 LOC) → `Unwrap MCP Search Folder Docs` (Execute Workflow → shared unwrap) + `Coalesce Documents List` (Set: normalises `payload.documents` vs `payload.content` / JSON-in-text) + `Split Out Documents` (`documents`) + `Filter - Has document_id` + `Normalize Docs` (Set: `id`, `updatedDate`, `name`, `url`, `uploader`) + `Get Processed Docs` (Data Table get-all on `wf02_processed_documents`, `executeOnce`) + `**Ensure Merge Processed Input`** (Code — sentinel row when table empty) + `Merge Docs to Process` (Merge `combineBySql` LEFT JOIN, same SQL shape as WF04 `Merge Documents to Process`).
 - `Build Task Payload` (Code, 19 LOC) → `Unwrap MCP Get Document` (Execute Workflow) + `Build Task Fields` (Set: `document_id`, `cycle_id`, `docName`, `title`, `author_username`, `docUrl`) + residual `Render Task Description HTML` (Code, ~5 LOC, HTML-only — assembles the description and the final `createTaskInput` like WF01).
 - `Extract Task ID` (Code, 8 LOC) → `Unwrap MCP Create Task` (Execute Workflow) + `Extract Task ID` (Set: `task_id` from `payload.task_id || payload.id || payload.task.task_id`; pulls `cycle_id` / `document_id` / `author_username` from `Build Task Fields`) + reused `IF Has Task ID` / `Stop - Missing task_id`.
 - `Register Approval State` (Code, 5 LOC, `$getWorkflowStaticData`) → `Ensure Approvals Table` (Data Table create with `createIfNotExists`) at intake start + `Seed Approval Row` (Data Table upsert on `wf02_approvals` keyed by `cycleKey = task_id:cycle_id`, defaults `artistic_decision`/`technical_decision = PENDING`).
@@ -139,14 +153,14 @@ Iterates on the WF01 pattern (shared unwrap sub-workflow) plus the WF04 pattern 
 
 ### Persistence (new)
 
-- **`wf02_processed_documents`** — `documentId` (string), `lastProcessedDate` (date/dateTime), `cycleId` (string). Self-bootstrapped with `Ensure Tracking Table` (`createIfNotExists`).
-- **`wf02_approvals`** — `cycleKey`, `task_id`, `cycle_id`, `document_id`, `author_username`, `artistic_decision/reason/at`, `technical_decision/reason/at`. Self-bootstrapped with `Ensure Approvals Table`.
+- `**wf02_processed_documents`** — `documentId` (string), `lastProcessedDate` (date/dateTime), `cycleId` (string). Self-bootstrapped with `Ensure Tracking Table` (`createIfNotExists`).
+- `**wf02_approvals**` — `cycleKey`, `task_id`, `cycle_id`, `document_id`, `author_username`, `artistic_decision/reason/at`, `technical_decision/reason/at`. Self-bootstrapped with `Ensure Approvals Table`.
 
 ### Deploy chain
 
 - [subworkflow-dependencies.json](../workflows/wf02-document-validation/subworkflow-dependencies.json) declares `unwrap-mcp-json` with `parentExecuteWorkflowNodeNames: ["Unwrap MCP Search Folder Docs", "Unwrap MCP Get Document", "Unwrap MCP Create Task"]` (parity with [WF01 manifest](../workflows/wf01-email-dispatch/subworkflow-dependencies.json)).
 - Validation gate: `./tools/validate-workflow.sh wf02` (mandatory; see [.cursor/skills/n8n-workflow-deploy-gate/SKILL.md](../.cursor/skills/n8n-workflow-deploy-gate/SKILL.md)).
-- REST publish: `./deploy.sh wf02` (auto-deploys the unwrap dependency first and injects its remote id from `N8N_WORKFLOW_ID_UNWRAP` into the three Execute Workflow nodes before the parent PUT).
+- REST publish: `./tools/deploy.sh wf02` (auto-deploys the unwrap dependency first and injects its remote id from `N8N_WORKFLOW_ID_UNWRAP` into the three Execute Workflow nodes before the parent PUT).
 
 ### Justified residues
 
@@ -180,11 +194,13 @@ flowchart TD
   T1 --> M1 --> SW --> SO --> DT --> F1 --> AR
 ```
 
+
+
 ### Suggested order
 
-1. Harden the shared *Unwrap MCP* sub-workflow.  
-2. Trade static dedupe in Code for **Data Table** (WF04 style).  
-3. Keep HTML rendering in one Code until a maintainable template path exists.  
+1. Harden the shared *Unwrap MCP* sub-workflow.
+2. Trade static dedupe in Code for **Data Table** (WF04 style).
+3. Keep HTML rendering in one Code until a maintainable template path exists.
 
 ### Justified residues
 
@@ -195,12 +211,14 @@ flowchart TD
 
 ## 7. Internal references
 
-| Artifact | Path |
-| -------- | ---- |
-| Machine inventory | [inventory-code-nodes.json](inventory-code-nodes.json) |
-| Inventory script | [inventory-code-nodes.mjs](../tools/inventory-code-nodes.mjs) |
-| WF04 technical | [SPEC.technical.md](../workflows/wf04-metadata-enrichment/SPEC.technical.md) |
-| WF04 functional | [SPEC.functional.md](../workflows/wf04-metadata-enrichment/SPEC.functional.md) |
+
+| Artifact          | Path                                                                           |
+| ----------------- | ------------------------------------------------------------------------------ |
+| Machine inventory | [inventory-code-nodes.json](inventory-code-nodes.json)                         |
+| Inventory script  | [inventory-code-nodes.mjs](../tools/inventory-code-nodes.mjs)                  |
+| WF04 technical    | [SPEC.technical.md](../workflows/wf04-metadata-enrichment/SPEC.technical.md)   |
+| WF04 functional   | [SPEC.functional.md](../workflows/wf04-metadata-enrichment/SPEC.functional.md) |
+
 
 ---
 

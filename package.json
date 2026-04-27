@@ -7,7 +7,8 @@
   "scripts": {
     "validate:workflow": "node tools/validate-workflow-json.mjs",
     "validate:workflows": "node tools/validate-workflow-json.mjs --all",
-    "deploy:workflow": "node tools/push-workflow-to-n8n-api.mjs"
+    "deploy:workflow": "node tools/push-workflow-to-n8n-api.mjs",
+    "download:workflow": "node tools/download-workflow-from-n8n-api.mjs"
   },
   "engines": {
     "node": ">=18"

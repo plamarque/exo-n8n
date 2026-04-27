@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * @deprecated Prefer `./deploy.sh wf03 --create-missing-deps` (or
+ * @deprecated Prefer `./tools/deploy.sh wf03 --create-missing-deps` (or
  * `npm run deploy:workflow -- wf03 --create-missing-deps`) so missing UTIL
  * sub-workflows are POST-created, env lines are printed, and the parent is
  * deployed with in-memory `workflowId` injection — without rewriting
@@ -17,7 +17,7 @@ const extra = process.argv.slice(2).filter((a) => a !== "--dry-run");
 const dryRun = process.argv.includes("--dry-run");
 
 console.warn(
-  "[deprecated] tools/import-wf03-subworkflows.mjs — use: ./deploy.sh wf03 --create-missing-deps",
+  "[deprecated] tools/import-wf03-subworkflows.mjs — use: ./tools/deploy.sh wf03 --create-missing-deps",
 );
 
 const forward = ["tools/push-workflow-to-n8n-api.mjs", "wf03", "--create-missing-deps", ...extra];

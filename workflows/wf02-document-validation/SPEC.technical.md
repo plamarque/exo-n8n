@@ -5,7 +5,7 @@
 ## n8n artifacts (repository)
 
 - Canonical export in git: `workflows/wf02-document-validation/workflow.json`.
-- Sub-workflow dependency manifest: `workflows/wf02-document-validation/subworkflow-dependencies.json` declares the shared unwrap (`workflows/shared/subworkflows/unwrap-mcp-json/workflow.json`) for the three `Unwrap MCP …` nodes; `./deploy.sh wf02` deploys the dependency first and injects its remote id from `N8N_WORKFLOW_ID_UNWRAP` into the parent at PUT time.
+- Sub-workflow dependency manifest: `workflows/wf02-document-validation/subworkflow-dependencies.json` declares the shared unwrap (`workflows/shared/subworkflows/unwrap-mcp-json/workflow.json`) for the three `Unwrap MCP …` nodes; `./tools/deploy.sh wf02` deploys the dependency first and injects its remote id from `N8N_WORKFLOW_ID_UNWRAP` into the parent at PUT time.
 - Remote n8n workflow id: pinned in repository root `.env` as `N8N_WORKFLOW_ID_WF02`. Tenant-bound; see [docs/DEVELOPMENT.md](../../docs/DEVELOPMENT.md#rest-deploy-to-n8n) and [.env.example](../../.env.example).
 
 ## 11) MCP exploration (QAUI) and evidence level

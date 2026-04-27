@@ -70,8 +70,6 @@ Tools used (see [SPEC.technical.md](SPEC.technical.md)):
 
 ## Video walkthrough
 
-
-
 **Short video:** *TBD*
 
 ---

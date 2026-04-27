@@ -115,7 +115,7 @@ These patterns appear across the portfolio; they are **intentional** for maintai
 ## Deployment and validation (pointers)
 
 - **Environment:** copy [`.env.example`](.env.example) to `.env` and follow [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) (REST deploy, credentials, MCP).
-- **Deploy a workflow from the repo root:** `./deploy.sh wf01` (and `wf02`, `wf03`, `wf04`); use `--dry-run` to inspect targets. Sub-workflow order is driven by each folder’s `subworkflow-dependencies.json` where present.
+- **Deploy a workflow from the repo root:** `./tools/deploy.sh wf01` (and `wf02`, `wf03`, `wf04`); use `--dry-run` to inspect targets. Sub-workflow order is driven by each folder’s `subworkflow-dependencies.json` where present.
 - **Validation policy:** before publishing, validate the canonical `workflow.json` as described in [docs/WORKFLOW.md](docs/WORKFLOW.md) and [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#rest-deploy-to-n8n).
 
 

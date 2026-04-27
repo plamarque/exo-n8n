@@ -89,4 +89,4 @@ If the folder contains no matching documents, `search_documents` returns an empt
 
 ## REST deploy
 
-From the repository root (unwrap dependency first, then parent): `./deploy.sh wf02` (see `[docs/DEVELOPMENT.md](../../docs/DEVELOPMENT.md)`). Sub-workflow manifest: `[subworkflow-dependencies.json](subworkflow-dependencies.json)`.
+From the repository root (unwrap dependency first, then parent): `./tools/deploy.sh wf02` (see `[docs/DEVELOPMENT.md](../../docs/DEVELOPMENT.md)`). Sub-workflow manifest: `[subworkflow-dependencies.json](subworkflow-dependencies.json)`.

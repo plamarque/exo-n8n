@@ -2,7 +2,7 @@
 name: n8n-workflow-deploy-gate
 description: >-
   Enforces local @n8n/workflow-sdk validation before publish. Supports two deploy channels:
-  (1) REST push of canonical workflow.json via ./deploy.sh (or npm run deploy:workflow) and root .env;
+  (1) REST push of canonical workflow.json via ./tools/deploy.sh (or npm run deploy:workflow) and root .env;
   (2) optional --emit-sdk then n8n MCP validate_workflow before update_workflow. Use when
   editing workflows/wf*-/workflow.json or syncing to a remote n8n instance.
 ---
@@ -13,7 +13,7 @@ description: >-
 
 | Goal | Channel | After local validation |
 |------|---------|-------------------------|
-| Parity with git / CI / canonical JSON | **REST API** | `./deploy.sh wf0X` or `unwrap` (same as `npm run deploy:workflow -- …`; [push-workflow-to-n8n-api.mjs](../../../tools/push-workflow-to-n8n-api.mjs)) |
+| Parity with git / CI / canonical JSON | **REST API** | `./tools/deploy.sh wf0X` or `unwrap` (same as `npm run deploy:workflow -- …`; [push-workflow-to-n8n-api.mjs](../../../tools/push-workflow-to-n8n-api.mjs)) |
 | Cursor + SDK `code` already generated | **n8n MCP** | `validate_workflow` then `update_workflow` with the same `code` |
 
 Publishing **SDK `code`** without going through the same `workflow.json` validation path is a different artifact than REST **JSON** publish; align with the user on which source wins.
@@ -39,7 +39,7 @@ From the repository root, after `npm install`:
 ### 2a. REST: push canonical JSON (default for repo parity)
 
 1. Ensure the remote workflow id is known: either `N8N_WORKFLOW_ID_WF…` in `.env` or a top-level `"id"` in the canonical `workflow.json` for that tenant (see per-workflow `SPEC.technical.md` / `README.md`, e.g. [wf01 SPEC.technical.md](../../../workflows/wf01-email-dispatch/SPEC.technical.md), [wf03 README.md](../../../workflows/wf03-weekly-steering/README.md), [wf04 SPEC.technical.md](../../../workflows/wf04-metadata-enrichment/SPEC.technical.md); unwrap id in wf01 spec).
-2. Run `./deploy.sh wf0X` (runs local validation again before `PUT` by default). Portfolios with **`subworkflow-dependencies.json`** (WF01, WF03) deploy declared sub-workflows first, then the parent, with in-memory **Execute Workflow** id injection (see [docs/DEVELOPMENT.md](../../../docs/DEVELOPMENT.md#portfolio-deploy-dependencies-manifest)). Use `--dry-run` to skip PUT/POST while still GETting remotes for merge logs; use `--no-deps` to skip the manifest; use `--create-missing-deps` for first-time POST of missing dependencies (not with `--dry-run` when ids are still missing). Use `--skip-validate` only with care.
+2. Run `./tools/deploy.sh wf0X` (runs local validation again before `PUT` by default). Portfolios with **`subworkflow-dependencies.json`** (WF01, WF03) deploy declared sub-workflows first, then the parent, with in-memory **Execute Workflow** id injection (see [docs/DEVELOPMENT.md](../../../docs/DEVELOPMENT.md#portfolio-deploy-dependencies-manifest)). Use `--dry-run` to skip PUT/POST while still GETting remotes for merge logs; use `--no-deps` to skip the manifest; use `--create-missing-deps` for first-time POST of missing dependencies (not with `--dry-run` when ids are still missing). Use `--skip-validate` only with care.
 
 MCP `validate_workflow` does **not** apply to this path.
 
