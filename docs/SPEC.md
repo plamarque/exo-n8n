@@ -65,7 +65,7 @@ Observable intended behavior from specs and server export:
 - Create or update a recurring agenda invitation that links to the note.
 - Use the reference project, note, and agenda IDs observed in the MIPS exploration material.
 
-Operational notes and file map: [workflows/wf03-weekly-steering/README.md](../workflows/wf03-weekly-steering/README.md). Remaining Code-node reduction work is tracked in [ISSUES.md](ISSUES.md).
+Operational notes and file map: [workflows/wf03-weekly-steering/README.md](../workflows/wf03-weekly-steering/README.md). Optional follow-up for further native-only refactors is tracked in [ISSUES.md](ISSUES.md).
 
 ### WF04 - Metadata enrichment
 

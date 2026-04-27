@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-The repository is a collection of four n8n workflows integrating eXo via MCP, with documentation that needed a predictable layout: one directory per workflow, canonical JSON artifacts, optional fixtures, shared sub-workflows, and minimal `tools/`.
+The repository is a collection of four n8n workflows integrating eXo via MCP, with documentation that needed a predictable layout: one directory per workflow, canonical JSON artifacts, optional fixtures, shared cross-cutting sub-workflows, optional per-workflow sub-workflows, and minimal `tools/`.
 
 ## Decision
 
@@ -14,6 +14,7 @@ The repository is a collection of four n8n workflows integrating eXo via MCP, wi
   - `workflows/wf01-email-dispatch/`, `workflows/wf02-document-validation/`, `workflows/wf03-weekly-steering/`, `workflows/wf04-metadata-enrichment/`.
   - Each contains at minimum: `README.md`, `SPEC.functional.md`, `SPEC.technical.md`, `workflow.json` (canonical), `config.env.example`, and optionally `fixtures/`.
   - Cross-cutting sub-workflows live under `workflows/shared/subworkflows/<name>/` with their own `workflow.json` and `README.md`.
+  - Sub-workflows used by **only one** portfolio workflow may live under that workflow’s folder, e.g. `workflows/wf03-weekly-steering/subworkflows/<name>/`, with the same `workflow.json` + `README.md` pattern.
 2. **Canonical JSON**
   - `workflow.json` in each workflow folder is the **source of truth** for review, import, and MCP validation.
   - **WF04**: the canonical file is **import**-oriented n8n JSON (suitable for re-import and API `PUT` updates). A **secondary snapshot** of a full n8n export lives under `workflows/wf04-metadata-enrichment/fixtures/workflow.export.snapshot.json` for diffing against the server when needed.

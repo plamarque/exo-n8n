@@ -20,7 +20,7 @@ This document is tracking-only. It does not define expected behavior.
 
 ### WF03
 
-- **WF03**: refactor Code → native nodes (HTML composition, config dates, report body) is still to do. Progress vs native patterns is described in [audit-code-vs-native.md](audit-code-vs-native.md). Operational entry point: [workflows/wf03-weekly-steering/README.md](../workflows/wf03-weekly-steering/README.md).
+- **WF03**: heavy HTML/report logic lives in portfolio-local UTIL exports under `workflows/wf03-weekly-steering/subworkflows/`; main graph uses **Set**, **Execute Workflow** (unwrap + report + compose), and one small **Decide Note Upsert** Code node. REST deploy from git uses `./deploy.sh wf03` with [subworkflow-dependencies.json](../workflows/wf03-weekly-steering/subworkflow-dependencies.json) (see [README](../workflows/wf03-weekly-steering/README.md)). Further native-only tweaks (Split Out / Aggregate for tasks) remain optional; see [audit-code-vs-native.md](audit-code-vs-native.md).
 - [UNCERTAIN] Activation status and latest successful execution evidence are not documented in the same style as WF01.
 
 ### WF04

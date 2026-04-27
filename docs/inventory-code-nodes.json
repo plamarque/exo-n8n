@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-27T08:49:04.608Z",
+  "generatedAt": "2026-04-27T10:47:33.232Z",
   "workflowsDir": "workflows/",
   "files": [
     {
@@ -136,91 +136,63 @@
       ]
     },
     {
-      "file": "workflows/wf03-weekly-steering/workflow.json",
-      "workflowName": "WF03 - Weekly steering preparation",
-      "codeNodeCount": 6,
+      "file": "workflows/wf03-weekly-steering/subworkflows/wf03-build-report-context/workflow.json",
+      "workflowName": "UTIL - WF03 build report context",
+      "codeNodeCount": 1,
       "codeNodes": [
         {
-          "name": "Prepare COPIL Config",
-          "id": "0981a2c4-3cb5-4664-81d4-cddf77e7c5dd",
-          "mode": null,
+          "name": "Build Report Context Body",
+          "id": "9b230c6a-502c-42ad-b9a1-b270945991fb",
+          "mode": "runOnceForEachItem",
           "typeVersion": 2,
-          "linesOfCode": 41,
-          "chars": 1504,
+          "linesOfCode": 131,
+          "chars": 4911,
           "hasParseEnvelope": false,
           "hasGetWorkflowStaticData": false,
-          "hasHtml": false,
+          "hasHtml": true,
           "hasMcpContentText": false,
           "hasJsCode": true,
           "missingJsCodeInRepo": false
-        },
+        }
+      ]
+    },
+    {
+      "file": "workflows/wf03-weekly-steering/subworkflows/wf03-compose-steering-note-html/workflow.json",
+      "workflowName": "UTIL - WF03 compose steering note HTML",
+      "codeNodeCount": 1,
+      "codeNodes": [
         {
-          "name": "Build Report Context",
-          "id": "86c65efd-0cfe-48bc-850b-f0e8cdbf4e4b",
-          "mode": null,
-          "typeVersion": 2,
-          "linesOfCode": 142,
-          "chars": 5368,
-          "hasParseEnvelope": true,
-          "hasGetWorkflowStaticData": false,
-          "hasHtml": true,
-          "hasMcpContentText": true,
-          "hasJsCode": true,
-          "missingJsCodeInRepo": false
-        },
-        {
-          "name": "Compose COPIL Note",
-          "id": "eda47380-991a-4d1e-9109-d9d24458d65a",
-          "mode": null,
+          "name": "Compose Steering Note HTML",
+          "id": "efe8542e-5253-4ad5-ad8f-004bbcdab6ba",
+          "mode": "runOnceForEachItem",
           "typeVersion": 2,
           "linesOfCode": 197,
-          "chars": 8656,
+          "chars": 8629,
           "hasParseEnvelope": false,
           "hasGetWorkflowStaticData": false,
           "hasHtml": true,
           "hasMcpContentText": false,
           "hasJsCode": true,
           "missingJsCodeInRepo": false
-        },
+        }
+      ]
+    },
+    {
+      "file": "workflows/wf03-weekly-steering/workflow.json",
+      "workflowName": "WF03 - Weekly steering preparation",
+      "codeNodeCount": 1,
+      "codeNodes": [
         {
           "name": "Decide Note Upsert",
           "id": "04bbb101-f817-4f75-aa8b-80250e300219",
-          "mode": null,
+          "mode": "runOnceForEachItem",
           "typeVersion": 2,
-          "linesOfCode": 30,
-          "chars": 1025,
-          "hasParseEnvelope": true,
+          "linesOfCode": 17,
+          "chars": 563,
+          "hasParseEnvelope": false,
           "hasGetWorkflowStaticData": false,
           "hasHtml": false,
-          "hasMcpContentText": true,
-          "hasJsCode": true,
-          "missingJsCodeInRepo": false
-        },
-        {
-          "name": "Prepare Agenda Update After Update",
-          "id": "ec3ad545-906b-47b0-a8fa-85b36bc74a94",
-          "mode": null,
-          "typeVersion": 2,
-          "linesOfCode": 15,
-          "chars": 1076,
-          "hasParseEnvelope": true,
-          "hasGetWorkflowStaticData": false,
-          "hasHtml": true,
-          "hasMcpContentText": true,
-          "hasJsCode": true,
-          "missingJsCodeInRepo": false
-        },
-        {
-          "name": "Prepare Agenda Update After Create",
-          "id": "545ed0e7-cc5e-4841-9079-d22b9e3de6d7",
-          "mode": null,
-          "typeVersion": 2,
-          "linesOfCode": 15,
-          "chars": 1076,
-          "hasParseEnvelope": true,
-          "hasGetWorkflowStaticData": false,
-          "hasHtml": true,
-          "hasMcpContentText": true,
+          "hasMcpContentText": false,
           "hasJsCode": true,
           "missingJsCodeInRepo": false
         }
@@ -249,8 +221,8 @@
     }
   ],
   "totals": {
-    "codeNodes": 15,
-    "linesOfCode": 551,
-    "chars": 27083
+    "codeNodes": 12,
+    "linesOfCode": 456,
+    "chars": 22481
   }
 }

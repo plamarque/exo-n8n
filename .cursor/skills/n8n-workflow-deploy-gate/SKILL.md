@@ -39,7 +39,7 @@ From the repository root, after `npm install`:
 ### 2a. REST: push canonical JSON (default for repo parity)
 
 1. Ensure the remote workflow id is known: either `N8N_WORKFLOW_ID_WF…` in `.env` or a top-level `"id"` in the canonical `workflow.json` for that tenant (see per-workflow `SPEC.technical.md` / `README.md`, e.g. [wf01 SPEC.technical.md](../../../workflows/wf01-email-dispatch/SPEC.technical.md), [wf03 README.md](../../../workflows/wf03-weekly-steering/README.md), [wf04 SPEC.technical.md](../../../workflows/wf04-metadata-enrichment/SPEC.technical.md); unwrap id in wf01 spec).
-2. Run `./deploy.sh wf0X` (runs local validation again before `PUT` by default). Use `--dry-run` to print the target URL without writing. Use `--skip-validate` only with care.
+2. Run `./deploy.sh wf0X` (runs local validation again before `PUT` by default). Portfolios with **`subworkflow-dependencies.json`** (WF01, WF03) deploy declared sub-workflows first, then the parent, with in-memory **Execute Workflow** id injection (see [docs/DEVELOPMENT.md](../../../docs/DEVELOPMENT.md#portfolio-deploy-dependencies-manifest)). Use `--dry-run` to skip PUT/POST while still GETting remotes for merge logs; use `--no-deps` to skip the manifest; use `--create-missing-deps` for first-time POST of missing dependencies (not with `--dry-run` when ids are still missing). Use `--skip-validate` only with care.
 
 MCP `validate_workflow` does **not** apply to this path.
 

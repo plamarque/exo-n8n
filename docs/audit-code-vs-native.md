@@ -91,11 +91,11 @@ Workflow id: `aze2wAktXHYrTBTr` (n8n cloud), synced with `get_workflow_details`.
 
 | Node | LOC | Main intent | Native / architecture | Priority |
 | ---- | --- | ----------- | ---------------------- | -------- |
-| Prepare COPIL Config | 41 | Date math | **Date & Time** + **Set** | P2 |
-| Build Report Context | 142 | Parse + HTML + aggregate | Unwrap; table rows: **Item Lists**; `status_counts`: **Aggregate**; HTML: dedicated sub-workflow or documented Code | P3 |
-| Compose COPIL Note | 194 | HTML template | Single “compose HTML” sub-workflow; static pieces in **Set** | P3 |
-| Decide Note Upsert | 30 | Unwrap + pick existing | Unwrap + **IF** on title; **Set** `should_update_note` | P2 |
-| Prepare Agenda (×2) | 15 each | Unwrap + HTML string for agenda | One shared sub-workflow *post-save → agenda* | P1 |
+| Prepare COPIL Config | — | Dates + env → flat config | **Set** (Luxon `$now` / `Europe/Paris` expressions) | Done |
+| Build Report Context | — | Parse + HTML + aggregate | **Execute Workflow** → [UTIL - WF03 build report context](../workflows/wf03-weekly-steering/subworkflows/wf03-build-report-context/workflow.json) (Code); parent: Unwrap + **Set** bundle | Done |
+| Compose COPIL Note | — | HTML template | **Execute Workflow** → [UTIL - WF03 compose steering note HTML](../workflows/wf03-weekly-steering/subworkflows/wf03-compose-steering-note-html/workflow.json) (Code); parent **Set** bundle | Done |
+| Decide Note Upsert | ~15 | Pick existing note id | Unwrap + small **Code** on `payload` (no duplicate MCP parse) | Residual |
+| Prepare Agenda (×2) | — | Agenda body after save | **Unwrap** + **Set** `agendaUpdateInput` / `note_url` | Done |
 
 ### WF04 — [workflow.json](../workflows/wf04-metadata-enrichment/workflow.json)
 
@@ -113,7 +113,7 @@ Workflow id: `aze2wAktXHYrTBTr` (n8n cloud), synced with `get_workflow_details`.
 | **Unwrap MCP JSON** | raw MCP / HTTP | parsed JSON item | WF01–04 |
 | **MCP list → items** | object w/ `emails` / `tasks` / … | normalized items | tool-specific |
 | **Extract task_id** | `create_task` response | `task_id` + passthrough | WF01, WF02 |
-| **Post note save → agenda** | saved note + context | `agendaUpdateInput` | WF03 (removes Update/Create duplication) |
+| **Post note save → agenda** | saved note + context | `agendaUpdateInput` | WF03: **Unwrap** + **Set** on both branches (no duplicate Code) |
 
 ---
 

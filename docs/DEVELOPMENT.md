@@ -147,10 +147,28 @@ npm run deploy:workflow -- wf04
 
 - Loads `[.env](../.env.example)` from the **repository root** (see [Root `.env` for repository tooling](#root-env-for-repository-tooling)).
 - By default runs local `validateWorkflow` on the target `workflow.json` before `PUT`. Use `--skip-validate` only with care.
-- `--dry-run` prints the target URL and exits without calling n8n.
+- `--dry-run` skips **PUT** and **POST** (including `--create-missing-deps` creates). It still performs **GET** on each dependency and the parent so credential merge can be simulated and URLs are printed. Do not combine `--dry-run` with `--create-missing-deps` when a dependency has no resolvable remote id (the run fails with an explicit message); resolve ids first via `.env`, dependency JSON top-level `"id"`, or parent **Execute Workflow** `parameters.workflowId`, then dry-run again.
 - The script sends a **schema-safe** subset of the export (n8n rejects extra top-level fields, `id` and `tags` in the body, and some `settings` keys such as `availableInMCP` / `binaryMode`). After a push, confirm **Available in MCP** and other UI-only options in n8n if your workflow relied on them.
 - **Credentials on PUT:** canonical JSON omits `credentials`. The deploy script **GET**s the existing remote workflow, **merges** `credentials` from the server onto local nodes by matching **`node.id`**, then `PUT`s (n8n returns `{ id, name }` references only — no secrets in git). If the remote workflow was **active**, it is **deactivated** before `PUT` and **re-activated** afterward when possible; if re-activate fails, the workflow stays inactive and a warning explains next steps.
-- **Fallback overrides:** if merge leaves some MCP or OpenAI nodes without a reference (new node ids, empty remote, etc.), the script fills gaps using `N8N_MCP_OAUTH2_CREDENTIAL_*` / `N8N_OPENAI_CREDENTIAL_*` when set, otherwise a **single** matching credential type on the instance (with a warning when multiple exist). If the OpenAI credential list is ambiguous or unavailable, the script can reuse the `openAiApi` `{id,name}` from the first configured `lmChatOpenAi` on another workflow: set `N8N_OPENAI_REFERENCE_WORKFLOW_ID`, or rely on `N8N_WORKFLOW_ID_WF01` when set (typical: same binding as WF01 without editing WF03 in the UI). Prefer fixing node ids to match the remote or attaching credentials once in the n8n UI over relying on env overrides when you need a different credential per workflow.
+- **Fallback overrides:** if merge leaves some MCP or OpenAI nodes without a reference (new node ids, empty remote, etc.), the script fills gaps using `N8N_MCP_OAUTH2_CREDENTIAL_*` / `N8N_OPENAI_CREDENTIAL_*` when set, otherwise a **single** matching credential type on the instance (with a warning when multiple exist). If the OpenAI credential list is ambiguous or unavailable, the script can reuse the `openAiApi` `{id,name}` from the first configured `lmChatOpenAi` on another workflow: set `N8N_OPENAI_REFERENCE_WORKFLOW_ID`, or rely on `N8N_WORKFLOW_ID_WF01` when set (typical: same binding as WF01 without editing WF03 in the n8n UI). Prefer fixing node ids to match the remote or attaching credentials once in the n8n UI over relying on env overrides when you need a different credential per workflow.
+
+### Portfolio deploy dependencies manifest
+
+Some portfolio folders include **`subworkflow-dependencies.json`** next to `workflow.json` (for example [wf03](../workflows/wf03-weekly-steering/subworkflow-dependencies.json); WF01 and WF03 today). When present, [tools/push-workflow-to-n8n-api.mjs](../tools/push-workflow-to-n8n-api.mjs) **deploys dependencies first** (same GET → merge credentials → PUT behavior as the parent), builds an injection map, then **PUT**s the parent. Remote **Execute Workflow** targets are **not** written back to git: the script patches `parameters.workflowId` **in memory** before the parent PUT.
+
+**Schema (version 1):** top-level `{ "version": 1, "dependencies": [ … ] }`. Each entry:
+
+| Field | Meaning |
+|-------|---------|
+| `path` | Path to the dependency `workflow.json`, relative to the portfolio directory (may use `../shared/…` for cross-portfolio UTILs). |
+| `remoteIdEnv` | Environment variable name holding the remote n8n workflow id for that dependency (for example `N8N_WORKFLOW_ID_UNWRAP`). |
+| `parentExecuteWorkflowNodeNames` | Exact `name` values of **Execute Workflow** nodes on the **parent** graph to receive that dependency’s remote id at deploy time. |
+
+**Resolution order for each dependency’s remote id:** value of `remoteIdEnv` in `.env`, else top-level `"id"` on the dependency JSON if present, else the first matching parent **Execute Workflow** node’s `parameters.workflowId` among `parentExecuteWorkflowNodeNames`. If still empty: use `./deploy.sh wf03 --create-missing-deps` (once) to **POST**-create on n8n and print `.env` lines — **not** with `--dry-run` when ids are missing.
+
+**Flags:** `--no-deps` skips the manifest even if present; `--create-missing-deps` POST-creates missing dependencies; [deploy.sh](../deploy.sh) forwards all arguments to the Node script.
+
+**WF03 first-time tenant:** Prefer `./deploy.sh wf03 --create-missing-deps` over editing canonical JSON. The legacy [tools/import-wf03-subworkflows.mjs](../tools/import-wf03-subworkflows.mjs) entrypoint is deprecated and forwards to the same deploy command.
 
 ## Configuration
 
@@ -164,7 +182,7 @@ Example `config.env.example` files live **next to each workflow** (for example [
 
 - **WF01**: import [workflows/wf01-email-dispatch/workflow.json](../workflows/wf01-email-dispatch/workflow.json); ensure shared [unwrap sub-workflow](../workflows/shared/subworkflows/unwrap-mcp-json/workflow.json); verify MCP eXo and OpenAI credentials; run `Manual Start`. See [wf01 README](../workflows/wf01-email-dispatch/README.md).
 - **WF02**: import [workflows/wf02-document-validation/workflow.json](../workflows/wf02-document-validation/workflow.json); set variables from [config.env.example](../workflows/wf02-document-validation/config.env.example); test webhook. See [wf02 README](../workflows/wf02-document-validation/README.md).
-- **WF03**: use [workflows/wf03-weekly-steering/README.md](../workflows/wf03-weekly-steering/README.md) and technical specs for IDs, notes, and agenda. Canonical JSON: [workflows/wf03-weekly-steering/workflow.json](../workflows/wf03-weekly-steering/workflow.json); raw API snapshot: [api-response.snapshot.json](../workflows/wf03-weekly-steering/fixtures/api-response.snapshot.json).
+- **WF03**: use [workflows/wf03-weekly-steering/README.md](../workflows/wf03-weekly-steering/README.md) and technical specs for IDs, notes, and agenda. REST-deploy with `./deploy.sh wf03` (dependencies from `subworkflow-dependencies.json` run first). For a fresh tenant without UTIL ids, `./deploy.sh wf03 --create-missing-deps`. Canonical JSON: [workflows/wf03-weekly-steering/workflow.json](../workflows/wf03-weekly-steering/workflow.json); raw API snapshot: [api-response.snapshot.json](../workflows/wf03-weekly-steering/fixtures/api-response.snapshot.json).
 - **WF04**: set `$vars.EXO_SPACE_NAME`; verify MCP OAuth, OpenAI, and Data Table; see [wf04 README](../workflows/wf04-metadata-enrichment/README.md).
 
 ## Operational safety
