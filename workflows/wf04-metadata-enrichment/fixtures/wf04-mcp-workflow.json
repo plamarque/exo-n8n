@@ -949,13 +949,13 @@
             {
               "id": "7",
               "name": "documentUrl",
-              "value": "={{ $(\"Read Document Content\").item.json.content?.[0]?.text?.url ? \"http://exo-qaui.meeds.io\" + $(\"Read Document Content\").item.json.content?.[0]?.text?.url : \"\" }}",
+              "value": "={{ $(\"Read Document Content\").item.json.content?.[0]?.text?.url ? \"https://exo-mips-ft.meeds.io\" + $(\"Read Document Content\").item.json.content?.[0]?.text?.url : \"\" }}",
               "type": "string"
             },
             {
               "id": "8",
               "name": "editorUrl",
-              "value": "={{ (() => { const docId = $(\"Read Document Content\").item.json.content?.[0]?.text?.document_id || \"\"; return docId ? \"http://exo-qaui.meeds.io/portal/dw/oeditor?docId=\" + encodeURIComponent(docId) : \"\"; })() }}",
+              "value": "={{ (() => { const docId = $(\"Read Document Content\").item.json.content?.[0]?.text?.document_id || \"\"; return docId ? \"https://exo-mips-ft.meeds.io/portal/dw/oeditor?docId=\" + encodeURIComponent(docId) : \"\"; })() }}",
               "type": "string"
             }
           ]

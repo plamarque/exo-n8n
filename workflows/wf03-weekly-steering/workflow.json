@@ -470,7 +470,7 @@
     },
     {
       "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo-qaui.meeds.io/mcp-server/mcp\"}}",
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo-mips-ft.meeds.io/mcp-server/mcp\"}}",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -508,7 +508,7 @@
     },
     {
       "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo-qaui.meeds.io/mcp-server/mcp\"}}",
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo-mips-ft.meeds.io/mcp-server/mcp\"}}",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -696,7 +696,7 @@
     },
     {
       "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo-qaui.meeds.io/mcp-server/mcp\"}}",
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo-mips-ft.meeds.io/mcp-server/mcp\"}}",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -782,7 +782,7 @@
     },
     {
       "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo-qaui.meeds.io/mcp-server/mcp\"}}",
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo-mips-ft.meeds.io/mcp-server/mcp\"}}",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -832,13 +832,13 @@
             {
               "id": "18362b02",
               "name": "note_url",
-              "value": "={{ $json.payload?.url || $json.payload?.link || ('https://exo-qaui.meeds.io/portal/dw/notes/' + String($json.payload?.note_id || $('Decide Note Upsert').item.json.existing_note_id || '')) }}",
+              "value": "={{ $json.payload?.url || $json.payload?.link || ('https://exo-mips-ft.meeds.io/portal/dw/notes/' + String($json.payload?.note_id || $('Decide Note Upsert').item.json.existing_note_id || '')) }}",
               "type": "string"
             },
             {
               "id": "42ced4e6",
               "name": "agendaUpdateInput",
-              "value": "={{\n  ({\n    event_id: $('Decide Note Upsert').item.json.agenda_parent_event_id,\n    summary: 'Weekly steering - ' + $('Decide Note Upsert').item.json.meeting_date,\n    description: '<p>Meeting support: <a href=\"' + ($json.payload?.url || $json.payload?.link || ('https://exo-qaui.meeds.io/portal/dw/notes/' + String($json.payload?.note_id || $('Decide Note Upsert').item.json.existing_note_id || ''))) + '\" target=\"_blank\" rel=\"noopener noreferrer\">' + $('Decide Note Upsert').item.json.note_title + '</a></p><p>Prepared automatically from project ' + String($('Decide Note Upsert').item.json.project_id) + ' tasks.</p>'\n  })\n}}",
+              "value": "={{\n  ({\n    event_id: $('Decide Note Upsert').item.json.agenda_parent_event_id,\n    summary: 'Weekly steering - ' + $('Decide Note Upsert').item.json.meeting_date,\n    description: '<p>Meeting support: <a href=\"' + ($json.payload?.url || $json.payload?.link || ('https://exo-mips-ft.meeds.io/portal/dw/notes/' + String($json.payload?.note_id || $('Decide Note Upsert').item.json.existing_note_id || ''))) + '\" target=\"_blank\" rel=\"noopener noreferrer\">' + $('Decide Note Upsert').item.json.note_title + '</a></p><p>Prepared automatically from project ' + String($('Decide Note Upsert').item.json.project_id) + ' tasks.</p>'\n  })\n}}",
               "type": "object"
             }
           ]
@@ -856,7 +856,7 @@
     },
     {
       "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo-qaui.meeds.io/mcp-server/mcp\"}}",
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo-mips-ft.meeds.io/mcp-server/mcp\"}}",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -880,7 +880,7 @@
     },
     {
       "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo-qaui.meeds.io/mcp-server/mcp\"}}",
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo-mips-ft.meeds.io/mcp-server/mcp\"}}",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -904,7 +904,7 @@
     },
     {
       "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo-qaui.meeds.io/mcp-server/mcp\"}}",
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo-mips-ft.meeds.io/mcp-server/mcp\"}}",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -954,13 +954,13 @@
             {
               "id": "ea3c98dd",
               "name": "note_url",
-              "value": "={{ $json.payload?.url || $json.payload?.link || ('https://exo-qaui.meeds.io/portal/dw/notes/' + String($json.payload?.note_id || $('Decide Note Upsert').item.json.existing_note_id || '')) }}",
+              "value": "={{ $json.payload?.url || $json.payload?.link || ('https://exo-mips-ft.meeds.io/portal/dw/notes/' + String($json.payload?.note_id || $('Decide Note Upsert').item.json.existing_note_id || '')) }}",
               "type": "string"
             },
             {
               "id": "41628d04",
               "name": "agendaUpdateInput",
-              "value": "={{\n  ({\n    event_id: $('Decide Note Upsert').item.json.agenda_parent_event_id,\n    summary: 'Weekly steering - ' + $('Decide Note Upsert').item.json.meeting_date,\n    description: '<p>Meeting support: <a href=\"' + ($json.payload?.url || $json.payload?.link || ('https://exo-qaui.meeds.io/portal/dw/notes/' + String($json.payload?.note_id || $('Decide Note Upsert').item.json.existing_note_id || ''))) + '\" target=\"_blank\" rel=\"noopener noreferrer\">' + $('Decide Note Upsert').item.json.note_title + '</a></p><p>Prepared automatically from project ' + String($('Decide Note Upsert').item.json.project_id) + ' tasks.</p>'\n  })\n}}",
+              "value": "={{\n  ({\n    event_id: $('Decide Note Upsert').item.json.agenda_parent_event_id,\n    summary: 'Weekly steering - ' + $('Decide Note Upsert').item.json.meeting_date,\n    description: '<p>Meeting support: <a href=\"' + ($json.payload?.url || $json.payload?.link || ('https://exo-mips-ft.meeds.io/portal/dw/notes/' + String($json.payload?.note_id || $('Decide Note Upsert').item.json.existing_note_id || ''))) + '\" target=\"_blank\" rel=\"noopener noreferrer\">' + $('Decide Note Upsert').item.json.note_title + '</a></p><p>Prepared automatically from project ' + String($('Decide Note Upsert').item.json.project_id) + ' tasks.</p>'\n  })\n}}",
               "type": "object"
             }
           ]
@@ -978,7 +978,7 @@
     },
     {
       "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo-qaui.meeds.io/mcp-server/mcp\"}}",
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo-mips-ft.meeds.io/mcp-server/mcp\"}}",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -1002,7 +1002,7 @@
     },
     {
       "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo-qaui.meeds.io/mcp-server/mcp\"}}",
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo-mips-ft.meeds.io/mcp-server/mcp\"}}",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,

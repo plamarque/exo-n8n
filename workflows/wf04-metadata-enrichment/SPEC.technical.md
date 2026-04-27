@@ -20,7 +20,7 @@ The implementation is **MCP-first**; there is no REST fallback in the current ve
 
 ### Connectivity
 
-- MCP endpoint (e.g. `https://exo-qaui.meeds.io/mcp-server/mcp` — match your target env)
+- MCP endpoint (e.g. `https://exo-mips-ft.meeds.io/mcp-server/mcp` — match your target env)
 - n8n auth: `mcpOAuth2Api`
 
 ### AI
