@@ -21,7 +21,7 @@ Publishing **SDK `code`** without going through the same `workflow.json` validat
 ## Prerequisites
 
 - **Normative policy:** [docs/WORKFLOW.md](../../../docs/WORKFLOW.md#deployment-validation-policy) (*Deployment validation policy*). Local validation on `workflow.json` is **mandatory** before any publish.
-- **REST push credentials:** copy [`.env.example`](../../../.env.example) → **`.env`** at the repository root; set `N8N_BASE_URL`, `N8N_API_KEY`, and `N8N_WORKFLOW_ID_*` for each workflow you push. See [docs/DEVELOPMENT.md](../../../docs/DEVELOPMENT.md#root-env-for-repository-tooling).
+- **REST push credentials:** copy [`.env.example`](../../../.env.example) → **`.env`** at the repository root; set `N8N_BASE_URL` and `N8N_API_KEY`. Set `N8N_WORKFLOW_ID_*` when the canonical `workflow.json` has no top-level `id` (see [docs/DEVELOPMENT.md](../../../docs/DEVELOPMENT.md#root-env-for-repository-tooling)).
 - **Cursor and MCP (SDK path only):** [docs/DEVELOPMENT.md](../../../docs/DEVELOPMENT.md#cursor-and-mcp-recommended). Copy [`.cursor/mcp.json.example`](../../mcp.json.example) to a **local, git-ignored** `.cursor/mcp.json`; never commit real secrets.
 - **Tooling commands:** [docs/DEVELOPMENT.md](../../../docs/DEVELOPMENT.md#useful-scripts) (`npm run validate:workflows`, [validate-workflow.sh](../../../tools/validate-workflow.sh)).
 
@@ -38,7 +38,7 @@ From the repository root, after `npm install`:
 
 ### 2a. REST: push canonical JSON (default for repo parity)
 
-1. Ensure `.env` at the repo root lists the correct `N8N_WORKFLOW_ID_WF…` for the portfolio id (see per-workflow `SPEC.technical.md` / `README.md`, e.g. [wf01 SPEC.technical.md](../../../workflows/wf01-email-dispatch/SPEC.technical.md), [wf03 README.md](../../../workflows/wf03-weekly-steering/README.md), [wf04 SPEC.technical.md](../../../workflows/wf04-metadata-enrichment/SPEC.technical.md); unwrap id in wf01 spec).
+1. Ensure the remote workflow id is known: either `N8N_WORKFLOW_ID_WF…` in `.env` or a top-level `"id"` in the canonical `workflow.json` for that tenant (see per-workflow `SPEC.technical.md` / `README.md`, e.g. [wf01 SPEC.technical.md](../../../workflows/wf01-email-dispatch/SPEC.technical.md), [wf03 README.md](../../../workflows/wf03-weekly-steering/README.md), [wf04 SPEC.technical.md](../../../workflows/wf04-metadata-enrichment/SPEC.technical.md); unwrap id in wf01 spec).
 2. Run `./deploy.sh wf0X` (runs local validation again before `PUT` by default). Use `--dry-run` to print the target URL without writing. Use `--skip-validate` only with care.
 
 MCP `validate_workflow` does **not** apply to this path.

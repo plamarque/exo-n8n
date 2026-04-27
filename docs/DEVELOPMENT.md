@@ -44,7 +44,7 @@ Publishing workflows must follow the **deployment validation policy** in [WORKFL
 Optional **local-only** file at the repository root (git-ignored). Use it for **n8n instance API** credentials consumed by [push-workflow-to-n8n-api.mjs](../tools/push-workflow-to-n8n-api.mjs), not for n8n workflow runtime variables (those stay in n8n **Variables** / per-workflow `config.env.example`).
 
 1. Copy `[.env.example](../.env.example)` → `.env` at the repo root.
-2. Set `N8N_BASE_URL`, `N8N_API_KEY`, and each `N8N_WORKFLOW_ID_`* for workflows you push (see per-workflow `SPEC.technical.md` / `README.md` for reference ids).
+2. Set `N8N_BASE_URL` and `N8N_API_KEY`. For each workflow you REST-deploy, set `N8N_WORKFLOW_ID_WF…` **unless** the canonical `workflow.json` already contains a top-level `"id"` (remote n8n workflow id from that tenant’s export). Workflows without a root `id` (for example WF02/WF04 in some exports) still need the matching `N8N_WORKFLOW_ID_*` entry. See per-workflow `SPEC.technical.md` / `README.md` for reference ids.
 3. **CI / pipelines:** do not commit `.env`; inject the **same variable names** as protected secrets in your runner.
 
 Per-workflow `[config.env.example](../workflows/wf02-document-validation/config.env.example)` files document **execution-time** values inside n8n (webhook URLs, space names, etc.). They are **not** a substitute for `N8N_API_KEY`.
@@ -149,7 +149,8 @@ npm run deploy:workflow -- wf04
 - By default runs local `validateWorkflow` on the target `workflow.json` before `PUT`. Use `--skip-validate` only with care.
 - `--dry-run` prints the target URL and exits without calling n8n.
 - The script sends a **schema-safe** subset of the export (n8n rejects extra top-level fields, `id` and `tags` in the body, and some `settings` keys such as `availableInMCP` / `binaryMode`). After a push, confirm **Available in MCP** and other UI-only options in n8n if your workflow relied on them.
-- **Credentials on PUT:** canonical JSON omits `credentials`. Before `PUT`, the deploy script injects shared credentials when it can resolve them: `mcpOAuth2Api` on MCP Client nodes (`N8N_MCP_OAUTH2_CREDENTIAL_*`, or the only credential of that type on the instance), and `openAiApi` on `lmChatOpenAi` nodes (`N8N_OPENAI_CREDENTIAL_*`, or the only `openAiApi` credential). Without this, n8n can reject updates on **active** workflows or leave nodes unusable after publish. If several credentials share the same type, set the corresponding `*_ID` explicitly in `.env`.
+- **Credentials on PUT:** canonical JSON omits `credentials`. The deploy script **GET**s the existing remote workflow, **merges** `credentials` from the server onto local nodes by matching **`node.id`**, then `PUT`s (n8n returns `{ id, name }` references only — no secrets in git). If the remote workflow was **active**, it is **deactivated** before `PUT` and **re-activated** afterward when possible; if re-activate fails, the workflow stays inactive and a warning explains next steps.
+- **Fallback overrides:** if merge leaves some MCP or OpenAI nodes without a reference (new node ids, empty remote, etc.), the script fills gaps using `N8N_MCP_OAUTH2_CREDENTIAL_*` / `N8N_OPENAI_CREDENTIAL_*` when set, otherwise a **single** matching credential type on the instance (with a warning when multiple exist). Prefer fixing node ids to match the remote or attaching credentials once in the n8n UI over relying on env overrides.
 
 ## Configuration
 
