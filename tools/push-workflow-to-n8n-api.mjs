@@ -21,6 +21,10 @@ Environment (from process env or repo root .env):
   N8N_BASE_URL       n8n instance base URL (no trailing slash)
   N8N_API_KEY        API key (header X-N8N-API-KEY)
   N8N_WORKFLOW_ID_WF01 … N8N_WORKFLOW_ID_WF04, N8N_WORKFLOW_ID_UNWRAP
+  N8N_MCP_OAUTH2_CREDENTIAL_ID   optional but recommended: mcpOAuth2Api credential id to attach to MCP Client nodes (canonical JSON omits credentials)
+  N8N_MCP_OAUTH2_CREDENTIAL_NAME optional display name for that credential
+  N8N_OPENAI_CREDENTIAL_ID       optional: openAiApi credential id for lmChatOpenAi nodes
+  N8N_OPENAI_CREDENTIAL_NAME      optional display name for that credential
 
 By default, runs local validateWorkflow on the JSON before PUT. Use --skip-validate only with care.
 `);
@@ -121,6 +125,157 @@ function buildWorkflowPutPayload(local) {
   return out;
 }
 
+const MCP_CLIENT_NODE_TYPE = "@n8n/n8n-nodes-langchain.mcpClient";
+const MCP_OAUTH2_CREDENTIAL_TYPE = "mcpOAuth2Api";
+
+/**
+ * Canonical `workflow.json` files omit `credentials` (not committed). n8n REST `PUT` replaces
+ * nodes as sent; without credential ids, MCP Client nodes lose OAuth binding and active
+ * workflows fail publish validation. Resolve a shared credential to inject before PUT.
+ *
+ * @param {string} base
+ * @param {string} apiKey
+ * @returns {Promise<{ id: string; name: string } | null>}
+ */
+/**
+ * @param {string} base
+ * @param {string} apiKey
+ * @returns {Promise<Array<{ id: string; name: string; type: string }> | null>}
+ */
+async function fetchCredentialsList(base, apiKey) {
+  const res = await fetch(`${base}/api/v1/credentials`, {
+    headers: { "X-N8N-API-KEY": apiKey },
+  });
+  if (!res.ok) return null;
+  /** @type {{ data?: Array<{ id: string; name: string; type: string }> }} */
+  const body = await res.json();
+  return body.data || [];
+}
+
+/**
+ * @param {Array<{ id: string; name: string; type: string }> | null} all
+ */
+function resolveMcpOAuth2CredentialBindingFromList(all) {
+  const explicitId = (process.env.N8N_MCP_OAUTH2_CREDENTIAL_ID || "").trim();
+  const explicitName = (process.env.N8N_MCP_OAUTH2_CREDENTIAL_NAME || "").trim();
+  if (explicitId) {
+    return { id: explicitId, name: explicitName || "MCP OAuth2 API" };
+  }
+  if (!all) return null;
+  const list = all.filter((c) => c.type === MCP_OAUTH2_CREDENTIAL_TYPE);
+  if (list.length === 1) return { id: list[0].id, name: list[0].name };
+  if (list.length > 1) {
+    console.warn(
+      `Multiple ${MCP_OAUTH2_CREDENTIAL_TYPE} credentials (${list.map((c) => c.name).join(", ")}). Set N8N_MCP_OAUTH2_CREDENTIAL_ID in .env to attach MCP Client nodes on PUT.`,
+    );
+  }
+  return null;
+}
+
+/** @param {unknown[] | undefined} nodes */
+function workflowUsesMcpOAuth2(nodes) {
+  if (!Array.isArray(nodes)) return false;
+  return nodes.some(
+    (node) =>
+      node &&
+      typeof node === "object" &&
+      /** @type {{ type?: string; parameters?: { authentication?: string } }} */ (node).type ===
+        MCP_CLIENT_NODE_TYPE &&
+      /** @type {{ type?: string; parameters?: { authentication?: string } }} */ (node).parameters
+        ?.authentication === MCP_OAUTH2_CREDENTIAL_TYPE,
+  );
+}
+
+/**
+ * @param {unknown[] | undefined} nodes
+ * @param {{ id: string; name: string } | null} binding
+ * @returns {number}
+ */
+function injectMcpOAuth2Credentials(nodes, binding) {
+  if (!binding || !Array.isArray(nodes)) return 0;
+  let count = 0;
+  for (const node of nodes) {
+    if (
+      node &&
+      typeof node === "object" &&
+      /** @type {{ type?: string; parameters?: { authentication?: string }; credentials?: unknown }} */ (
+        node
+      ).type === MCP_CLIENT_NODE_TYPE &&
+      /** @type {{ type?: string; parameters?: { authentication?: string }; credentials?: unknown }} */ (
+        node
+      ).parameters?.authentication === MCP_OAUTH2_CREDENTIAL_TYPE
+    ) {
+      /** @type {{ credentials?: Record<string, { id: string; name: string }> }} */ (node).credentials = {
+        [MCP_OAUTH2_CREDENTIAL_TYPE]: { id: binding.id, name: binding.name },
+      };
+      count++;
+    }
+  }
+  return count;
+}
+
+const LM_CHAT_OPENAI_NODE_TYPE = "@n8n/n8n-nodes-langchain.lmChatOpenAi";
+const OPENAI_API_CREDENTIAL_TYPE = "openAiApi";
+
+/**
+ * @param {string} base
+ * @param {string} apiKey
+ * @returns {Promise<{ id: string; name: string } | null>}
+ */
+/**
+ * @param {Array<{ id: string; name: string; type: string }> | null} all
+ */
+function resolveOpenAiCredentialBindingFromList(all) {
+  const explicitId = (process.env.N8N_OPENAI_CREDENTIAL_ID || "").trim();
+  const explicitName = (process.env.N8N_OPENAI_CREDENTIAL_NAME || "").trim();
+  if (explicitId) {
+    return { id: explicitId, name: explicitName || "OpenAI API" };
+  }
+  if (!all) return null;
+  const list = all.filter((c) => c.type === OPENAI_API_CREDENTIAL_TYPE);
+  if (list.length === 1) return { id: list[0].id, name: list[0].name };
+  if (list.length > 1) {
+    console.warn(
+      `Multiple ${OPENAI_API_CREDENTIAL_TYPE} credentials (${list.map((c) => c.name).join(", ")}). Set N8N_OPENAI_CREDENTIAL_ID in .env for lmChatOpenAi nodes.`,
+    );
+  }
+  return null;
+}
+
+/** @param {unknown[] | undefined} nodes */
+function workflowUsesLmChatOpenAi(nodes) {
+  if (!Array.isArray(nodes)) return false;
+  return nodes.some(
+    (node) =>
+      node &&
+      typeof node === "object" &&
+      /** @type {{ type?: string }} */ (node).type === LM_CHAT_OPENAI_NODE_TYPE,
+  );
+}
+
+/**
+ * @param {unknown[] | undefined} nodes
+ * @param {{ id: string; name: string } | null} binding
+ * @returns {number}
+ */
+function injectOpenAiCredentials(nodes, binding) {
+  if (!binding || !Array.isArray(nodes)) return 0;
+  let count = 0;
+  for (const node of nodes) {
+    if (
+      node &&
+      typeof node === "object" &&
+      /** @type {{ type?: string; credentials?: unknown }} */ (node).type === LM_CHAT_OPENAI_NODE_TYPE
+    ) {
+      /** @type {{ credentials?: Record<string, { id: string; name: string }> }} */ (node).credentials = {
+        [OPENAI_API_CREDENTIAL_TYPE]: { id: binding.id, name: binding.name },
+      };
+      count++;
+    }
+  }
+  return count;
+}
+
 /**
  * @param {string} repoRoot
  * @param {string} jsonPath absolute or relative to repo
@@ -193,6 +348,34 @@ if (!skipValidate) {
 
 const raw = fs.readFileSync(jsonPath, "utf8");
 const local = JSON.parse(raw);
+
+const credList = await fetchCredentialsList(base, key);
+const mcpBinding = resolveMcpOAuth2CredentialBindingFromList(credList);
+const attachedMcp = injectMcpOAuth2Credentials(
+  /** @type {unknown[] | undefined} */ (local.nodes),
+  mcpBinding,
+);
+if (attachedMcp > 0) {
+  console.log(`Attached ${MCP_OAUTH2_CREDENTIAL_TYPE} to ${attachedMcp} MCP Client node(s).`);
+} else if (workflowUsesMcpOAuth2(/** @type {unknown[] | undefined} */ (local.nodes)) && !mcpBinding) {
+  console.warn(
+    "No mcpOAuth2Api credential resolved; MCP Client nodes were not given credentials. Set N8N_MCP_OAUTH2_CREDENTIAL_ID or ensure exactly one mcpOAuth2Api credential exists. Publishing/activating may fail until fixed.",
+  );
+}
+
+const openAiBinding = resolveOpenAiCredentialBindingFromList(credList);
+const attachedOpenAi = injectOpenAiCredentials(
+  /** @type {unknown[] | undefined} */ (local.nodes),
+  openAiBinding,
+);
+if (attachedOpenAi > 0) {
+  console.log(`Attached ${OPENAI_API_CREDENTIAL_TYPE} to ${attachedOpenAi} OpenAI chat model node(s).`);
+} else if (workflowUsesLmChatOpenAi(/** @type {unknown[] | undefined} */ (local.nodes)) && !openAiBinding) {
+  console.warn(
+    "No openAiApi credential resolved; lmChatOpenAi nodes were not given credentials. Set N8N_OPENAI_CREDENTIAL_ID or ensure exactly one openAiApi credential exists.",
+  );
+}
+
 const payload = buildWorkflowPutPayload(
   /** @type {Record<string, unknown>} */ (local),
 );

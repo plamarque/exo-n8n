@@ -149,6 +149,7 @@ npm run deploy:workflow -- wf04
 - By default runs local `validateWorkflow` on the target `workflow.json` before `PUT`. Use `--skip-validate` only with care.
 - `--dry-run` prints the target URL and exits without calling n8n.
 - The script sends a **schema-safe** subset of the export (n8n rejects extra top-level fields, `id` and `tags` in the body, and some `settings` keys such as `availableInMCP` / `binaryMode`). After a push, confirm **Available in MCP** and other UI-only options in n8n if your workflow relied on them.
+- **Credentials on PUT:** canonical JSON omits `credentials`. Before `PUT`, the deploy script injects shared credentials when it can resolve them: `mcpOAuth2Api` on MCP Client nodes (`N8N_MCP_OAUTH2_CREDENTIAL_*`, or the only credential of that type on the instance), and `openAiApi` on `lmChatOpenAi` nodes (`N8N_OPENAI_CREDENTIAL_*`, or the only `openAiApi` credential). Without this, n8n can reject updates on **active** workflows or leave nodes unusable after publish. If several credentials share the same type, set the corresponding `*_ID` explicitly in `.env`.
 
 ## Configuration
 
