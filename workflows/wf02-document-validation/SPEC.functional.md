@@ -98,7 +98,7 @@ On rejection:
 
 ### 9.1 Project
 
-- eXo project: `Programmation Festival` — `project_id` for tasks: `117`
+- eXo project on **exo-mips-ft**: **`project_id=2`** for tasks (eXo `project_name` may show as `Programation`); set `WF02_PROJECT_ID` in n8n if you use another board.
 - Document space: `Festival Art de Rue`
 - Path: `/Documents/Festivak_Art2Rue_2026/00_Programmation`
 - `parent_folder_id` on **exo-mips-ft**: `ced6e9c539805e114bd65696b26bd073` (legacy exo-qaui id was `b468cb5639805e11480baa56164da90c`; override with n8n variable `WF02_PARENT_FOLDER_ID` if your tree differs)

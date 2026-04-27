@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-27T12:00:10.826Z",
+  "generatedAt": "2026-04-27T22:31:47.693Z",
   "workflowsDir": "workflows/",
   "files": [
     {
@@ -12,8 +12,8 @@
           "id": "273f3214-6f2d-49a8-bf4b-74125d3f45ff",
           "mode": "runOnceForEachItem",
           "typeVersion": 2,
-          "linesOfCode": 89,
-          "chars": 2637,
+          "linesOfCode": 106,
+          "chars": 3447,
           "hasParseEnvelope": false,
           "hasGetWorkflowStaticData": false,
           "hasHtml": false,
@@ -47,18 +47,46 @@
     {
       "file": "workflows/wf02-document-validation/workflow.json",
       "workflowName": "WF02 - Document validation (split / join)",
-      "codeNodeCount": 1,
+      "codeNodeCount": 3,
       "codeNodes": [
+        {
+          "name": "Ensure Merge Processed Input",
+          "id": "f4e3d2c1-b5a6-4789-8123-000001mergefix",
+          "mode": "runOnceForAllItems",
+          "typeVersion": 2,
+          "linesOfCode": 8,
+          "chars": 181,
+          "hasParseEnvelope": false,
+          "hasGetWorkflowStaticData": false,
+          "hasHtml": false,
+          "hasMcpContentText": false,
+          "hasJsCode": true,
+          "missingJsCodeInRepo": false
+        },
         {
           "name": "Render Task Description HTML",
           "id": "aa5b4f7c-41dd-4cce-85f1-9fa7756b7c1e",
           "mode": "runOnceForEachItem",
           "typeVersion": 2,
-          "linesOfCode": 4,
-          "chars": 789,
+          "linesOfCode": 5,
+          "chars": 811,
           "hasParseEnvelope": false,
           "hasGetWorkflowStaticData": false,
           "hasHtml": true,
+          "hasMcpContentText": false,
+          "hasJsCode": true,
+          "missingJsCodeInRepo": false
+        },
+        {
+          "name": "Merge Decision",
+          "id": "0c1f8ed6-0edb-4388-9329-81270cc588fc",
+          "mode": "runOnceForAllItems",
+          "typeVersion": 2,
+          "linesOfCode": 57,
+          "chars": 1618,
+          "hasParseEnvelope": false,
+          "hasGetWorkflowStaticData": false,
+          "hasHtml": false,
           "hasMcpContentText": false,
           "hasJsCode": true,
           "missingJsCodeInRepo": false
@@ -151,8 +179,8 @@
     }
   ],
   "totals": {
-    "codeNodes": 7,
-    "linesOfCode": 513,
-    "chars": 21525
+    "codeNodes": 9,
+    "linesOfCode": 596,
+    "chars": 24156
   }
 }

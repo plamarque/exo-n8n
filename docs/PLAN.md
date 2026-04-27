@@ -6,7 +6,7 @@ This document is tracking-only. It does not define expected behavior.
 
 - Governance documentation lives in `docs/`; `AGENTS.md` is at the repository root. Workflow artifacts use the layout in [ADR 0002](ADR/0002-repository-layout-workflows.md) (`workflows/`, one `workflow.json` per portfolio workflow, `shared/` and `tools/`).
 - **WF01**: canonical JSON and split specs; persistent email idempotence still open (see [ISSUES](ISSUES.md)).
-- **WF02**: canonical JSON + split specs; **native refactor done (2026-04-27)** — 6 Code nodes → 1 residual `Render Task Description HTML` (~5 LOC, HTML-only); approval state and intake idempotency now persist in two Data Tables (`wf02_approvals`, `wf02_processed_documents`); shared unwrap sub-workflow reused via [subworkflow-dependencies.json](../workflows/wf02-document-validation/subworkflow-dependencies.json).
+- **WF02**: canonical JSON + split specs; **native refactor done (2026-04-27)** — 6 Code nodes → 2 small Code nodes: `Render Task Description HTML` + `Ensure Merge Processed Input` (empty-processed-table guard for `Merge`/`combineBySql`); approval state and intake idempotency now persist in two Data Tables (`wf02_approvals`, `wf02_processed_documents`); shared unwrap sub-workflow reused via [subworkflow-dependencies.json](../workflows/wf02-document-validation/subworkflow-dependencies.json).
 - **WF03**: canonical `workflow.json` + API snapshot in `fixtures/`; **Code-node reduction** still pending (contrast: WF01/WF04 more advanced).
 - **WF04**: canonical `workflow.json` + `fixtures/workflow.export.snapshot.json`; one Code node may remain for category mapping; optional API push via `tools/push-workflow-to-n8n-api.mjs` / `npm run deploy:workflow`.
 

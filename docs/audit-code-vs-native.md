@@ -78,7 +78,7 @@ Workflow id: `aze2wAktXHYrTBTr` (n8n cloud), synced with `get_workflow_details`.
 
 ### WF02 — [workflow.json](../workflows/wf02-document-validation/workflow.json)
 
-Refactor completed 2026-04-27 — see [WF02 native refactor](#wf02-native-refactor-2026-04-27) below. Resulting Code surface: 1 residual node (`Render Task Description HTML`, ~5 LOC, HTML-only). Earlier rows kept as historical traceability:
+Refactor completed 2026-04-27 — see [WF02 native refactor](#wf02-native-refactor-2026-04-27) below. Resulting Code surface: **`Render Task Description HTML`** (~5 LOC, HTML-only) + **`Ensure Merge Processed Input`** (~8 LOC, AlaSQL/`combineBySql` guard when `wf02_processed_documents` has zero rows). Earlier rows kept as historical traceability:
 
 | Node (historical) | LOC | Main intent | Replacement (2026-04-27) | Priority | Status |
 | ----------------- | --- | ----------- | ------------------------- | -------- | ------ |
@@ -87,7 +87,7 @@ Refactor completed 2026-04-27 — see [WF02 native refactor](#wf02-native-refact
 | Extract Task ID | 8 | Envelope | Shared unwrap + **Set** (`Extract Task ID`, mirrors WF01 `Extract Task Assignment`) + **IF** + **Stop and Error** | P1 | Done |
 | Register Approval | 5 | State in static | Data Table `wf02_approvals` (`Ensure Approvals Table` + `Seed Approval Row` upsert keyed by `cycleKey = task_id:cycle_id`) | P2 | Done |
 | Parse Approval | 10 | Map from webhook | **Set** (`Parse Approval`) + **IF Valid Approval** + **Stop and Error** | P1 | Done |
-| Update Approval State | 12 | State merge + join | Data Table get + **Set** (`Merge Decision`) + Data Table upsert + **Set** (`Compute Join`) — boolean expressions feed existing `IF Join Ready` / `IF Both Approved` | P2 | Done |
+| Update Approval State | 12 | State merge + join | Data Table get + **Code** (`Merge Decision`, `runOnceForAllItems`) + Data Table upsert + **Set** (`Compute Join`) — boolean expressions feed existing `IF Join Ready` / `IF Both Approved` | P2 | Done |
 
 ### WF03 — [workflow.json](../workflows/wf03-weekly-steering/workflow.json) (see [api-response.snapshot.json](../workflows/wf03-weekly-steering/fixtures/api-response.snapshot.json))
 
@@ -130,12 +130,12 @@ Iterates on the WF01 pattern (shared unwrap sub-workflow) plus the WF04 pattern 
 
 ### Mapping (current → target)
 
-- `Parse + Deduplicate Docs` (Code, 21 LOC) → `Unwrap MCP Search Folder Docs` (Execute Workflow → shared unwrap) + `Coalesce Documents List` (Set: normalises `payload.documents` vs `payload.content` / JSON-in-text) + `Split Out Documents` (`documents`) + `Filter - Has document_id` + `Normalize Docs` (Set: `id`, `updatedDate`, `name`, `url`, `uploader`) + `Get Processed Docs` (Data Table get-all on `wf02_processed_documents`, `executeOnce`) + `Merge Docs to Process` (Merge `combineBySql` LEFT JOIN, same SQL shape as WF04 `Merge Documents to Process`).
+- `Parse + Deduplicate Docs` (Code, 21 LOC) → `Unwrap MCP Search Folder Docs` (Execute Workflow → shared unwrap) + `Coalesce Documents List` (Set: normalises `payload.documents` vs `payload.content` / JSON-in-text) + `Split Out Documents` (`documents`) + `Filter - Has document_id` + `Normalize Docs` (Set: `id`, `updatedDate`, `name`, `url`, `uploader`) + `Get Processed Docs` (Data Table get-all on `wf02_processed_documents`, `executeOnce`) + **`Ensure Merge Processed Input`** (Code — sentinel row when table empty) + `Merge Docs to Process` (Merge `combineBySql` LEFT JOIN, same SQL shape as WF04 `Merge Documents to Process`).
 - `Build Task Payload` (Code, 19 LOC) → `Unwrap MCP Get Document` (Execute Workflow) + `Build Task Fields` (Set: `document_id`, `cycle_id`, `docName`, `title`, `author_username`, `docUrl`) + residual `Render Task Description HTML` (Code, ~5 LOC, HTML-only — assembles the description and the final `createTaskInput` like WF01).
 - `Extract Task ID` (Code, 8 LOC) → `Unwrap MCP Create Task` (Execute Workflow) + `Extract Task ID` (Set: `task_id` from `payload.task_id || payload.id || payload.task.task_id`; pulls `cycle_id` / `document_id` / `author_username` from `Build Task Fields`) + reused `IF Has Task ID` / `Stop - Missing task_id`.
 - `Register Approval State` (Code, 5 LOC, `$getWorkflowStaticData`) → `Ensure Approvals Table` (Data Table create with `createIfNotExists`) at intake start + `Seed Approval Row` (Data Table upsert on `wf02_approvals` keyed by `cycleKey = task_id:cycle_id`, defaults `artistic_decision`/`technical_decision = PENDING`).
-- `Parse Approval` (Code, 10 LOC) → `Parse Approval` (Set: reads `body.* ?? query.*`, normalizes role/decision casing, exposes `cycleKey`) + `IF Valid Approval` → `Stop - Invalid approval payload`.
-- `Update Approval State` (Code, 12 LOC, static + join math) → `Get Approval Rows` (Data Table get-all, `executeOnce`) + `Merge Decision` (Set, role-conditional `<role>_decision`/`<role>_reason`/`<role>_at = $now.toISO()`) + `Upsert Approval Row` (Data Table upsert on `wf02_approvals`) + `Compute Join` (Set: `joinReady` / `bothApproved` boolean expressions). The existing `IF Join Ready` / `IF Both Approved` are reused unchanged.
+- `Parse Approval` (Code, 10 LOC) → `Parse Approval` (Set: reads `body.* ?? query.*`, normalizes role/decision casing, exposes `cycleKey`) + `IF Valid Approval` → `Form End - Invalid Approval` (n8n Form, `operation`: `completion`).
+- `Update Approval State` (Code, 12 LOC, static + join math) → `Get Approval Rows` (Data Table get-all, `executeOnce`) + `Merge Decision` (**Code**: lookup row by `cycleKey`, role-conditional `<role>_decision`/`<role>_reason`/`<role>_at`) + `Upsert Approval Row` (Data Table upsert on `wf02_approvals`) + `Compute Join` (Set: `joinReady` / `bothApproved` boolean expressions). The existing `IF Join Ready` / `IF Both Approved` are reused unchanged.
 
 ### Persistence (new)
 

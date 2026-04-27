@@ -308,6 +308,20 @@
       "onError": "continueRegularOutput"
     },
     {
+      "id": "f4e3d2c1-b5a6-4789-8123-000001mergefix",
+      "name": "Ensure Merge Processed Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1590,
+        360
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const items = $input.all();\nif (items.length > 0) return items;\nreturn [{ json: {\n  documentId: '__wf02_empty_processed_placeholder__',\n  lastProcessedDate: '',\n  cycleId: ''\n} }];\n"
+      }
+    },
+    {
       "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00008",
       "name": "Merge Docs to Process",
       "type": "n8n-nodes-base.merge",
@@ -434,7 +448,7 @@
       ],
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;');\nconst description = '<p><strong>Source document:</strong> <a href=\"' + esc($json.docUrl) + '\" target=\"_blank\" rel=\"noopener noreferrer\">' + esc($json.docName) + '</a></p>' + '<p><strong>Cycle:</strong> ' + esc($json.cycle_id) + '</p>' + '<p><strong>Validation:</strong> use the approval links in the first task comment.</p>' + '<p>Rule: move to Done only when both stamps are APPROVED.</p>';\nreturn { ...$json, createTaskInput: { project_id: Number($vars.WF02_PROJECT_ID || 117), title: $json.title, description, assignee: $json.author_username, coworkers: ['nadia', 'etienne'], status_id: Number($vars.WF02_INPROGRESS_STATUS_ID || 475), priority: 'NORMAL' } };\n"
+        "jsCode": "const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;');\nconst description = '<p><strong>Source document:</strong> <a href=\"' + esc($json.docUrl) + '\" target=\"_blank\" rel=\"noopener noreferrer\">' + esc($json.docName) + '</a></p>' + '<p><strong>Cycle:</strong> ' + esc($json.cycle_id) + '</p>' + '<p><strong>Validation:</strong> use the approval links in the first task comment.</p>' + '<p>Rule: move to Done only when both stamps are APPROVED.</p>';\n// create_task_in_project: numeric project_id, plain strings (see SPEC.technical.md §12.3 — exo-mips-ft project 2).\nreturn { ...$json, createTaskInput: { project_id: Number($vars.WF02_PROJECT_ID || 2), title: $json.title, description, assignee: $json.author_username, priority: 'NORMAL' } };\n"
       }
     },
     {
@@ -491,7 +505,7 @@
             {
               "id": "task_id",
               "name": "task_id",
-              "value": "={{ Number(($json.payload && ($json.payload.task_id || $json.payload.id || ($json.payload.task && $json.payload.task.task_id))) || 0) }}",
+              "value": "={{ Number((() => { const p = $json.payload; if (!p) return 0; const fromPart = p.content && p.content[0] && p.content[0].text && typeof p.content[0].text === 'object' ? p.content[0].text.task_id : null; return p.task_id || p.id || (p.task && p.task.task_id) || fromPart || 0; })()) }}",
               "type": "number"
             },
             {
@@ -569,12 +583,36 @@
       }
     },
     {
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b0000e",
+      "name": "MCP Set Task In Progress",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        3230,
+        100
+      ],
+      "parameters": {
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo-mips-ft.meeds.io/mcp-server/mcp\"}}",
+        "authentication": "mcpOAuth2Api",
+        "tool": {
+          "__rl": true,
+          "mode": "id",
+          "value": "update_task_status"
+        },
+        "inputMode": "json",
+        "jsonInput": "={{ { task_id: $('Extract Task ID').item.json.task_id, status_id: Number($vars.WF02_INPROGRESS_STATUS_ID || 6) } }}",
+        "options": {
+          "timeout": 60000
+        }
+      }
+    },
+    {
       "id": "9d988422-9a5d-41e8-8848-e898e206025a",
       "name": "MCP Add Initial Comment",
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        3320,
+        3410,
         100
       ],
       "parameters": {
@@ -586,7 +624,7 @@
           "value": "add_task_comment"
         },
         "inputMode": "json",
-        "jsonInput": "={{ (() => { const base = String($vars.WF02_APPROVAL_BASE_URL || \"https://meeds.app.n8n.cloud/webhook/wf02-doc-validation/approve\").replace(/\\/$/, \"\"); const art = base + \"?task_id=\" + $('Extract Task ID').item.json.task_id + \"&cycle_id=\" + encodeURIComponent($('Extract Task ID').item.json.cycle_id) + \"&role=artistic&actor=nadia\"; const tech = base + \"?task_id=\" + $('Extract Task ID').item.json.task_id + \"&cycle_id=\" + encodeURIComponent($('Extract Task ID').item.json.cycle_id) + \"&role=technical&actor=etienne\"; const text = \"<p><strong>Validation started</strong> (cycle: \" + $('Extract Task ID').item.json.cycle_id + \").</p><p><a href=\\\"\" + art + \"\\\" target=\\\"_blank\\\" rel=\\\"noopener noreferrer\\\">Approve - Artistic (Nadia)</a></p><p><a href=\\\"\" + tech + \"\\\" target=\\\"_blank\\\" rel=\\\"noopener noreferrer\\\">Approve - Technical (Etienne)</a></p>\"; return { task_id: $('Extract Task ID').item.json.task_id, text }; })() }}",
+        "jsonInput": "={{ (() => { const base = String($vars.WF02_APPROVAL_BASE_URL || \"https://meeds.app.n8n.cloud/form/wf02-doc-validation/approve\").replace(/\\/$/, \"\"); const q = (role, actor) => \"?task_id=\" + $('Extract Task ID').item.json.task_id + \"&cycle_id=\" + encodeURIComponent($('Extract Task ID').item.json.cycle_id) + \"&role=\" + role + \"&actor=\" + actor; const art = base + q(\"artistic\", \"nadia\"); const tech = base + q(\"technical\", \"etienne\"); const text = \"<p><strong>Validation started</strong> (cycle: \" + $('Extract Task ID').item.json.cycle_id + \").</p><p>Open the form to <strong>approve or reject</strong> (reason copied to the task). Task stays In progress until both stamps are approved:</p><p><a href=\\\"\" + art + \"\\\" target=\\\"_blank\\\" rel=\\\"noopener noreferrer\\\">Artistic stamp (Nadia)</a></p><p><a href=\\\"\" + tech + \"\\\" target=\\\"_blank\\\" rel=\\\"noopener noreferrer\\\">Technical stamp (Etienne)</a></p>\"; return { task_id: $('Extract Task ID').item.json.task_id, text }; })() }}",
         "options": {
           "timeout": 60000
         }
@@ -751,7 +789,7 @@
       }
     },
     {
-      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b0000e",
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00014",
       "name": "Update Tracking Doc",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
@@ -822,18 +860,71 @@
     },
     {
       "id": "e08bc8c4-3ef3-468b-9f43-1314eb143cc6",
-      "name": "Approval Webhook",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2.1,
+      "name": "Approval Form Trigger",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
       "position": [
         220,
         620
       ],
       "parameters": {
-        "httpMethod": "POST",
-        "path": "wf02-doc-validation/approve",
-        "responseMode": "responseNode",
-        "authentication": "none"
+        "authentication": "none",
+        "formTitle": "WF02 — Validation stamp",
+        "formDescription": "<p>Context is pre-filled from your task link. Choose <strong>Approved</strong> or <strong>Rejected</strong>. If you reject, add a <strong>reason</strong> (it is copied to the task).</p><p>The task stays <em>In progress</em> until both stamps are <strong>Approved</strong>.</p>",
+        "responseMode": "lastNode",
+        "formFields": {
+          "values": [
+            {
+              "fieldName": "task_id",
+              "fieldType": "hiddenField",
+              "fieldValue": ""
+            },
+            {
+              "fieldName": "cycle_id",
+              "fieldType": "hiddenField",
+              "fieldValue": ""
+            },
+            {
+              "fieldName": "role",
+              "fieldType": "hiddenField",
+              "fieldValue": ""
+            },
+            {
+              "fieldName": "actor",
+              "fieldType": "hiddenField",
+              "fieldValue": ""
+            },
+            {
+              "fieldName": "decision",
+              "fieldLabel": "Decision",
+              "fieldType": "radio",
+              "requiredField": true,
+              "defaultValue": "Approved",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Approved"
+                  },
+                  {
+                    "option": "Rejected"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldName": "reason",
+              "fieldLabel": "Reason",
+              "fieldType": "textarea",
+              "placeholder": "Required when rejecting; optional when approving",
+              "requiredField": false
+            }
+          ]
+        },
+        "options": {
+          "path": "wf02-doc-validation/approve",
+          "buttonLabel": "Submit decision",
+          "appendAttribution": false
+        }
       },
       "webhookId": "ca8ca31c-e44a-4cb4-8e8f-14b7db56958a"
     },
@@ -853,37 +944,37 @@
             {
               "id": "task_id",
               "name": "task_id",
-              "value": "={{ Number(($json.body && $json.body.task_id) || ($json.query && $json.query.task_id) || 0) }}",
+              "value": "={{ Number($json.task_id ?? $json.body?.task_id ?? $json.query?.task_id ?? 0) }}",
               "type": "number"
             },
             {
               "id": "cycle_id",
               "name": "cycle_id",
-              "value": "={{ String(($json.body && $json.body.cycle_id) || ($json.query && $json.query.cycle_id) || '') }}",
+              "value": "={{ String($json.cycle_id ?? $json.body?.cycle_id ?? $json.query?.cycle_id ?? '') }}",
               "type": "string"
             },
             {
               "id": "role",
               "name": "role",
-              "value": "={{ String(($json.body && $json.body.role) || ($json.query && $json.query.role) || '').toLowerCase() }}",
+              "value": "={{ String($json.role ?? $json.body?.role ?? $json.query?.role ?? '').toLowerCase() }}",
               "type": "string"
             },
             {
               "id": "decision",
               "name": "decision",
-              "value": "={{ String(($json.body && $json.body.decision) || ($json.query && $json.query.decision) || '').toUpperCase() }}",
+              "value": "={{ (() => { const raw = String($json.decision ?? $json.body?.decision ?? $json.query?.decision ?? '').trim(); const u = raw.toUpperCase(); if (u === 'APPROVED' || u === 'REJECTED') return u; if (raw.toLowerCase() === 'approved') return 'APPROVED'; if (raw.toLowerCase() === 'rejected') return 'REJECTED'; return ''; })() }}",
               "type": "string"
             },
             {
               "id": "reason",
               "name": "reason",
-              "value": "={{ String(($json.body && $json.body.reason) || ($json.query && $json.query.reason) || '') }}",
+              "value": "={{ String($json.reason ?? $json.body?.reason ?? $json.query?.reason ?? '') }}",
               "type": "string"
             },
             {
               "id": "cycleKey",
               "name": "cycleKey",
-              "value": "={{ String(Number(($json.body && $json.body.task_id) || ($json.query && $json.query.task_id) || 0)) + ':' + String(($json.body && $json.body.cycle_id) || ($json.query && $json.query.cycle_id) || '') }}",
+              "value": "={{ String(Number($json.task_id ?? $json.body?.task_id ?? $json.query?.task_id ?? 0)) + ':' + String($json.cycle_id ?? $json.body?.cycle_id ?? $json.query?.cycle_id ?? '') }}",
               "type": "string"
             }
           ]
@@ -944,6 +1035,16 @@
                 "type": "string",
                 "operation": "notEmpty"
               }
+            },
+            {
+              "id": "decision_allowed",
+              "leftValue": "={{ ['APPROVED', 'REJECTED'].includes($json.decision) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
             }
           ],
           "combinator": "and"
@@ -951,16 +1052,67 @@
       }
     },
     {
+      "id": "b8f4a2c1-9e6d-4b7a-8c2f-1d3e5f7098ab",
+      "name": "IF Missing Reject Reason",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        670,
+        620
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "reject_needs_reason",
+              "leftValue": "={{ $json.decision === 'REJECTED' && String($json.reason ?? '').trim() === '' }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "c9e5b3d2-af7e-5c8b-9d3a-2e4f60891bcd",
+      "name": "Form End - Missing Reject Reason",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        670,
+        800
+      ],
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "text",
+        "completionTitle": "Reason required",
+        "completionMessage": "You chose Rejected. Please go back, enter a short reason in the Reason field, and submit again."
+      }
+    },
+    {
       "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00010",
-      "name": "Stop - Invalid approval payload",
-      "type": "n8n-nodes-base.stopAndError",
-      "typeVersion": 1,
+      "name": "Form End - Invalid Approval",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
       "position": [
         580,
         800
       ],
       "parameters": {
-        "errorMessage": "Invalid approval payload: missing task_id, cycle_id, role, or decision."
+        "operation": "completion",
+        "respondWith": "text",
+        "completionTitle": "Invalid approval link",
+        "completionMessage": "Required parameters were missing or incomplete (task_id, cycle_id, role, decision). Use the approval link from the task comment."
       }
     },
     {
@@ -1012,86 +1164,15 @@
     {
       "id": "0c1f8ed6-0edb-4388-9329-81270cc588fc",
       "name": "Merge Decision",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         1120,
         620
       ],
       "parameters": {
-        "mode": "manual",
-        "assignments": {
-          "assignments": [
-            {
-              "id": "cycleKey",
-              "name": "cycleKey",
-              "value": "={{ $('Parse Approval').item.json.cycleKey }}",
-              "type": "string"
-            },
-            {
-              "id": "task_id",
-              "name": "task_id",
-              "value": "={{ Number($('Parse Approval').item.json.task_id) }}",
-              "type": "number"
-            },
-            {
-              "id": "cycle_id",
-              "name": "cycle_id",
-              "value": "={{ $('Parse Approval').item.json.cycle_id }}",
-              "type": "string"
-            },
-            {
-              "id": "document_id",
-              "name": "document_id",
-              "value": "={{ (($('Get Approval Rows').all().find(r => r.json.cycleKey === $('Parse Approval').item.json.cycleKey) || {json:{}}).json.document_id) || '' }}",
-              "type": "string"
-            },
-            {
-              "id": "author_username",
-              "name": "author_username",
-              "value": "={{ (($('Get Approval Rows').all().find(r => r.json.cycleKey === $('Parse Approval').item.json.cycleKey) || {json:{}}).json.author_username) || 'claire' }}",
-              "type": "string"
-            },
-            {
-              "id": "artistic_decision",
-              "name": "artistic_decision",
-              "value": "={{ $('Parse Approval').item.json.role === 'artistic' ? $('Parse Approval').item.json.decision : ((($('Get Approval Rows').all().find(r => r.json.cycleKey === $('Parse Approval').item.json.cycleKey) || {json:{}}).json.artistic_decision) || 'PENDING') }}",
-              "type": "string"
-            },
-            {
-              "id": "artistic_reason",
-              "name": "artistic_reason",
-              "value": "={{ $('Parse Approval').item.json.role === 'artistic' ? $('Parse Approval').item.json.reason : ((($('Get Approval Rows').all().find(r => r.json.cycleKey === $('Parse Approval').item.json.cycleKey) || {json:{}}).json.artistic_reason) || '') }}",
-              "type": "string"
-            },
-            {
-              "id": "artistic_at",
-              "name": "artistic_at",
-              "value": "={{ $('Parse Approval').item.json.role === 'artistic' ? $now.toISO() : ((($('Get Approval Rows').all().find(r => r.json.cycleKey === $('Parse Approval').item.json.cycleKey) || {json:{}}).json.artistic_at) || '') }}",
-              "type": "string"
-            },
-            {
-              "id": "technical_decision",
-              "name": "technical_decision",
-              "value": "={{ $('Parse Approval').item.json.role === 'technical' ? $('Parse Approval').item.json.decision : ((($('Get Approval Rows').all().find(r => r.json.cycleKey === $('Parse Approval').item.json.cycleKey) || {json:{}}).json.technical_decision) || 'PENDING') }}",
-              "type": "string"
-            },
-            {
-              "id": "technical_reason",
-              "name": "technical_reason",
-              "value": "={{ $('Parse Approval').item.json.role === 'technical' ? $('Parse Approval').item.json.reason : ((($('Get Approval Rows').all().find(r => r.json.cycleKey === $('Parse Approval').item.json.cycleKey) || {json:{}}).json.technical_reason) || '') }}",
-              "type": "string"
-            },
-            {
-              "id": "technical_at",
-              "name": "technical_at",
-              "value": "={{ $('Parse Approval').item.json.role === 'technical' ? $now.toISO() : ((($('Get Approval Rows').all().find(r => r.json.cycleKey === $('Parse Approval').item.json.cycleKey) || {json:{}}).json.technical_at) || '') }}",
-              "type": "string"
-            }
-          ]
-        },
-        "includeOtherFields": false,
-        "options": {}
+        "mode": "runOnceForAllItems",
+        "jsCode": "const parse = $('Parse Approval').first();\nif (!parse || !parse.json) {\n  return [{ json: {} }];\n}\nconst pa = parse.json;\nconst cycleKey = String(pa.cycleKey ?? '');\nconst rows = $('Get Approval Rows').all();\nlet found = {};\nfor (let i = 0; i < rows.length; i++) {\n  const j = rows[i].json || {};\n  if (String(j.cycleKey ?? '') === cycleKey) {\n    found = j;\n    break;\n  }\n}\nconst role = String(pa.role ?? '');\nconst now =\n  typeof $now !== 'undefined' && typeof $now.toISO === 'function'\n    ? $now.toISO()\n    : new Date().toISOString();\n\nlet artistic_decision = String(found.artistic_decision ?? 'PENDING');\nlet artistic_reason = String(found.artistic_reason ?? '');\nlet artistic_at = String(found.artistic_at ?? '');\nlet technical_decision = String(found.technical_decision ?? 'PENDING');\nlet technical_reason = String(found.technical_reason ?? '');\nlet technical_at = String(found.technical_at ?? '');\n\nif (role === 'artistic') {\n  artistic_decision = String(pa.decision ?? 'PENDING');\n  artistic_reason = String(pa.reason ?? '');\n  artistic_at = now;\n}\nif (role === 'technical') {\n  technical_decision = String(pa.decision ?? 'PENDING');\n  technical_reason = String(pa.reason ?? '');\n  technical_at = now;\n}\n\nreturn [\n  {\n    json: {\n      cycleKey: pa.cycleKey,\n      task_id: Number(pa.task_id),\n      cycle_id: String(pa.cycle_id ?? ''),\n      document_id: String(found.document_id ?? ''),\n      author_username: String(found.author_username ?? 'claire'),\n      artistic_decision,\n      artistic_reason,\n      artistic_at,\n      technical_decision,\n      technical_reason,\n      technical_at,\n    },\n  },\n];\n"
       }
     },
     {
@@ -1389,7 +1470,7 @@
           "value": "update_task_status"
         },
         "inputMode": "json",
-        "jsonInput": "={{ { task_id: $json.task_id, status_id: Number($vars.WF02_DONE_STATUS_ID || 477) } }}",
+        "jsonInput": "={{ { task_id: $json.task_id, status_id: Number($vars.WF02_DONE_STATUS_ID || 8) } }}",
         "options": {
           "timeout": 60000
         }
@@ -1421,19 +1502,18 @@
     },
     {
       "id": "9762fdc0-d4c5-41d2-aa79-3f00eea32208",
-      "name": "Respond Approved",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.5,
+      "name": "Form End - Approved",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
       "position": [
         2380,
         500
       ],
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ { ok: true, status: \"approved\" } }}",
-        "options": {
-          "responseCode": 200
-        }
+        "operation": "completion",
+        "respondWith": "text",
+        "completionTitle": "Approved",
+        "completionMessage": "Both approvers confirmed. The task has been closed. You can close this tab."
       }
     },
     {
@@ -1454,7 +1534,7 @@
           "value": "update_task_status"
         },
         "inputMode": "json",
-        "jsonInput": "={{ { task_id: $json.task_id, status_id: Number($vars.WF02_INPROGRESS_STATUS_ID || 475) } }}",
+        "jsonInput": "={{ { task_id: $json.task_id, status_id: Number($vars.WF02_INPROGRESS_STATUS_ID || 6) } }}",
         "options": {
           "timeout": 60000
         }
@@ -1486,36 +1566,34 @@
     },
     {
       "id": "4fbd6cf5-af94-46fa-a724-6a11bebe17fa",
-      "name": "Respond Rejected",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.5,
+      "name": "Form End - Rejected",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
       "position": [
         2380,
         660
       ],
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ { ok: true, status: \"rejected\" } }}",
-        "options": {
-          "responseCode": 200
-        }
+        "operation": "completion",
+        "respondWith": "text",
+        "completionTitle": "Validation incomplete",
+        "completionMessage": "Validation is incomplete or was rejected. You can close this tab."
       }
     },
     {
       "id": "033a237b-be9d-4e7c-a913-9374bd1e8136",
-      "name": "Respond Pending",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.5,
+      "name": "Form End - Pending",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
       "position": [
         1840,
         760
       ],
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ { ok: true, status: \"pending\", message: \"Decision recorded. Waiting for the second stamp.\" } }}",
-        "options": {
-          "responseCode": 200
-        }
+        "operation": "completion",
+        "respondWith": "text",
+        "completionTitle": "Recorded",
+        "completionMessage": "Decision recorded. Waiting for the second stamp. You can close this tab."
       }
     }
   ],
@@ -1639,6 +1717,17 @@
       "main": [
         [
           {
+            "node": "Ensure Merge Processed Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ensure Merge Processed Input": {
+      "main": [
+        [
+          {
             "node": "Merge Docs to Process",
             "type": "main",
             "index": 1
@@ -1738,7 +1827,7 @@
       "main": [
         [
           {
-            "node": "MCP Add Initial Comment",
+            "node": "MCP Set Task In Progress",
             "type": "main",
             "index": 0
           }
@@ -1746,6 +1835,17 @@
         [
           {
             "node": "Stop - Missing task_id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Set Task In Progress": {
+      "main": [
+        [
+          {
+            "node": "MCP Add Initial Comment",
             "type": "main",
             "index": 0
           }
@@ -1774,7 +1874,7 @@
         ]
       ]
     },
-    "Approval Webhook": {
+    "Approval Form Trigger": {
       "main": [
         [
           {
@@ -1800,14 +1900,32 @@
       "main": [
         [
           {
-            "node": "MCP Add Decision Comment",
+            "node": "IF Missing Reject Reason",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Stop - Invalid approval payload",
+            "node": "Form End - Invalid Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Missing Reject Reason": {
+      "main": [
+        [
+          {
+            "node": "Form End - Missing Reject Reason",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "MCP Add Decision Comment",
             "type": "main",
             "index": 0
           }
@@ -1880,7 +1998,7 @@
         ],
         [
           {
-            "node": "Respond Pending",
+            "node": "Form End - Pending",
             "type": "main",
             "index": 0
           }
@@ -1920,7 +2038,7 @@
       "main": [
         [
           {
-            "node": "Respond Approved",
+            "node": "Form End - Approved",
             "type": "main",
             "index": 0
           }
@@ -1942,7 +2060,7 @@
       "main": [
         [
           {
-            "node": "Respond Rejected",
+            "node": "Form End - Rejected",
             "type": "main",
             "index": 0
           }
