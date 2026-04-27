@@ -571,7 +571,6 @@
           "mode": "list",
           "value": "gpt-4o-mini"
         },
-        "builtInTools": {},
         "options": {
           "temperature": 0.3
         }
