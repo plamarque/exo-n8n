@@ -7,6 +7,8 @@
  * node `id`, so canonical JSON does not need embedded credentials. Optionally
  * deactivates before PUT when the remote workflow is active, then re-activates.
  * Env-based credential overrides apply only to nodes still missing credentials after merge.
+ * When the OpenAI credential list cannot pick a single binding, the script can reuse the
+ * openAiApi reference from another remote workflow (see N8N_OPENAI_REFERENCE_WORKFLOW_ID / WF01 id in usage).
  *
  * Usage:
  *   node tools/push-workflow-to-n8n-api.mjs wf01
@@ -30,6 +32,7 @@ Environment (from process env or repo root .env):
   N8N_MCP_OAUTH2_CREDENTIAL_NAME optional display name for that override
   N8N_OPENAI_CREDENTIAL_ID       optional override: fill only lmChatOpenAi nodes still missing credentials after merge
   N8N_OPENAI_CREDENTIAL_NAME     optional display name for that override
+  N8N_OPENAI_REFERENCE_WORKFLOW_ID  optional: copy openAiApi ref from first configured lmChatOpenAi on that workflow id (else tries N8N_WORKFLOW_ID_WF01) when /credentials cannot pick a single binding
 
 By default, runs local validateWorkflow on the JSON before PUT. Use --skip-validate only with care.
 `);
@@ -309,6 +312,38 @@ function injectOpenAiCredentialsMissing(nodes, binding) {
   return count;
 }
 
+/**
+ * Reuse the same openAiApi {id,name} as an existing lmChatOpenAi on another workflow (typically WF01),
+ * when the credentials API list is missing, forbidden, or ambiguous.
+ * @param {string} base
+ * @param {string} apiKey
+ * @param {string} workflowId
+ * @returns {Promise<{ id: string; name: string } | null>}
+ */
+async function extractOpenAiCredentialRefFromRemoteWorkflow(base, apiKey, workflowId) {
+  let remote;
+  try {
+    remote = await getRemoteWorkflow(base, apiKey, workflowId);
+  } catch {
+    return null;
+  }
+  const nodes = /** @type {unknown[] | undefined} */ (remote.nodes);
+  if (!Array.isArray(nodes)) return null;
+  for (const node of nodes) {
+    if (!node || typeof node !== "object") continue;
+    if (/** @type {{ type?: string }} */ (node).type !== LM_CHAT_OPENAI_NODE_TYPE) continue;
+    const cred = /** @type {{ credentials?: { openAiApi?: { id?: string; name?: string } } }} */ (
+      node
+    ).credentials?.openAiApi;
+    const id = typeof cred?.id === "string" ? cred.id.trim() : "";
+    if (!id) continue;
+    const name =
+      typeof cred?.name === "string" && cred.name.trim() ? cred.name.trim() : "OpenAI API";
+    return { id, name };
+  }
+  return null;
+}
+
 /** @param {unknown[] | undefined} nodes */
 function workflowUsesMcpOAuth2(nodes) {
   if (!Array.isArray(nodes)) return false;
@@ -475,7 +510,23 @@ if (filledMcp > 0) {
   console.log(`Fallback: attached ${MCP_OAUTH2_CREDENTIAL_TYPE} to ${filledMcp} MCP Client node(s) still missing credentials.`);
 }
 
-const openAiBinding = resolveOpenAiCredentialBindingFromList(credList);
+let openAiBinding = resolveOpenAiCredentialBindingFromList(credList);
+if (
+  !openAiBinding &&
+  workflowUsesLmChatOpenAi(/** @type {unknown[] | undefined} */ (local.nodes))
+) {
+  const refWorkflowId =
+    (process.env.N8N_OPENAI_REFERENCE_WORKFLOW_ID || "").trim() ||
+    (process.env.N8N_WORKFLOW_ID_WF01 || "").trim();
+  if (refWorkflowId) {
+    openAiBinding = await extractOpenAiCredentialRefFromRemoteWorkflow(base, key, refWorkflowId);
+    if (openAiBinding) {
+      console.log(
+        `OpenAI credential reference resolved from workflow ${refWorkflowId} (reuse an existing lmChatOpenAi binding when the /credentials list is ambiguous or unavailable).`,
+      );
+    }
+  }
+}
 const filledOpenAi = injectOpenAiCredentialsMissing(
   /** @type {unknown[] | undefined} */ (local.nodes),
   openAiBinding,

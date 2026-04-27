@@ -343,19 +343,6 @@
       ]
     },
     {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "mode": "list",
-          "value": "gpt-5-mini"
-        },
-        "builtInTools": {},
-        "options": {
-          "reasoningEffort": "low",
-          "timeout": 90000,
-          "maxRetries": 2
-        }
-      },
       "id": "fe0c5844-de00-4c85-a50f-9681e4a64cb8",
       "name": "OpenAI COPIL Model",
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
@@ -363,7 +350,19 @@
       "position": [
         1536,
         528
-      ]
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "options": {
+          "reasoningEffort": "low",
+          "timeout": 90000,
+          "maxRetries": 2
+        }
+      }
     },
     {
       "parameters": {
