@@ -734,7 +734,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const note = $('Execute WF03 Compose Steering Note').item.json;\nconst p = $json.payload;\nconst notes = Array.isArray(p) ? p : (p?.notes || p?.results || []);\nconst existing = notes.find(n => String(n.title || '').trim() === note.note_title);\nconst existingNoteId = Number(existing?.note_id || existing?.id || 0);\nreturn [{\n  json: {\n    ...note,\n    existing_note_id: existingNoteId,\n    should_update_note: existingNoteId > 0,\n    updateNoteInput: {\n      note_id: existingNoteId,\n      title: note.note_title,\n      html_content: note.html_content\n    }\n  }\n}];",
+        "jsCode": "const note = $('Execute WF03 Compose Steering Note').item.json;\nconst p = $json.payload;\nconst notes = Array.isArray(p) ? p : (p?.notes || p?.results || []);\nconst existing = notes.find(n => String(n.title || '').trim() === note.note_title);\nconst existingNoteId = Number(existing?.note_id || existing?.id || 0);\nreturn {\n  json: {\n    ...note,\n    existing_note_id: existingNoteId,\n    should_update_note: existingNoteId > 0,\n    updateNoteInput: {\n      note_id: existingNoteId,\n      title: note.note_title,\n      html_content: note.html_content\n    }\n  }\n};",
         "mode": "runOnceForEachItem"
       },
       "id": "04bbb101-f817-4f75-aa8b-80250e300219",
