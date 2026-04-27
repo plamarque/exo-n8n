@@ -84,8 +84,8 @@ Refactored 2026-04-27 to push 6 Code nodes down to a single justified residue (`
 1. **Triggers** — `Manual Start` or `Schedule Intake (5m)`.
 2. **Bootstrap tables** — `Ensure Tracking Table` (Data Table create `wf02_processed_documents` with `createIfNotExists`) → `Ensure Approvals Table` (Data Table create `wf02_approvals` with `createIfNotExists`); both `onError: continueRegularOutput` so re-running is safe.
 3. **List** — `MCP Search Folder Docs` (`search_documents`). `parent_folder_id` resolves from n8n variable `WF02_PARENT_FOLDER_ID` when non-empty; otherwise it defaults to the **exo-mips-ft** programming folder id `ced6e9c539805e114bd65696b26bd073`. All MCP Client nodes use `endpointUrl` = `$vars.EXO_MCP_ENDPOINT` with the same **fallback** as WF03 (`https://exo-mips-ft.meeds.io/mcp-server/mcp`) when the variable is unset.
-4. **Unwrap MCP envelope** — `Unwrap MCP Search Folder Docs` (Execute Workflow → shared unwrap sub-workflow) returns `{ payload: { documents: [...] } }`.
-5. **Split + filter** — `Split Out Documents` (`fieldToSplitOut: payload.documents`) → `Filter - Has document_id`. If `documents` is empty (no files in the folder), **no items** are emitted downstream: the execution finishes without error and without creating a task (expected).
+4. **Unwrap MCP envelope** — `Unwrap MCP Search Folder Docs` (Execute Workflow → shared unwrap sub-workflow). Depending on the MCP tool shape, the next item may expose hits under `payload.documents` **or** as plain document rows under `payload.content` (or JSON-in-`type: "text"` parts inside `content`).
+5. **Coalesce + split** — `Coalesce Documents List` (Set) builds a single array field `documents`: prefers `payload.documents`, then walks `payload.content` (array or single object). Each element may be a bare document row (`document_id` on the part) or an MCP-style envelope `{ type: \"text\", text: ... }` where **`text` is either a JSON string, an array of document rows, or one document object** (exo-mips-ft shape). The expression also accepts an input item whose JSON is a one-element array wrapper. `Split Out Documents` uses `fieldToSplitOut: documents` → `Filter - Has document_id`. If `documents` is empty, the run ends without error (expected when the folder has no files).
 6. **Normalize** — `Normalize Docs` (Set: `id`, `updatedDate`, `name`, `url`, `uploader`).
 7. **Dedup join** — `Get Processed Docs` (Data Table get all rows from `wf02_processed_documents`, `executeOnce`, `alwaysOutputData`) feeds input2; `Normalize Docs` also feeds input1 of `Merge Docs to Process` (combineBySql LEFT JOIN, same shape as WF04 — keeps rows where the doc is unseen or the `updatedDate` is newer than the stored `lastProcessedDate`).
 8. **Load** — `MCP Get Document By ID` (`get_document_by_id`) → `Unwrap MCP Get Document` (Execute Workflow).
@@ -172,10 +172,10 @@ Approval state is now visible on the n8n canvas (Data Table rows) instead of the
 - **Execute Workflow** (3×) calling the shared `Unwrap MCP JSON` sub-workflow after each MCP call.
 - **Data Table** (5×) — `Ensure Tracking Table` / `Ensure Approvals Table` (create with `createIfNotExists`), `Get Processed Docs` and `Get Approval Rows` (get with `returnAll` + `executeOnce`), `Update Tracking Doc` / `Seed Approval Row` / `Upsert Approval Row` (upsert).
 - **Merge (combineBySql)** — `Merge Docs to Process` LEFT JOIN for intake idempotency.
-- **Set** (5×) — `Normalize Docs`, `Build Task Fields`, `Extract Task ID`, `Parse Approval`, `Merge Decision`, `Compute Join`.
+- **Set** (6×) — `Coalesce Documents List`, `Normalize Docs`, `Build Task Fields`, `Extract Task ID`, `Parse Approval`, `Merge Decision`, `Compute Join`.
 - **IF** — `IF Has Task ID`, `IF Valid Approval`, `IF Join Ready`, `IF Both Approved`.
 - **Filter** — `Filter - Has document_id` (drops MCP results without `document_id`).
-- **Split Out** — `Split Out Documents` expands `payload.documents`.
+- **Set + Split Out** — `Coalesce Documents List` normalises MCP hits to a `documents` array; `Split Out Documents` expands that field.
 - **Code** — single residual `Render Task Description HTML` (~5 LOC, HTML-only, parity with WF01).
 - **Webhook** + **Respond to Webhook** + **Stop and Error** — async approvals + structured rejection of invalid payloads.
 

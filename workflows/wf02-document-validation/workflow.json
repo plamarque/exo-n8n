@@ -165,16 +165,41 @@
       }
     },
     {
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00004b",
+      "name": "Coalesce Documents List",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1040,
+        200
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "documents",
+              "name": "documents",
+              "value": "={{ (() => { const rawRoot = $json; const root = Array.isArray(rawRoot) && rawRoot.length && typeof rawRoot[0] === 'object' ? rawRoot[0] : (rawRoot || {}); const p = root.payload && typeof root.payload === 'object' ? root.payload : root; if (Array.isArray(p.documents) && p.documents.length) return p.documents; const asDocRows = (arr) => (Array.isArray(arr) ? arr : []).filter((x) => x && typeof x === 'object' && String(x.document_id || '').trim()); const rawContent = p.content; const c = Array.isArray(rawContent) ? rawContent : (rawContent && typeof rawContent === 'object' ? [rawContent] : []); const out = []; for (const part of c) { if (!part || typeof part !== 'object') continue; if (Array.isArray(part.documents)) { out.push(...part.documents); continue; } if (part.type === 'text' && part.text != null) { if (Array.isArray(part.text)) { out.push(...part.text); continue; } if (part.text && typeof part.text === 'object' && !Array.isArray(part.text)) { out.push(part.text); continue; } if (typeof part.text === 'string') { let t = part.text.trim(); if (t.startsWith('```')) t = t.replace(/^```(?:json)?\\s*/i, '').replace(/\\s*```\\s*$/, '').trim(); try { const parsed = JSON.parse(t); if (Array.isArray(parsed)) out.push(...parsed); else if (parsed && Array.isArray(parsed.documents)) out.push(...parsed.documents); else if (parsed && typeof parsed === 'object' && String(parsed.document_id || '').trim()) out.push(parsed); } catch (_) { /* ignore */ } } continue; } if (String(part.document_id || '').trim()) out.push(part); } const rows = asDocRows(out); if (rows.length) return rows; return asDocRows(c); })() }}",
+              "type": "array"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
       "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00004",
       "name": "Split Out Documents",
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        1120,
+        1200,
         200
       ],
       "parameters": {
-        "fieldToSplitOut": "payload.documents",
+        "fieldToSplitOut": "documents",
         "options": {}
       }
     },
@@ -184,7 +209,7 @@
       "type": "n8n-nodes-base.filter",
       "typeVersion": 2.3,
       "position": [
-        1300,
+        1380,
         200
       ],
       "parameters": {
@@ -1551,6 +1576,17 @@
       ]
     },
     "Unwrap MCP Search Folder Docs": {
+      "main": [
+        [
+          {
+            "node": "Coalesce Documents List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Coalesce Documents List": {
       "main": [
         [
           {
