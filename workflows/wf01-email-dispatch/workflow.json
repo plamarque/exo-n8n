@@ -1,18 +1,639 @@
 {
+  "updatedAt": "2026-04-27T22:44:10.913Z",
+  "createdAt": "2026-04-22T04:35:52.578Z",
   "id": "zeVd0scWqU5vcOUq",
   "name": "WF01 - Email dispatch",
+  "description": "WF01 refactoré: création de tâches eXo sur project_id 3 et assignation via username.",
   "active": false,
   "isArchived": false,
-  "versionId": "68b0f3b5-9f31-406e-875c-b6ef9a9bf17c",
-  "activeVersionId": null,
-  "triggerCount": 0,
-  "createdAt": "2026-04-22T04:35:52.578Z",
-  "updatedAt": "2026-04-25T17:38:11.122Z",
-  "settings": {
-    "executionOrder": "v1",
-    "availableInMCP": true,
-    "binaryMode": "separate"
-  },
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "6c244bb0-727e-4785-b1a8-ace341b77282",
+      "name": "Manual Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        224,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "authentication": "mcpOAuth2Api",
+        "tool": {
+          "__rl": true,
+          "mode": "id",
+          "value": "list_emails"
+        },
+        "inputMode": "json",
+        "jsonInput": "{\"limit\":50,\"offset\":0}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "8b52b27e-8b35-420f-bc19-84eff92f8d1d",
+      "name": "MCP List Emails",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        448,
+        320
+      ],
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "1RM4eapAQJfVKz0k",
+          "name": "eXo MIPS MCP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": "E4OAThogWRG93MUG",
+        "options": {}
+      },
+      "id": "ba2d6724-d3e5-4bc4-b07f-b4cf469449a3",
+      "name": "Unwrap MCP Emails",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        672,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "payload",
+        "options": {}
+      },
+      "id": "d419966a-c2b3-434c-a9f8-558717a611b6",
+      "name": "Split Out Emails",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        896,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "emailId",
+              "name": "emailId",
+              "value": "={{ String($json.email_id ?? $json.messageId ?? $json.id ?? '') }}",
+              "type": "string"
+            },
+            {
+              "id": "subject",
+              "name": "subject",
+              "value": "={{ $json.subject || 'Email sans sujet' }}",
+              "type": "string"
+            },
+            {
+              "id": "body",
+              "name": "body",
+              "value": "={{ $json.content?.body || $json.body || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "sender",
+              "name": "sender",
+              "value": "={{ $json.sender?.address || $json.sender || $json.from || 'unknown' }}",
+              "type": "string"
+            },
+            {
+              "id": "receivedAt",
+              "name": "receivedAt",
+              "value": "={{ $json.receivedDate || $json.receivedAt || $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2fbb59c6-013e-42f9-9782-3cbbede2518d",
+      "name": "Normalize Email",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1120,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "has_email_id",
+              "leftValue": "={{$json.emailId}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "6d173a84-4e42-4aad-b0be-3f96ab5bf9a5",
+      "name": "Filter - Has Email ID",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1344,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze this email and determine whether it is clearly actionable.\nSubject: {{ $json.subject }}\nSender: {{ $json.sender }}\nBody: {{ $json.body }}\n\nReturn only the structured fields requested.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are the triage agent for Art2Rue festival emails. Hard rule: create a task only if the email is clearly actionable. If there is doubt, ambiguity, or it is informational only, do not create a task: set action_required=false and response_expected=false. Expected fields: action_required (boolean), response_expected (boolean), action_confidence (0..1), assignee_username (louis|claire|lucie), priority (LOW|NORMAL|HIGH|URGENT), slaHours (>0), task_title, summary, next_action, rationale. If action_required=false: assignee_username=claire, priority=LOW, slaHours=72, task_title=\"No action required\", next_action=\"No immediate action\"."
+        }
+      },
+      "id": "a389fdbd-c823-44fc-bf41-20b82cc2abf9",
+      "name": "AI Router",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1568,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.1
+        }
+      },
+      "id": "14dce692-9f03-4ee5-97c0-5faca7469924",
+      "name": "Routing Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1584,
+        544
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "rEcL1EsPRnj2xbNt",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\"action_required\":true,\"response_expected\":true,\"action_confidence\":0.92,\"assignee_username\":\"louis\",\"priority\":\"HIGH\",\"slaHours\":4,\"task_title\":\"Ticketing VPN incident\",\"summary\":\"VPN outage.\",\"next_action\":\"Diagnose.\",\"rationale\":\"Technical issue.\"}"
+      },
+      "id": "71544077-ebbe-4cbc-9ed5-babb4e61bcc3",
+      "name": "Routing Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1712,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "subject",
+              "name": "subject",
+              "value": "={{ $('Normalize Email').item.json.subject }}",
+              "type": "string"
+            },
+            {
+              "id": "body",
+              "name": "body",
+              "value": "={{ $('Normalize Email').item.json.body }}",
+              "type": "string"
+            },
+            {
+              "id": "sender",
+              "name": "sender",
+              "value": "={{ $('Normalize Email').item.json.sender }}",
+              "type": "string"
+            },
+            {
+              "id": "actionRequired",
+              "name": "actionRequired",
+              "value": "={{ Boolean(($json.output || $json).action_required) }}",
+              "type": "boolean"
+            },
+            {
+              "id": "responseExpected",
+              "name": "responseExpected",
+              "value": "={{ Boolean(($json.output || $json).response_expected) }}",
+              "type": "boolean"
+            },
+            {
+              "id": "actionConfidence",
+              "name": "actionConfidence",
+              "value": "={{ Number(($json.output || $json).action_confidence || 0) }}",
+              "type": "number"
+            },
+            {
+              "id": "assigneeCandidate",
+              "name": "assigneeCandidate",
+              "value": "={{ String((($json.output || $json).assignee_username || '')).toLowerCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "priorityCandidate",
+              "name": "priorityCandidate",
+              "value": "={{ String((($json.output || $json).priority || 'NORMAL')).toUpperCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "taskTitleCandidate",
+              "name": "taskTitleCandidate",
+              "value": "={{ String((($json.output || $json).task_title || $('Normalize Email').item.json.subject || 'Email to process')).slice(0,80) }}",
+              "type": "string"
+            },
+            {
+              "id": "summary",
+              "name": "summary",
+              "value": "={{ String((($json.output || $json).summary || 'Summary not provided')).slice(0,500) }}",
+              "type": "string"
+            },
+            {
+              "id": "nextAction",
+              "name": "nextAction",
+              "value": "={{ String((($json.output || $json).next_action || 'Analyze and update status')).slice(0,300) }}",
+              "type": "string"
+            },
+            {
+              "id": "rationale",
+              "name": "rationale",
+              "value": "={{ String((($json.output || $json).rationale || 'AI decision')).slice(0,300) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5d964a18-7f78-4d48-8c8b-21d645483306",
+      "name": "Normalize AI Output",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1920,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "action",
+              "leftValue": "={{$json.actionRequired}}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "response",
+              "leftValue": "={{$json.responseExpected}}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "confidence",
+              "leftValue": "={{$json.actionConfidence}}",
+              "rightValue": 0.7,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4d8ca516-4831-4ef8-8519-358ddda6060a",
+      "name": "IF Clearly Actionable",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2144,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "resolvedAssignee",
+              "name": "resolvedAssignee",
+              "value": "={{ ['louis','claire','lucie'].includes($json.assigneeCandidate) ? $json.assigneeCandidate : 'claire' }}",
+              "type": "string"
+            },
+            {
+              "id": "assigneeLabel",
+              "name": "assigneeLabel",
+              "value": "={{ ({louis:'Louis', claire:'Claire', lucie:'Lucie'}[$json.assigneeCandidate]) || 'Claire' }}",
+              "type": "string"
+            },
+            {
+              "id": "resolvedPriority",
+              "name": "resolvedPriority",
+              "value": "={{ $json.priorityCandidate === 'URGENT' ? 'HIGH' : (['LOW','NORMAL','HIGH'].includes($json.priorityCandidate) ? $json.priorityCandidate : 'NORMAL') }}",
+              "type": "string"
+            },
+            {
+              "id": "taskTitle",
+              "name": "taskTitle",
+              "value": "={{$json.taskTitleCandidate}}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "1c7a8285-7daf-421d-ab05-ddf6394d948c",
+      "name": "Build MCP Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2368,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\\\"/g, '&quot;');\nconst excerpt = String($json.body || '').replace(/\\s+/g, ' ').slice(0, 400);\nconst description = ['<div>','<p><strong>Email from:</strong> ' + esc($json.sender) + '<br/><strong>Subject:</strong> ' + esc($json.subject) + '</p>','<h4>Context</h4>','<p>' + esc($json.summary || 'Summary not provided') + '</p>','<h4>Expected action</h4>','<p>' + esc($json.nextAction || 'Analyze and update status') + '</p>','<h4>AI decision</h4>','<ul>','<li><strong>Assignee:</strong> ' + esc($json.assigneeLabel || $json.resolvedAssignee) + ' (' + esc($json.resolvedAssignee) + ')</li>','<li><strong>Priority:</strong> ' + esc($json.resolvedPriority) + '</li>','<li><strong>Actionable confidence:</strong> ' + esc($json.actionConfidence) + '</li>','<li><strong>Rationale:</strong> ' + esc($json.rationale || 'AI decision') + '</li>','</ul>','<h4>Email excerpt</h4>','<blockquote>' + esc(excerpt) + '</blockquote>','</div>'].join('').slice(0, 5000);\nconst projectId = Number($vars.WF01_PROJECT_ID || 3);\nreturn { ...$json, aiDecision: { clearlyActionable: true, assignee: $json.resolvedAssignee, assigneeLabel: $json.assigneeLabel, priority: $json.resolvedPriority, actionConfidence: $json.actionConfidence, taskTitle: $json.taskTitle, summary: $json.summary, nextAction: $json.nextAction, rationale: $json.rationale }, createTaskInput: { project_id: projectId, title: $json.taskTitle, description, assignee: $json.resolvedAssignee, priority: $json.resolvedPriority } };"
+      },
+      "id": "9ff29148-4ada-4dab-999e-c649d2408061",
+      "name": "Render Task Description HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2592,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "authentication": "mcpOAuth2Api",
+        "tool": {
+          "__rl": true,
+          "mode": "id",
+          "value": "create_task_in_project"
+        },
+        "inputMode": "json",
+        "jsonInput": "={{$json.createTaskInput}}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "a4d3f709-ab1e-4004-8bcf-14cdc04b7de4",
+      "name": "MCP Create Task",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        2816,
+        320
+      ],
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "1RM4eapAQJfVKz0k",
+          "name": "eXo MIPS MCP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": "E4OAThogWRG93MUG",
+        "options": {}
+      },
+      "id": "1fa2eb88-0b11-4f2e-a0f3-bd5d9768d200",
+      "name": "Unwrap MCP Create Task",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        3040,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "task_id",
+              "name": "task_id",
+              "value": "={{ Number($json.payload?.task_id || $json.payload?.id || $json.payload?.task?.task_id || 0) }}",
+              "type": "number"
+            },
+            {
+              "id": "username",
+              "name": "username",
+              "value": "={{ $('Render Task Description HTML').item.json.createTaskInput.assignee || 'claire' }}",
+              "type": "string"
+            },
+            {
+              "id": "raw_create_payload",
+              "name": "raw_create_payload",
+              "value": "={{ JSON.stringify($json.payload || {}).slice(0, 800) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "127aa862-77d2-496a-9012-7ebfa1639525",
+      "name": "Extract Task Assignment",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3264,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "has_task_id",
+              "leftValue": "={{$json.task_id}}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "373adb2b-af0b-46da-92f5-14e26e5e088c",
+      "name": "IF Has Task ID",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3488,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "authentication": "mcpOAuth2Api",
+        "tool": {
+          "__rl": true,
+          "mode": "id",
+          "value": "assign_task"
+        },
+        "inputMode": "json",
+        "jsonInput": "={{ { task_id: $json.task_id, username: $json.username } }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "56e13fb4-cfaa-4e6b-9cc2-cff6d079bd9a",
+      "name": "MCP Assign Task",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        3712,
+        224
+      ],
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "1RM4eapAQJfVKz0k",
+          "name": "eXo MIPS MCP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "errorMessage": "=create_task_in_project failed or returned no task_id. payload={{$json.raw_create_payload}}"
+      },
+      "id": "0c16a2b5-331c-48ce-b6c8-fdc5526973aa",
+      "name": "Stop - Missing task_id",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        3712,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
+      "id": "e168fc27-27f2-413e-8405-22e00523127b",
+      "name": "Intake Every 5m",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Check Email\n\nUse MCP tool to read user inbox",
+        "height": 400,
+        "width": 1056
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        416,
+        160
+      ],
+      "typeVersion": 1,
+      "id": "69b13858-3f16-4af7-95c1-b7b474fa4c94",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Categorize email\nAI reads email and categorize",
+        "height": 592,
+        "width": 768,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1504,
+        176
+      ],
+      "typeVersion": 1,
+      "id": "223ec55f-37f4-4b1b-9740-479a1b307927",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Dispatch as Task\n**Double click** to edit me. [Guide](https://docs.n8n.io/workflows/components/sticky-notes/)",
+        "height": 496,
+        "width": 1600,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2336,
+        128
+      ],
+      "typeVersion": 1,
+      "id": "f5cc9cfc-f528-44b6-9eeb-b180684e5f23",
+      "name": "Sticky Note2"
+    }
+  ],
   "connections": {
     "Manual Start": {
       "main": [
@@ -220,573 +841,39 @@
       ]
     }
   },
-  "nodes": [
-    {
-      "id": "6c244bb0-727e-4785-b1a8-ace341b77282",
-      "name": "Manual Start",
-      "type": "n8n-nodes-base.manualTrigger",
-      "typeVersion": 1,
-      "position": [
-        224,
-        224
-      ]
-    },
-    {
-      "id": "8b52b27e-8b35-420f-bc19-84eff92f8d1d",
-      "name": "MCP List Emails",
-      "type": "@n8n/n8n-nodes-langchain.mcpClient",
-      "typeVersion": 1,
-      "position": [
-        528,
-        336
-      ],
-      "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
-        "authentication": "mcpOAuth2Api",
-        "tool": {
-          "__rl": true,
-          "mode": "id",
-          "value": "list_emails"
-        },
-        "inputMode": "json",
-        "jsonInput": "{\"limit\":50,\"offset\":0}",
-        "options": {
-          "timeout": 60000
-        }
-      }
-    },
-    {
-      "id": "ba2d6724-d3e5-4bc4-b07f-b4cf469449a3",
-      "name": "Unwrap MCP Emails",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1,
-      "position": [
-        768,
-        336
-      ],
-      "parameters": {
-        "workflowId": "E4OAThogWRG93MUG",
-        "options": {}
-      }
-    },
-    {
-      "id": "d419966a-c2b3-434c-a9f8-558717a611b6",
-      "name": "Split Out Emails",
-      "type": "n8n-nodes-base.splitOut",
-      "typeVersion": 1,
-      "position": [
-        992,
-        336
-      ],
-      "parameters": {
-        "fieldToSplitOut": "payload",
-        "options": {}
-      }
-    },
-    {
-      "id": "2fbb59c6-013e-42f9-9782-3cbbede2518d",
-      "name": "Normalize Email",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        1200,
-        336
-      ],
-      "parameters": {
-        "mode": "manual",
-        "assignments": {
-          "assignments": [
-            {
-              "id": "emailId",
-              "name": "emailId",
-              "value": "={{ String($json.email_id ?? $json.messageId ?? $json.id ?? '') }}",
-              "type": "string"
-            },
-            {
-              "id": "subject",
-              "name": "subject",
-              "value": "={{ $json.subject || 'Email sans sujet' }}",
-              "type": "string"
-            },
-            {
-              "id": "body",
-              "name": "body",
-              "value": "={{ $json.content?.body || $json.body || '' }}",
-              "type": "string"
-            },
-            {
-              "id": "sender",
-              "name": "sender",
-              "value": "={{ $json.sender?.address || $json.sender || $json.from || 'unknown' }}",
-              "type": "string"
-            },
-            {
-              "id": "receivedAt",
-              "name": "receivedAt",
-              "value": "={{ $json.receivedDate || $json.receivedAt || $now.toISO() }}",
-              "type": "string"
-            }
-          ]
-        },
-        "includeOtherFields": false,
-        "options": {}
-      }
-    },
-    {
-      "id": "6d173a84-4e42-4aad-b0be-3f96ab5bf9a5",
-      "name": "Filter - Has Email ID",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        1424,
-        336
-      ],
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": false,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "has_email_id",
-              "leftValue": "={{$json.emailId}}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "notEmpty"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      }
-    },
-    {
-      "id": "a389fdbd-c823-44fc-bf41-20b82cc2abf9",
-      "name": "AI Router",
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 3.1,
-      "position": [
-        1664,
-        336
-      ],
-      "parameters": {
-        "promptType": "define",
-        "text": "=Analyze this email and determine whether it is clearly actionable.\nSubject: {{ $json.subject }}\nSender: {{ $json.sender }}\nBody: {{ $json.body }}\n\nReturn only the structured fields requested.",
-        "hasOutputParser": true,
-        "options": {
-          "systemMessage": "You are the triage agent for Art2Rue festival emails. Hard rule: create a task only if the email is clearly actionable. If there is doubt, ambiguity, or it is informational only, do not create a task: set action_required=false and response_expected=false. Expected fields: action_required (boolean), response_expected (boolean), action_confidence (0..1), assignee_username (louis|claire|lucie), priority (LOW|NORMAL|HIGH|URGENT), slaHours (>0), task_title, summary, next_action, rationale. If action_required=false: assignee_username=claire, priority=LOW, slaHours=72, task_title=\"No action required\", next_action=\"No immediate action\"."
-        }
-      }
-    },
-    {
-      "id": "14dce692-9f03-4ee5-97c0-5faca7469924",
-      "name": "Routing Model",
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.3,
-      "position": [
-        1664,
-        544
-      ],
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "mode": "list",
-          "value": "gpt-4o-mini"
-        },
-        "options": {
-          "temperature": 0.1
-        }
-      }
-    },
-    {
-      "id": "71544077-ebbe-4cbc-9ed5-babb4e61bcc3",
-      "name": "Routing Output Parser",
-      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
-      "typeVersion": 1.3,
-      "position": [
-        1824,
-        544
-      ],
-      "parameters": {
-        "jsonSchemaExample": "{\"action_required\":true,\"response_expected\":true,\"action_confidence\":0.92,\"assignee_username\":\"louis\",\"priority\":\"HIGH\",\"slaHours\":4,\"task_title\":\"Ticketing VPN incident\",\"summary\":\"VPN outage.\",\"next_action\":\"Diagnose.\",\"rationale\":\"Technical issue.\"}"
-      }
-    },
-    {
-      "id": "5d964a18-7f78-4d48-8c8b-21d645483306",
-      "name": "Normalize AI Output",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        1904,
-        336
-      ],
-      "parameters": {
-        "mode": "manual",
-        "assignments": {
-          "assignments": [
-            {
-              "id": "subject",
-              "name": "subject",
-              "value": "={{ $('Normalize Email').item.json.subject }}",
-              "type": "string"
-            },
-            {
-              "id": "body",
-              "name": "body",
-              "value": "={{ $('Normalize Email').item.json.body }}",
-              "type": "string"
-            },
-            {
-              "id": "sender",
-              "name": "sender",
-              "value": "={{ $('Normalize Email').item.json.sender }}",
-              "type": "string"
-            },
-            {
-              "id": "actionRequired",
-              "name": "actionRequired",
-              "value": "={{ Boolean(($json.output || $json).action_required) }}",
-              "type": "boolean"
-            },
-            {
-              "id": "responseExpected",
-              "name": "responseExpected",
-              "value": "={{ Boolean(($json.output || $json).response_expected) }}",
-              "type": "boolean"
-            },
-            {
-              "id": "actionConfidence",
-              "name": "actionConfidence",
-              "value": "={{ Number(($json.output || $json).action_confidence || 0) }}",
-              "type": "number"
-            },
-            {
-              "id": "assigneeCandidate",
-              "name": "assigneeCandidate",
-              "value": "={{ String((($json.output || $json).assignee_username || '')).toLowerCase() }}",
-              "type": "string"
-            },
-            {
-              "id": "priorityCandidate",
-              "name": "priorityCandidate",
-              "value": "={{ String((($json.output || $json).priority || 'NORMAL')).toUpperCase() }}",
-              "type": "string"
-            },
-            {
-              "id": "taskTitleCandidate",
-              "name": "taskTitleCandidate",
-              "value": "={{ String((($json.output || $json).task_title || $('Normalize Email').item.json.subject || 'Email to process')).slice(0,80) }}",
-              "type": "string"
-            },
-            {
-              "id": "summary",
-              "name": "summary",
-              "value": "={{ String((($json.output || $json).summary || 'Summary not provided')).slice(0,500) }}",
-              "type": "string"
-            },
-            {
-              "id": "nextAction",
-              "name": "nextAction",
-              "value": "={{ String((($json.output || $json).next_action || 'Analyze and update status')).slice(0,300) }}",
-              "type": "string"
-            },
-            {
-              "id": "rationale",
-              "name": "rationale",
-              "value": "={{ String((($json.output || $json).rationale || 'AI decision')).slice(0,300) }}",
-              "type": "string"
-            }
-          ]
-        },
-        "includeOtherFields": false,
-        "options": {}
-      }
-    },
-    {
-      "id": "4d8ca516-4831-4ef8-8519-358ddda6060a",
-      "name": "IF Clearly Actionable",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        2128,
-        336
-      ],
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "action",
-              "leftValue": "={{$json.actionRequired}}",
-              "rightValue": true,
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
-            },
-            {
-              "id": "response",
-              "leftValue": "={{$json.responseExpected}}",
-              "rightValue": true,
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
-            },
-            {
-              "id": "confidence",
-              "leftValue": "={{$json.actionConfidence}}",
-              "rightValue": 0.7,
-              "operator": {
-                "type": "number",
-                "operation": "gte"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      }
-    },
-    {
-      "id": "1c7a8285-7daf-421d-ab05-ddf6394d948c",
-      "name": "Build MCP Payload",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        2352,
-        336
-      ],
-      "parameters": {
-        "mode": "manual",
-        "assignments": {
-          "assignments": [
-            {
-              "id": "resolvedAssignee",
-              "name": "resolvedAssignee",
-              "value": "={{ ['louis','claire','lucie'].includes($json.assigneeCandidate) ? $json.assigneeCandidate : 'claire' }}",
-              "type": "string"
-            },
-            {
-              "id": "assigneeLabel",
-              "name": "assigneeLabel",
-              "value": "={{ ({louis:'Louis', claire:'Claire', lucie:'Lucie'}[$json.assigneeCandidate]) || 'Claire' }}",
-              "type": "string"
-            },
-            {
-              "id": "resolvedPriority",
-              "name": "resolvedPriority",
-              "value": "={{ $json.priorityCandidate === 'URGENT' ? 'HIGH' : (['LOW','NORMAL','HIGH'].includes($json.priorityCandidate) ? $json.priorityCandidate : 'NORMAL') }}",
-              "type": "string"
-            },
-            {
-              "id": "taskTitle",
-              "name": "taskTitle",
-              "value": "={{$json.taskTitleCandidate}}",
-              "type": "string"
-            }
-          ]
-        },
-        "includeOtherFields": true,
-        "options": {}
-      }
-    },
-    {
-      "id": "9ff29148-4ada-4dab-999e-c649d2408061",
-      "name": "Render Task Description HTML",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        2576,
-        336
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\\\"/g, '&quot;');\nconst excerpt = String($json.body || '').replace(/\\s+/g, ' ').slice(0, 400);\nconst description = ['<div>','<p><strong>Email from:</strong> ' + esc($json.sender) + '<br/><strong>Subject:</strong> ' + esc($json.subject) + '</p>','<h4>Context</h4>','<p>' + esc($json.summary || 'Summary not provided') + '</p>','<h4>Expected action</h4>','<p>' + esc($json.nextAction || 'Analyze and update status') + '</p>','<h4>AI decision</h4>','<ul>','<li><strong>Assignee:</strong> ' + esc($json.assigneeLabel || $json.resolvedAssignee) + ' (' + esc($json.resolvedAssignee) + ')</li>','<li><strong>Priority:</strong> ' + esc($json.resolvedPriority) + '</li>','<li><strong>Actionable confidence:</strong> ' + esc($json.actionConfidence) + '</li>','<li><strong>Rationale:</strong> ' + esc($json.rationale || 'AI decision') + '</li>','</ul>','<h4>Email excerpt</h4>','<blockquote>' + esc(excerpt) + '</blockquote>','</div>'].join('').slice(0, 5000);\nconst projectId = Number($vars.WF01_PROJECT_ID || 3);\nreturn { ...$json, aiDecision: { clearlyActionable: true, assignee: $json.resolvedAssignee, assigneeLabel: $json.assigneeLabel, priority: $json.resolvedPriority, actionConfidence: $json.actionConfidence, taskTitle: $json.taskTitle, summary: $json.summary, nextAction: $json.nextAction, rationale: $json.rationale }, createTaskInput: { project_id: projectId, title: $json.taskTitle, description, assignee: $json.resolvedAssignee, priority: $json.resolvedPriority } };"
-      }
-    },
-    {
-      "id": "a4d3f709-ab1e-4004-8bcf-14cdc04b7de4",
-      "name": "MCP Create Task",
-      "type": "@n8n/n8n-nodes-langchain.mcpClient",
-      "typeVersion": 1,
-      "position": [
-        2800,
-        336
-      ],
-      "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
-        "authentication": "mcpOAuth2Api",
-        "tool": {
-          "__rl": true,
-          "mode": "id",
-          "value": "create_task_in_project"
-        },
-        "inputMode": "json",
-        "jsonInput": "={{$json.createTaskInput}}",
-        "options": {
-          "timeout": 60000
-        }
-      }
-    },
-    {
-      "id": "1fa2eb88-0b11-4f2e-a0f3-bd5d9768d200",
-      "name": "Unwrap MCP Create Task",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1,
-      "position": [
-        3024,
-        336
-      ],
-      "parameters": {
-        "workflowId": "E4OAThogWRG93MUG",
-        "options": {}
-      }
-    },
-    {
-      "id": "127aa862-77d2-496a-9012-7ebfa1639525",
-      "name": "Extract Task Assignment",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        3248,
-        336
-      ],
-      "parameters": {
-        "mode": "manual",
-        "assignments": {
-          "assignments": [
-            {
-              "id": "task_id",
-              "name": "task_id",
-              "value": "={{ Number($json.payload?.task_id || $json.payload?.id || $json.payload?.task?.task_id || 0) }}",
-              "type": "number"
-            },
-            {
-              "id": "username",
-              "name": "username",
-              "value": "={{ $('Render Task Description HTML').item.json.createTaskInput.assignee || 'claire' }}",
-              "type": "string"
-            },
-            {
-              "id": "raw_create_payload",
-              "name": "raw_create_payload",
-              "value": "={{ JSON.stringify($json.payload || {}).slice(0, 800) }}",
-              "type": "string"
-            }
-          ]
-        },
-        "includeOtherFields": false,
-        "options": {}
-      }
-    },
-    {
-      "id": "373adb2b-af0b-46da-92f5-14e26e5e088c",
-      "name": "IF Has Task ID",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        3472,
-        336
-      ],
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "has_task_id",
-              "leftValue": "={{$json.task_id}}",
-              "rightValue": 0,
-              "operator": {
-                "type": "number",
-                "operation": "gt"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      }
-    },
-    {
-      "id": "56e13fb4-cfaa-4e6b-9cc2-cff6d079bd9a",
-      "name": "MCP Assign Task",
-      "type": "@n8n/n8n-nodes-langchain.mcpClient",
-      "typeVersion": 1,
-      "position": [
-        3696,
-        240
-      ],
-      "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
-        "authentication": "mcpOAuth2Api",
-        "tool": {
-          "__rl": true,
-          "mode": "id",
-          "value": "assign_task"
-        },
-        "inputMode": "json",
-        "jsonInput": "={{ { task_id: $json.task_id, username: $json.username } }}",
-        "options": {
-          "timeout": 60000
-        }
-      }
-    },
-    {
-      "id": "0c16a2b5-331c-48ce-b6c8-fdc5526973aa",
-      "name": "Stop - Missing task_id",
-      "type": "n8n-nodes-base.stopAndError",
-      "typeVersion": 1,
-      "position": [
-        3696,
-        464
-      ],
-      "parameters": {
-        "errorMessage": "=create_task_in_project failed or returned no task_id. payload={{$json.raw_create_payload}}"
-      }
-    },
-    {
-      "id": "e168fc27-27f2-413e-8405-22e00523127b",
-      "name": "Intake Every 5m",
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.3,
-      "position": [
-        224,
-        448
-      ],
-      "parameters": {
-        "rule": {
-          "interval": [
-            {
-              "field": "minutes"
-            }
-          ]
-        }
-      }
-    }
-  ],
-  "activeVersion": null,
-  "tags": [],
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate"
+  },
+  "staticData": null,
   "meta": {
     "aiBuilderAssisted": true
   },
-  "parentFolderId": null,
-  "description": "WF01 refactored: create eXo tasks on project_id 3 and assign by username."
+  "pinData": {},
+  "versionId": "e36415fd-94df-4b01-9630-a30b25e40d75",
+  "activeVersionId": null,
+  "versionCounter": 76,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-04-22T04:35:52.598Z",
+      "createdAt": "2026-04-22T04:35:52.598Z",
+      "role": "workflow:owner",
+      "workflowId": "zeVd0scWqU5vcOUq",
+      "projectId": "rzaD0nbLwUWIJxdW",
+      "project": {
+        "updatedAt": "2026-04-20T14:44:01.248Z",
+        "createdAt": "2026-04-20T14:43:55.238Z",
+        "id": "rzaD0nbLwUWIJxdW",
+        "name": "Patrice   <patrice@meedslab.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "8de64810-3c63-4fd1-969c-9915f88c784a"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": null
 }
