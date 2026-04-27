@@ -8,7 +8,7 @@ This repository is primarily an n8n/eXo workflow artifact workspace. It contains
 
 ## Node toolchain (workflow SDK)
 
-- Root [package.json](../package.json) pins **`@n8n/workflow-sdk`** for **local** validation and optional codegen of MCP-oriented SDK bundles, and **`dotenv`** so REST deploy scripts load a **repository-root** `.env` (see [Root `.env` for repository tooling](#root-env-for-repository-tooling)).
+- Root [package.json](../package.json) pins `**@n8n/workflow-sdk`** for **local** validation and optional codegen of MCP-oriented SDK bundles, and `**dotenv`** so REST deploy scripts load a **repository-root** `.env` (see [Root `.env` for repository tooling](#root-env-for-repository-tooling)).
 - After cloning: `npm install` from the repository root.
 - **Source of truth** remains each canonical `**workflow.json`**. Generated files under `work/` are **git-ignored** scratch output (optional `--emit-sdk`).
 
@@ -43,11 +43,11 @@ Publishing workflows must follow the **deployment validation policy** in [WORKFL
 
 Optional **local-only** file at the repository root (git-ignored). Use it for **n8n instance API** credentials consumed by [push-workflow-to-n8n-api.mjs](../tools/push-workflow-to-n8n-api.mjs), not for n8n workflow runtime variables (those stay in n8n **Variables** / per-workflow `config.env.example`).
 
-1. Copy [`.env.example`](../.env.example) → `.env` at the repo root.
-2. Set `N8N_BASE_URL`, `N8N_API_KEY`, and each `N8N_WORKFLOW_ID_*` for workflows you push (see per-workflow `SPEC.technical.md` / `README.md` for reference ids).
+1. Copy `[.env.example](../.env.example)` → `.env` at the repo root.
+2. Set `N8N_BASE_URL`, `N8N_API_KEY`, and each `N8N_WORKFLOW_ID_`* for workflows you push (see per-workflow `SPEC.technical.md` / `README.md` for reference ids).
 3. **CI / pipelines:** do not commit `.env`; inject the **same variable names** as protected secrets in your runner.
 
-Per-workflow [`config.env.example`](../workflows/wf02-document-validation/config.env.example) files document **execution-time** values inside n8n (webhook URLs, space names, etc.). They are **not** a substitute for `N8N_API_KEY`.
+Per-workflow `[config.env.example](../workflows/wf02-document-validation/config.env.example)` files document **execution-time** values inside n8n (webhook URLs, space names, etc.). They are **not** a substitute for `N8N_API_KEY`.
 
 ## Cursor and MCP (recommended)
 
@@ -133,14 +133,6 @@ node tools/inventory-code-nodes.mjs
 
 This regenerates `docs/inventory-code-nodes.json` and prints totals for n8n **Code** nodes (skips `fixtures/` when scanning for `workflow.json`).
 
-WF03 only — the large **Compose COPIL Note** `jsCode` is maintained in `[tools/_compose_raw.js](../tools/_compose_raw.js)`. After editing that file, re-embed it into the workflow with:
-
-```bash
-python3 tools/patch_wf03_english.py
-```
-
-(The script also refreshes the **Build Report Context** English literals and should be re-run when those nodes change in isolation.)
-
 ### REST deploy to n8n
 
 Implementation: [tools/push-workflow-to-n8n-api.mjs](../tools/push-workflow-to-n8n-api.mjs). Short wrapper at the repo root: [deploy.sh](../deploy.sh). Same portfolio ids as [validate-workflow.sh](../tools/validate-workflow.sh) (`wf01` … `wf04`, `unwrap`).
@@ -153,7 +145,7 @@ Implementation: [tools/push-workflow-to-n8n-api.mjs](../tools/push-workflow-to-n
 npm run deploy:workflow -- wf04
 ```
 
-- Loads [`.env`](../.env.example) from the **repository root** (see [Root `.env` for repository tooling](#root-env-for-repository-tooling)).
+- Loads `[.env](../.env.example)` from the **repository root** (see [Root `.env` for repository tooling](#root-env-for-repository-tooling)).
 - By default runs local `validateWorkflow` on the target `workflow.json` before `PUT`. Use `--skip-validate` only with care.
 - `--dry-run` prints the target URL and exits without calling n8n.
 - The script sends a **schema-safe** subset of the export (n8n rejects extra top-level fields, `id` and `tags` in the body, and some `settings` keys such as `availableInMCP` / `binaryMode`). After a push, confirm **Available in MCP** and other UI-only options in n8n if your workflow relied on them.
