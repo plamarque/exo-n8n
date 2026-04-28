@@ -10,9 +10,9 @@ Prefer a short screencast before the long read? Replace the placeholder with you
 
 ## n8n canvas (overview)
 
-WF01 — Email dispatch workflow in the n8n editor
+![WF01 — Email dispatch workflow in the n8n editor](wf01.png)
 
-Email intake → unwrap → per-item AI triage → task create/assign. For the exact sequence and node names, open `[workflow.json](workflow.json)` in n8n or read [SPEC.technical.md](SPEC.technical.md) (section 4).
+Email intake → unwrap → per-item AI triage → task create/assign. For the exact sequence and node names, open [`workflow.json`](workflow.json) in n8n or read [SPEC.technical.md](SPEC.technical.md) (section 4).
 
 ---
 
