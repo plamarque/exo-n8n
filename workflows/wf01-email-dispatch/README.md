@@ -48,12 +48,25 @@ Create or locate the following **on eXo**, then copy identifiers into n8n **vari
 
 | Prerequisite                                                                                                                                                                                                                                 | Why                                                                                                                    |
 | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| **MCP Client** credential + **`EXO_MCP_ENDPOINT`** (or graph default to your tenant URL)                                                                                                                                                     | All eXo steps go through MCP.                                                                                          |
+| **MCP Client** credential + **`EXO_MCP_ENDPOINT`** (or graph default to your tenant URL) | All eXo steps go through MCP. |
 | **LLM / OpenAI** credentials for the routing + parser chain                                                                                                                                                                                  | Structured triage node(s) require a configured model (see `workflow.json` and [SPEC.technical.md](SPEC.technical.md)). |
 | **Sub-workflow** **Unwrap MCP JSON** deployed and **`N8N_WORKFLOW_ID_UNWRAP`** in root `.env` when using **REST deploy** ([subworkflow-dependencies.json](subworkflow-dependencies.json), [docs/DEVELOPMENT.md](../../docs/DEVELOPMENT.md)). | Required for dependency id injection during REST deployment. |
 
 
 **Out of scope for a first run (per [SPEC.functional.md](SPEC.functional.md))** — persisted idempotency by `emailId`, dynamic project discovery, REST fallback: not required to **start** the demo.
+
+## Runtime variables (what they mean, and where to set them)
+
+Set these in **n8n Variables** (or equivalent instance env mapping), because the workflow reads them at runtime via `$vars.*`.
+
+
+| Variable           | Meaning                                                                                    | Where to set                            |
+| ------------------ | ------------------------------------------------------------------------------------------ | --------------------------------------- |
+| `EXO_MCP_ENDPOINT` | Base MCP endpoint used by WF01 MCP nodes.                                                  | n8n Variables (instance/project scope). |
+| `WF01_PROJECT_ID`  | Target eXo project id for created tasks (optional; workflow default applies when missing). | n8n Variables.                          |
+
+
+Repository root `.env` is different: it is only for repo tooling (`N8N_*` deploy/pull settings), not for WF01 runtime business variables.
 
 ## High-level flow (conceptual)
 

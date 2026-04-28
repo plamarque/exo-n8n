@@ -184,6 +184,31 @@ Some portfolio folders include **`subworkflow-dependencies.json`** next to `work
 
 **WF03 first-time tenant:** Prefer `./tools/deploy.sh wf03 --create-missing-deps` over editing canonical JSON. The legacy [tools/import-wf03-subworkflows.mjs](../tools/import-wf03-subworkflows.mjs) entrypoint is deprecated and forwards to the same deploy command.
 
+## How runtime variables are passed to workflows
+
+There are two different configuration channels in this repository:
+
+1. **Repository root `.env`** (copied from [`.env.example`](../.env.example))
+   - Used by repository tooling (`deploy.sh`, REST push/pull scripts, credential/id merge logic).
+   - Not read by n8n workflow runtime nodes directly.
+
+2. **n8n runtime variables** (used in workflow expressions such as `$vars.EXO_MCP_ENDPOINT` or `$vars.WF02_PROJECT_ID`)
+   - Set these in your **n8n instance** (Variables UI), or through your n8n environment variable mechanism.
+   - These values are resolved when the workflow executes in n8n.
+
+### Recommended setup flow
+
+1. Open each workflow's `config.env.example` and copy the variables relevant to your tenant.
+2. In n8n, set those keys as runtime variables (same names) before first run.
+3. Keep root `.env` only for repository tooling (`N8N_BASE_URL`, `N8N_API_KEY`, `N8N_WORKFLOW_ID_*`, optional deploy overrides).
+
+### Important behavior
+
+- `workflow.json` is the canonical graph and is not templated by this repository.
+- Runtime variables are not expanded into `workflow.json` during local validation.
+- During execution, n8n resolves `$vars.*` from the target instance variable store.
+
+
 ## Configuration
 
 Example `config.env.example` files live **next to each workflow** (for example [workflows/wf02-document-validation/config.env.example](../workflows/wf02-document-validation/config.env.example)).

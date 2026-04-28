@@ -52,6 +52,21 @@ Create or locate the following **on eXo**, then copy identifiers into n8n **vari
 | **Data Tables** `wf02_processed_documents` / `wf02_approvals` | Created on first run by the graph (`createIfNotExists`); **no manual SQL** required. |
 | **Unwrap** sub-workflow id for deploy | **`N8N_WORKFLOW_ID_UNWRAP`** + [subworkflow-dependencies.json](subworkflow-dependencies.json). |
 
+## Runtime variables (what they mean, and where to set them)
+
+Set these in **n8n Variables** (or equivalent instance env mapping), because WF02 resolves them at runtime via `$vars.*`.
+
+| Variable | Meaning | Where to set |
+|----------|---------|--------------|
+| `EXO_MCP_ENDPOINT` | MCP endpoint for document/task/comment/status operations. | n8n Variables. |
+| `WF02_PARENT_FOLDER_ID` | Watched eXo folder id for document intake. | n8n Variables. |
+| `WF02_PROJECT_ID` | Target eXo project id where validation tasks are created. | n8n Variables. |
+| `WF02_INPROGRESS_STATUS_ID` | Project status id used after create and on non-final outcomes. | n8n Variables. |
+| `WF02_DONE_STATUS_ID` | Project status id used when both approvals are `APPROVED`. | n8n Variables. |
+| `WF02_APPROVAL_BASE_URL` | Hosted n8n **Form** URL used in task comments for reviewer links. | n8n Variables. |
+
+Use `config.env.example` as a naming/meaning template, then copy values into n8n Variables for your tenant.
+
 ## High-level flow (conceptual)
 
 1. **Intake** — manual start or scheduled poll of the folder.

@@ -57,6 +57,24 @@ WF03 binds to **specific eXo objects** (space, notes, project, agenda). On a **n
 
 If any id is wrong, **create/upsert** paths in the technical spec may **fail** or link the **wrong** object — verify ids after a tenant copy.
 
+## Runtime variables (what they mean, and where to set them)
+
+Set these in **n8n Variables** (or equivalent instance env mapping), because WF03 resolves them at runtime via `$vars.*`.
+
+| Variable | Meaning | Where to set |
+|----------|---------|--------------|
+| `EXO_MCP_ENDPOINT` | MCP endpoint for notes/tasks/agenda calls. | n8n Variables. |
+| `WF03_SPACE_ID` | eXo space id used by the workflow scope. | n8n Variables. |
+| `WF03_PROJECT_ID` | eXo project id used for the progress report table. | n8n Variables. |
+| `WF03_TEMPLATE_NOTE_ID` | Template note id used as source content. | n8n Variables. |
+| `WF03_REPORTS_PARENT_NOTE_ID` | Parent note id where weekly notes are created/updated. | n8n Variables. |
+| `WF03_AGENDA_PARENT_EVENT_ID` | Stable agenda event id updated with the note link. | n8n Variables. |
+| `WF03_MEETING_OWNER` | Label used in generated meeting content. | n8n Variables. |
+| `WF03_ATTENDEE_USERNAMES` | Comma-separated attendee usernames for agenda updates. | n8n Variables. |
+| `WF03_STAGNATION_DAYS`, `WF03_BLOCKED_DAYS`, `WF03_OVERLOAD_THRESHOLD` | LLM/watch-list thresholds. | n8n Variables. |
+
+Deploy-time ids (`N8N_WORKFLOW_ID_*`) belong to root `.env` for repository tooling, not to runtime `$vars` resolution.
+
 ## High-level flow (conceptual)
 
 1. **Trigger** — scheduled prep before the meeting slot (implementation detail in `workflow.json`).

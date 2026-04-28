@@ -50,6 +50,17 @@ Without steady upkeep, document libraries accumulate **weak titles**, **missing 
 
 **Operational** — per-run **document cap** and **no rollback** on partial failure: see [SPEC.functional.md](SPEC.functional.md) §4 and [SPEC.technical.md](SPEC.technical.md) §3.
 
+## Runtime variables (what they mean, and where to set them)
+
+Set these in **n8n Variables** (or equivalent instance env mapping), because WF04 resolves runtime keys through `$vars.*`.
+
+| Variable | Meaning | Where to set |
+|----------|---------|--------------|
+| `EXO_SPACE_NAME` | Target eXo space name (required, strict). | n8n Variables. |
+| `EXO_MCP_ENDPOINT` | MCP endpoint used by WF04 MCP nodes. | n8n Variables (or node-level default expression). |
+
+WF04's runtime behavior depends on these variables in n8n; root `.env` remains reserved for repository deploy/pull tooling.
+
 ## High-level flow (conceptual)
 
 1. **Trigger** — manual start or daily schedule.
