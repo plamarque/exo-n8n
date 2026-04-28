@@ -60,6 +60,5 @@ Normative for contributors and AI agents whenever portfolio workflows are change
 - WF03: [workflows/wf03-weekly-steering/](../workflows/wf03-weekly-steering/) (includes `SPEC.technical-exo-mips.md`, `SPEC.technical-mcp.md`, `fixtures/steering-template-note.md`).
 - WF04: [workflows/wf04-metadata-enrichment/](../workflows/wf04-metadata-enrichment/).
 - Shared: [workflows/shared/subworkflows/unwrap-mcp-json/](../workflows/shared/subworkflows/unwrap-mcp-json/).
-- Audit: [audit-code-vs-native.md](audit-code-vs-native.md); generated Code-node inventory: [inventory-code-nodes.json](inventory-code-nodes.json).
 - Tooling: [tools/](../tools/) (see [DEVELOPMENT.md](DEVELOPMENT.md)).
 - Layout and canonical JSON: [ADR/0002-repository-layout-workflows.md](ADR/0002-repository-layout-workflows.md).

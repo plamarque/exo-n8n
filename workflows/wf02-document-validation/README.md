@@ -36,7 +36,7 @@ For festival programming (and similar programs), **editorial fit** and **operati
 | Parallelism   | **Split + wait for webhooks + merge**                  | Models two **independent** human decisions; **join** encodes the business rule.                                                                           |
 | Idempotency   | **Data Table + Merge (SQL-style combine)**             | Same pattern as WF04: **skip** unchanged docs; avoid accidental duplicate tasks when rerunning intake.                                                    |
 | MCP envelopes | **Execute Workflow → Unwrap MCP JSON**                 | Consistent parsing of `list` / `get` / `create` responses.                                                                                                |
-| Code surface  | **Small Code** (e.g. HTML body, merge input edge case) | Per [docs/audit-code-vs-native.md](../../docs/audit-code-vs-native.md) and [SPEC.technical.md](SPEC.technical.md), most control flow is **native** nodes. |
+| Code surface  | **Small Code** (e.g. HTML body, merge input edge case) | Per [SPEC.technical.md](SPEC.technical.md) §12.4, most control flow is **native** nodes. |
 
 
 ## MCP eXo interaction model

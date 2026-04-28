@@ -85,7 +85,7 @@ After a successful create, the workflow calls **`update_task_status`** once to m
 
 ### 12.4 n8n orchestration (as implemented in repo `workflow.json`)
 
-Refactored 2026-04-27 (native refactor); residual Code: **`Render Task Description HTML`** (~5 LOC, HTML-only) plus **`Ensure Merge Processed Input`** (~8 LOC — ensures `combineBySql` input2 is never empty when `wf02_processed_documents` has zero rows; AlaSQL LEFT JOIN otherwise yields no merge output). The unwrap step reuses the shared sub-workflow [workflows/shared/subworkflows/unwrap-mcp-json/workflow.json](../shared/subworkflows/unwrap-mcp-json/workflow.json) (parity with WF01); idempotency uses an n8n **Data Table** + **Merge (combineBySql)** (parity with WF04). See [docs/audit-code-vs-native.md](../../docs/audit-code-vs-native.md) section *WF02 native refactor*.
+Refactored 2026-04-27 (native refactor); residual Code: **`Render Task Description HTML`** (~5 LOC, HTML-only) plus **`Ensure Merge Processed Input`** (~8 LOC — ensures `combineBySql` input2 is never empty when `wf02_processed_documents` has zero rows; AlaSQL LEFT JOIN otherwise yields no merge output). The unwrap step reuses the shared sub-workflow [workflows/shared/subworkflows/unwrap-mcp-json/workflow.json](../shared/subworkflows/unwrap-mcp-json/workflow.json) (parity with WF01); idempotency uses an n8n **Data Table** + **Merge (combineBySql)** (parity with WF04).
 
 **Intake branch (Manual Start / Schedule 5m)**
 

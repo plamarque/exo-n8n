@@ -16,8 +16,8 @@ This document is tracking-only. It does not define expected behavior.
 - [ ] Resolve configuration drift between per-workflow `config.env.example` and live n8n variables.
 - [x] Re-import/update WF02 from repository JSON and rerun manual validation. (2026-04-27 — `./tools/deploy.sh wf02` push of refactored canonical JSON; manual end-to-end approval round-trip still recommended on the live tenant.)
 - [ ] Add persistent email idempotence to WF01 if the workflow is expected to run repeatedly.
-- [x] Refactor **WF02** toward more native n8n nodes (per audit). (2026-04-27 — see [audit-code-vs-native.md](audit-code-vs-native.md) section *WF02 native refactor*.)
-- [ ] Refactor **WF03** toward more native n8n nodes (per audit) — heavy HTML/report Code remains in portfolio-local UTILs.
+- [x] Refactor **WF02** toward more native n8n nodes. (2026-04-27 — details in [SPEC.technical.md](../workflows/wf02-document-validation/SPEC.technical.md) §12.4.)
+- [ ] Optional further **WF03** native-only tweaks (Split Out / Aggregate for tasks, etc.) — heavy HTML/report Code remains in portfolio-local UTILs; see [README](../workflows/wf03-weekly-steering/README.md) and [ISSUES](ISSUES.md).
 - [x] Reuse shared `unwrap-mcp-json` sub-workflow in WF02 (2026-04-27, via [subworkflow-dependencies.json](../workflows/wf02-document-validation/subworkflow-dependencies.json) — WF03/WF04 evaluation still open).
 
 ## Done Criteria For Documentation Governance

@@ -35,7 +35,7 @@ Governance meetings repeat on a **fixed cadence**, but preparation is often **ma
 | ------------------ | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Readability        | **UTIL sub-workflows** for **build report context** and **compose HTML**                | Keeps the parent graph a **sequence of decisions**; heavy string work is isolated.                                                                         |
 | MCP parsing        | **Execute Workflow → [Unwrap MCP JSON](../shared/subworkflows/unwrap-mcp-json/)**       | Same envelope problem as other flows; shared UTIL avoids drift.                                                                                            |
-| Native vs Code     | **Set + Execute Workflow** preferred; **one small Code** for upsert decision if present | Aligns with native-first refactors noted in [docs/ISSUES.md](../../docs/ISSUES.md) and [docs/audit-code-vs-native.md](../../docs/audit-code-vs-native.md). |
+| Native vs Code     | **Set + Execute Workflow** preferred; **one small Code** for upsert decision if present | Aligns with native-first layout described in [docs/ISSUES.md](../../docs/ISSUES.md) and this README. |
 | Multiple contracts | Separate **MIPS** vs **QAUI** technical write-ups                                       | Exploration landed in two spec files; the functional story is one—see references below.                                                                    |
 
 
@@ -104,9 +104,9 @@ WF03 is the **broadest** demo: it touches **Notes**, **Tasks**, and **Agenda / c
 
 - n8n workflow: `1suyxKutB174p7b4` (name on the instance: `WF03 - Weekly steering preparation`).
 
-## Code vs native audit
+## Code vs native
 
-WF03’s main graph now favors **Set**, **Execute Workflow** (shared unwrap + two WF03 UTILs), and a single small **Decide Note Upsert** Code node; HTML/report composition lives in UTIL sub-workflows. See `[docs/ISSUES.md](../../docs/ISSUES.md)` and [audit `docs/audit-code-vs-native.md](../../docs/audit-code-vs-native.md)`.
+WF03’s main graph favors **Set**, **Execute Workflow** (shared unwrap + two WF03 UTILs), and a single small **Decide Note Upsert** Code node; HTML/report composition lives in UTIL sub-workflows. See [docs/ISSUES.md](../../docs/ISSUES.md) for optional further native-only tweaks.
 
 ## Import and deploy
 

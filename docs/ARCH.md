@@ -10,9 +10,9 @@ There is no observed application package manifest at the repository root. The ex
 
 - `workflows/`: one folder per portfolio workflow (WF01–WF04) plus `shared/subworkflows/` for reusable pieces (for example [unwrap MCP JSON](../workflows/shared/subworkflows/unwrap-mcp-json/)).
 - `workflows/*/` layout: `workflow.json` (canonical), `README.md`, `SPEC.functional.md`, `SPEC.technical.md` (or split technical docs for WF03), `config.env.example`, optional `fixtures/`.
-- `tools/`: minimal maintenance scripts (inventory of Code nodes, optional REST push of canonical `workflow.json` to n8n via [push-workflow-to-n8n-api.mjs](../tools/push-workflow-to-n8n-api.mjs)). See [DEVELOPMENT.md](DEVELOPMENT.md).
-- `docs/`: normative and tracking documentation, [audit](audit-code-vs-native.md), and generated [inventory](inventory-code-nodes.json).
-- `docs/ADR/`: architecture decision records, including [0002](ADR/0002-repository-layout-workflows.md) (layout and canonical JSON policy).
+- `tools/`: minimal maintenance scripts (validation of canonical `workflow.json`, optional REST push to n8n via [push-workflow-to-n8n-api.mjs](../tools/push-workflow-to-n8n-api.mjs)). See [DEVELOPMENT.md](DEVELOPMENT.md).
+- `docs/`: normative and tracking documentation (for example [SPEC.md](SPEC.md), [WORKFLOW.md](WORKFLOW.md), [ISSUES.md](ISSUES.md)).
+- `docs/ADR/`: architecture decision records, including [0002](ADR/0002-repository-layout-workflows.md) (layout and canonical JSON policy) and [0003](ADR/0003-prefer-native-n8n-nodes.md) (prefer native nodes over Code for low-code maintainability).
 
 ## External Systems
 
@@ -73,7 +73,7 @@ The recurring architecture is:
 ## Architectural Constraints
 
 - MCP response normalization is a cross-cutting concern because several eXo MCP responses may arrive as arrays containing serialized JSON in `text`.
-- Native n8n nodes are preferred for visible business logic when they remain maintainable.
+- Native n8n nodes are preferred for visible business logic when they remain maintainable; narrow exceptions for Code nodes are recorded in [ADR 0003](ADR/0003-prefer-native-n8n-nodes.md).
 - Code nodes are acceptable for complex HTML composition, state merging, or response normalization when native nodes would obscure the behavior.
 - Environment-specific IDs and URLs should be configurable where workflows need to move between eXo/n8n environments.
 
