@@ -2,6 +2,18 @@
 
 **TL;DR** — Ingest mail through eXo MCP, **unwrap** responses, let a **structured LLM** decide if a message is truly actionable, then **create and assign** a project task when confidence and policy allow. The point of the demo: not every email should create work.
 
+## Video walkthrough
+
+Prefer a short screencast before the long read? Replace the placeholder with your published URL (or embed) when ready.
+
+**Short video:** *TBD*
+
+## n8n canvas (overview)
+
+WF01 — Email dispatch workflow in the n8n editor
+
+Email intake → unwrap → per-item AI triage → task create/assign. For the exact sequence and node names, open `[workflow.json](workflow.json)` in n8n or read [SPEC.technical.md](SPEC.technical.md) (section 4).
+
 ---
 
 ## Problem context
@@ -15,6 +27,33 @@ Project teams still receive **actionable** and **informational** email in the sa
 - **Classify** with a small, contract-based LLM output (action required, response expected, confidence, assignee, priority, title, summary).
 - **Create** a task in a **known eXo project** and **assign** it to a resolved user when—and only when—guardrails pass.
 - **Stop with a clear error** if create returns no `task_id` (defect or contract mismatch).
+
+## Prerequisites (eXo tenant and n8n)
+
+Create or locate the following **on eXo**, then copy identifiers into n8n **variables / workflow parameters** as needed (see [SPEC.technical.md](SPEC.technical.md) §3 and [config.env.example](config.env.example) for naming).
+
+**eXo**
+
+
+| Prerequisite                                                                                 | Why                                                                                                                                                                                                                      |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **MCP endpoint** reachable with tools `list_emails`, `create_task_in_project`, `assign_task` | Core automation path ([SPEC.technical.md](SPEC.technical.md) §2).                                                                                                                                                        |
+| **Task project** — numeric `**project_id`** where tasks are created                          | Mapped from `**WF01_PROJECT_ID**` when set; otherwise the demo default is `**3**` (`Festival Art2Rue` on **exo-mips-ft** — **confirm on your tenant** via UI or MCP (`list_projects`).                                   |
+| **Assignee usernames** (`louis`, `claire`, `lucie`)                                          | LLM output is constrained and mapped with fallback ([SPEC.technical.md](SPEC.technical.md) §6). Users **must exist** under those **login names** on your tenant **or** adjust the workflow mapping to match your roster. |
+| **Mailbox visibility** for `list_emails`                                                     | The identity used by the n8n **MCP OAuth** credential must be able to list the **Art2Rue**-style demo mail; no mail → nothing to process.                                                                                |
+
+
+**n8n**
+
+
+| Prerequisite                                                                                                                                                                                                                                 | Why                                                                                                                    |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| **MCP Client** credential + `**EXO_MCP_ENDPOINT`** (or graph default to your tenant URL)                                                                                                                                                     | All eXo steps go through MCP.                                                                                          |
+| **LLM / OpenAI** credentials for the routing + parser chain                                                                                                                                                                                  | Structured triage node(s) require a configured model (see `workflow.json` and [SPEC.technical.md](SPEC.technical.md)). |
+| **Sub-workflow** **Unwrap MCP JSON** deployed and `**N8N_WORKFLOW_ID_UNWRAP`** in root `.env` when using **REST deploy** ([subworkflow-dependencies.json](subworkflow-dependencies.json), [docs/DEVELOPMENT.md](../../docs/DEVELOPMENT.md)). |                                                                                                                        |
+
+
+**Out of scope for a first run (per [SPEC.functional.md](SPEC.functional.md))** — persisted idempotency by `emailId`, dynamic project discovery, REST fallback: not required to **start** the demo.
 
 ## High-level flow (conceptual)
 
@@ -66,12 +105,6 @@ After MCP nodes that return wrapped JSON, the graph calls the shared **[Unwrap M
 | [subworkflow-dependencies.json](subworkflow-dependencies.json)                     | Deploy order for Unwrap dependency.              |
 | [../shared/subworkflows/unwrap-mcp-json/](../shared/subworkflows/unwrap-mcp-json/) | Shared MCP unwrap UTIL.                          |
 
-
-## Video walkthrough
-
-
-
-**Short video:** *TBD*
 
 ---
 

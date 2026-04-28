@@ -37,12 +37,14 @@ Teams on eXo already centralize **tasks, documents, spaces, and calendar**. The 
 
 Together they enable:
 
-| Capability | How it shows up here |
-|------------|----------------------|
-| **External signals** | Turn inbound email into structured eXo work (WF01). |
-| **Richer than native DMS flows** | Model **parallel approvals** and traceability beyond a simple folder workflow (WF02). |
+
+| Capability                          | How it shows up here                                                                  |
+| ----------------------------------- | ------------------------------------------------------------------------------------- |
+| **External signals**                | Turn inbound email into structured eXo work (WF01).                                   |
+| **Richer than native DMS flows**    | Model **parallel approvals** and traceability beyond a simple folder workflow (WF02). |
 | **Recurring collaboration rituals** | Prepare a **steering committee** pack (note + tasks + calendar) on a schedule (WF03). |
-| **Background quality** | **Incremental, idempotent** enrichment of document metadata (WF04). |
+| **Background quality**              | **Incremental, idempotent** enrichment of document metadata (WF04).                   |
+
 
 ---
 
@@ -55,12 +57,18 @@ Together they enable:
 - [WF03 — Weekly steering preparation](workflows/wf03-weekly-steering/README.md)
 - [WF04 — Metadata enrichment](workflows/wf04-metadata-enrichment/README.md)
 
-| Workflow | Chapter (tutorial) | Canonical graph | Product spec | Technical spec |
-|----------|-------------------|-----------------|---------------|----------------|
-| **WF01** — Email dispatch | [workflows/wf01-email-dispatch/README.md](workflows/wf01-email-dispatch/README.md) | [workflow.json](workflows/wf01-email-dispatch/workflow.json) | [SPEC.functional.md](workflows/wf01-email-dispatch/SPEC.functional.md) | [SPEC.technical.md](workflows/wf01-email-dispatch/SPEC.technical.md) |
-| **WF02** — Document validation (split / join) | [workflows/wf02-document-validation/README.md](workflows/wf02-document-validation/README.md) | [workflow.json](workflows/wf02-document-validation/workflow.json) | [SPEC.functional.md](workflows/wf02-document-validation/SPEC.functional.md) | [SPEC.technical.md](workflows/wf02-document-validation/SPEC.technical.md) |
-| **WF03** — Weekly steering preparation | [workflows/wf03-weekly-steering/README.md](workflows/wf03-weekly-steering/README.md) | [workflow.json](workflows/wf03-weekly-steering/workflow.json) | [SPEC.functional.md](workflows/wf03-weekly-steering/SPEC.functional.md) | [SPEC.technical-exo-mips.md](workflows/wf03-weekly-steering/SPEC.technical-exo-mips.md), [SPEC.technical-mcp.md](workflows/wf03-weekly-steering/SPEC.technical-mcp.md) |
-| **WF04** — Metadata enrichment | [workflows/wf04-metadata-enrichment/README.md](workflows/wf04-metadata-enrichment/README.md) | [workflow.json](workflows/wf04-metadata-enrichment/workflow.json) | [SPEC.functional.md](workflows/wf04-metadata-enrichment/SPEC.functional.md) | [SPEC.technical.md](workflows/wf04-metadata-enrichment/SPEC.technical.md) |
+Each chapter includes **Prerequisites (eXo tenant and n8n)** — what to create or look up on the eXo side (spaces, folders, projects, note/calendar ids, users) and what to configure in n8n (MCP, LLM, forms, variables) before running the workflow.
+
+Each README opens with **Video walkthrough** (placeholder until you publish links) immediately after the **TL;DR**, then **n8n canvas** screenshot — useful if you prefer video before reading on.
+
+
+| Workflow                                      | Chapter (tutorial)                                                                           | Canonical graph                                                   | Product spec                                                                | Technical spec                                                                                                                                                         |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **WF01** — Email dispatch                     | [workflows/wf01-email-dispatch/README.md](workflows/wf01-email-dispatch/README.md)           | [workflow.json](workflows/wf01-email-dispatch/workflow.json)      | [SPEC.functional.md](workflows/wf01-email-dispatch/SPEC.functional.md)      | [SPEC.technical.md](workflows/wf01-email-dispatch/SPEC.technical.md)                                                                                                   |
+| **WF02** — Document validation (split / join) | [workflows/wf02-document-validation/README.md](workflows/wf02-document-validation/README.md) | [workflow.json](workflows/wf02-document-validation/workflow.json) | [SPEC.functional.md](workflows/wf02-document-validation/SPEC.functional.md) | [SPEC.technical.md](workflows/wf02-document-validation/SPEC.technical.md)                                                                                              |
+| **WF03** — Weekly steering preparation        | [workflows/wf03-weekly-steering/README.md](workflows/wf03-weekly-steering/README.md)         | [workflow.json](workflows/wf03-weekly-steering/workflow.json)     | [SPEC.functional.md](workflows/wf03-weekly-steering/SPEC.functional.md)     | [SPEC.technical-exo-mips.md](workflows/wf03-weekly-steering/SPEC.technical-exo-mips.md), [SPEC.technical-mcp.md](workflows/wf03-weekly-steering/SPEC.technical-mcp.md) |
+| **WF04** — Metadata enrichment                | [workflows/wf04-metadata-enrichment/README.md](workflows/wf04-metadata-enrichment/README.md) | [workflow.json](workflows/wf04-metadata-enrichment/workflow.json) | [SPEC.functional.md](workflows/wf04-metadata-enrichment/SPEC.functional.md) | [SPEC.technical.md](workflows/wf04-metadata-enrichment/SPEC.technical.md)                                                                                              |
+
 
 **Cross-cutting docs:** [docs/SPEC.md](docs/SPEC.md) (portfolio summary), [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) (setup, deploy, validation), [AGENTS.md](AGENTS.md) (contribution rules for this repo).
 
@@ -82,7 +90,7 @@ Together they enable:
 
 ---
 
-###  WF02 — Richer document validation: two parallel approvals
+### WF02 — Richer document validation: two parallel approvals
 
 **Tutorial:** [workflows/wf02-document-validation/README.md](workflows/wf02-document-validation/README.md)
 
@@ -133,11 +141,9 @@ These patterns appear across the portfolio; they are **intentional** for maintai
 
 ## Deployment and validation (pointers)
 
-- **Environment:** copy [`.env.example`](.env.example) to `.env` and follow [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) (REST deploy, credentials, MCP).
+- **Environment:** copy `[.env.example](.env.example)` to `.env` and follow [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) (REST deploy, credentials, MCP).
 - **Deploy a workflow from the repo root:** `./tools/deploy.sh wf01` (and `wf02`, `wf03`, `wf04`); use `--dry-run` to inspect targets. Sub-workflow order is driven by each folder’s `subworkflow-dependencies.json` where present.
 - **Validation policy:** before publishing, validate the canonical `workflow.json` as described in [docs/WORKFLOW.md](docs/WORKFLOW.md) and [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#rest-deploy-to-n8n).
-
-
 
 ---
 

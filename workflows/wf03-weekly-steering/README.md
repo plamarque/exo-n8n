@@ -2,6 +2,18 @@
 
 **TL;DR** — Automate the **weekly steering committee prep pack**: load a **note template**, embed a **task-based progress table**, add **LLM-suggested** agenda and watch items, and keep a **recurring calendar** entry pointing at the right **note for the week**. COPIL-style meeting habit, without the copy-paste.
 
+## Video walkthrough
+
+Prefer a short screencast before the long read? Replace the placeholder with your published URL (or embed) when ready.
+
+**Short video:** *TBD*
+
+## n8n canvas (overview)
+
+![WF03 — Weekly steering preparation workflow in the n8n editor](wf03.png)
+
+Triggers → notes/templates → task list for table → **Execute Workflow** UTILs (report + HTML) → LLM nudges → note upsert and agenda link. For tool-level detail, open [`workflow.json`](workflow.json) and the technical specs ([SPEC.technical-exo-mips.md](SPEC.technical-exo-mips.md), [SPEC.technical-mcp.md](SPEC.technical-mcp.md)).
+
 **Terminology:** **COPIL** is French project shorthand for a **steering committee** (*comité de pilotage*). In English, *steering committee* (or *steering group*) is the clearest wording. This workflow’s export still uses `COPIL` in several **node names** to match the demo environment; the portfolio workflow title uses English *steering*.
 
 ---
@@ -17,6 +29,33 @@ Governance meetings repeat on a **fixed cadence**, but preparation is often **ma
 - **List project tasks** and render a **tabular HTML** snapshot for the note body.
 - Run an **LLM** on a compact task payload to propose **agenda nudges** and **risk / watch** items (non-binding, grounded in data).
 - **Create or update** the standing **agenda / calendar** object so participants open the **same invite** with the **correct note link**.
+
+## Prerequisites (eXo tenant and n8n)
+
+WF03 binds to **specific eXo objects** (space, notes, project, agenda). On a **new tenant**, create the corresponding **space / note / project / calendar** structure (or clone the demo layout), then read ids from the eXo UI or via MCP exploration in [SPEC.technical-exo-mips.md](SPEC.technical-exo-mips.md). Align n8n **variables** with [config.env.example](config.env.example).
+
+**eXo (ids are examples from MIPS exploration — replace for your tenant)**
+
+| Prerequisite | Variable (typical) | Why |
+|--------------|-------------------|-----|
+| **Space** for festival / program | **`WF03_SPACE_ID`** | Scopes notes, tasks, and events. |
+| **Template note** the workflow reads to seed content | **`WF03_TEMPLATE_NOTE_ID`** | Source for the weekly handout structure. |
+| **Parent note** under which **weekly child notes** are created | **`WF03_REPORTS_PARENT_NOTE_ID`** | Anchors generated notes in the tree. |
+| **Task project** for the **HTML progress table** | **`WF03_PROJECT_ID`** | `list_tasks` / project task list for the report. |
+| **Agenda / parent event** for the **recurring meeting** link | **`WF03_AGENDA_PARENT_EVENT_ID`** | Calendar object updated to point at the current week’s note. |
+| **Meeting owner label** (string) | **`WF03_MEETING_OWNER`** | Display / context in generated content. |
+| **Attendee usernames** (comma-separated) | **`WF03_ATTENDEE_USERNAMES`** | Must **exist** on the tenant (`claire`, `etienne`, … per [SPEC.functional.md](SPEC.functional.md) §4). |
+| **LLM tuning** (optional) | **`WF03_STAGNATION_DAYS`**, **`WF03_BLOCKED_DAYS`**, **`WF03_OVERLOAD_THRESHOLD`** | Thresholds for “watch list” suggestions in [config.env.example](config.env.example). |
+
+**n8n**
+
+| Prerequisite | Why |
+|--------------|-----|
+| **MCP OAuth** + **`EXO_MCP_ENDPOINT`** | Notes, tasks, agenda calls. |
+| **OpenAI** (or equivalent) for LLM nodes | Agenda / watch suggestions. |
+| **Three sub-workflows** deployed: Unwrap + **WF03 build report** + **WF03 compose** | Parent **Execute Workflow** references; set **`N8N_WORKFLOW_ID_UNWRAP`**, **`N8N_WORKFLOW_ID_WF03_BUILD_REPORT`**, **`N8N_WORKFLOW_ID_WF03_COMPOSE`** for REST deploy ([subworkflow-dependencies.json](subworkflow-dependencies.json), [Import and deploy](#import-and-deploy)). |
+
+If any id is wrong, **create/upsert** paths in the technical spec may **fail** or link the **wrong** object — verify ids after a tenant copy.
 
 ## High-level flow (conceptual)
 
@@ -63,13 +102,6 @@ WF03 is the **broadest** demo: it touches **Notes**, **Tasks**, and **Agenda / c
 | [config.env.example](config.env.example)                                   | Example n8n variables.                                                                     |
 | [subworkflow-dependencies.json](subworkflow-dependencies.json)             | Deploy order: Unwrap + WF03 UTILs.                                                         |
 | [subworkflows/](subworkflows/)                                             | WF03-only UTIL exports (report + HTML).                                                    |
-
-
-## Video walkthrough
-
-
-
-**Short video:** *TBD*
 
 ---
 
