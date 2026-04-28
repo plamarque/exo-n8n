@@ -12,6 +12,25 @@ If you only read one thing per workflow, start with its **chapter** in the table
 
 ---
 
+## Prerequisites (eXo + n8n)
+
+You need **two runtimes** before the demos are useful end to end:
+
+- An **eXo** tenant (cloud or self-managed) where the **MCP server** is **enabled and exposed** for your integration, with the right **MCP base URL** and **OAuth2 (or equivalent) client** details. Enablement is a **platform / admin** task; follow your eXo (Meeds) admin guide for the version you run. A common URL shape ends in `/mcp-server/mcp`—always match the **actual** host and path in n8n.
+- A reachable **n8n** instance to import or deploy the `workflow.json` files, run triggers, and **store credentials** (MCP + AI) in the n8n UI.
+
+**n8n Cloud vs self-hosted:** this portfolio was **tested on n8n Cloud** (managed tenant). It **should** work on **self-hosted n8n** on a **compatible n8n version** with the same node types (MCP Client, LLM nodes, etc.); UI labels and menu locations for credentials may differ slightly from Cloud.
+
+**Credentials in n8n (high level):**
+
+1. **MCP (eXo)** — Create a credential that your **MCP Client** nodes can use (the technical specs in this repo often refer to the n8n credential type `mcpOAuth2Api`—treat the name as the one n8n shows for your build). Point it at your **eXo MCP endpoint** and complete the **OAuth2** fields (client id/secret, token URLs, scopes) as your eXo environment requires. Reuse the same credential on all eXo-facing nodes for a given tenant unless you intentionally split users.
+2. **OpenAI (or compatible)** — Create an **OpenAI** (or provider-appropriate) credential and attach it to the **AI / LLM** nodes. The portfolio uses structured and chat-style model calls; without a working credential or hosted-model quota, those nodes will fail at execution time.
+3. **n8n Cloud trial** — n8n Cloud often offers a **free trial** that may include a small **bundled AI credit** pool (wording and limits change with the product). That is a practical way to **walk through the demos** before wiring your own billable OpenAI key—check your tenant’s billing / credits panel.
+
+Operational detail (REST deploy from git, local validation, optional Cursor MCP) is in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+
+---
+
 ## Why this portfolio
 
 Teams on eXo already centralize **tasks, documents, spaces, and calendar**. The gap is often **glue**: repeating the same steps across email, folders, and meetings. n8n fills that gap with **visible, editable graphs**; the **eXo MCP server** exposes **consistent, tool-shaped actions** (list documents, create tasks, update status, etc.) that n8n can call like any other integration.
