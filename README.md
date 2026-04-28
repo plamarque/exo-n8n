@@ -7,12 +7,13 @@ This repository is a **didactic portfolio**: four n8n workflows that show how **
 - **Business-facing demos** (email intake, document validation, steering prep, metadata hygiene).
 - **Canonical exports** (`workflow.json` per workflow) you can import or deploy.
 - **Deep specs** under `docs/` and each workflow directory under `workflows/` for implementers.
+- **Scripts and Skills** to build and develop your workflows along with an n8n server and an coding agent such as Cursor
 
 If you only read one thing per workflow, start with its **chapter** in the table below, then open `SPEC.functional.md` in that workflow’s directory when you need acceptance criteria and product rules.
 
 ---
 
-## Prerequisites (eXo + n8n)
+## Prerequisites
 
 You need **two runtimes** before the demos are useful end to end:
 
@@ -27,7 +28,7 @@ You need **two runtimes** before the demos are useful end to end:
 2. **OpenAI (or compatible)** — Create an **OpenAI** (or provider-appropriate) credential and attach it to the **AI / LLM** nodes. The portfolio uses structured and chat-style model calls; without a working credential or hosted-model quota, those nodes will fail at execution time.
 3. **n8n Cloud trial** — n8n Cloud often offers a **free trial** that may include a small **bundled AI credit** pool (wording and limits change with the product). That is a practical way to **walk through the demos** before wiring your own billable OpenAI key—check your tenant’s billing / credits panel.
 
-Operational detail (REST deploy from git, local validation, optional Cursor MCP) is in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+Operational detail (deploy script, local validation, optional Cursor MCP) is in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
 ---
 
@@ -52,22 +53,13 @@ Together they enable:
 
 **Workflow tutorials (README chapters)** — open these on GitHub for the didactic walkthrough per workflow:
 
-- [WF01 — Email dispatch](workflows/wf01-email-dispatch/README.md)
-- [WF02 — Document validation (split / join)](workflows/wf02-document-validation/README.md)
-- [WF03 — Weekly steering preparation](workflows/wf03-weekly-steering/README.md)
-- [WF04 — Metadata enrichment](workflows/wf04-metadata-enrichment/README.md)
 
-Each chapter includes **Prerequisites (eXo tenant and n8n)** — what to create or look up on the eXo side (spaces, folders, projects, note/calendar ids, users) and what to configure in n8n (MCP, LLM, forms, variables) before running the workflow.
-
-Each README opens with **Video walkthrough** (placeholder until you publish links) immediately after the **TL;DR**, then **n8n canvas** screenshot — useful if you prefer video before reading on.
-
-
-| Workflow                                      | Chapter (tutorial)                                                                           | Canonical graph                                                   | Product spec                                                                | Technical spec                                                                                                                                                         |
-| --------------------------------------------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **WF01** — Email dispatch                     | [workflows/wf01-email-dispatch/README.md](workflows/wf01-email-dispatch/README.md)           | [workflow.json](workflows/wf01-email-dispatch/workflow.json)      | [SPEC.functional.md](workflows/wf01-email-dispatch/SPEC.functional.md)      | [SPEC.technical.md](workflows/wf01-email-dispatch/SPEC.technical.md)                                                                                                   |
-| **WF02** — Document validation (split / join) | [workflows/wf02-document-validation/README.md](workflows/wf02-document-validation/README.md) | [workflow.json](workflows/wf02-document-validation/workflow.json) | [SPEC.functional.md](workflows/wf02-document-validation/SPEC.functional.md) | [SPEC.technical.md](workflows/wf02-document-validation/SPEC.technical.md)                                                                                              |
-| **WF03** — Weekly steering preparation        | [workflows/wf03-weekly-steering/README.md](workflows/wf03-weekly-steering/README.md)         | [workflow.json](workflows/wf03-weekly-steering/workflow.json)     | [SPEC.functional.md](workflows/wf03-weekly-steering/SPEC.functional.md)     | [SPEC.technical-exo-mips.md](workflows/wf03-weekly-steering/SPEC.technical-exo-mips.md), [SPEC.technical-mcp.md](workflows/wf03-weekly-steering/SPEC.technical-mcp.md) |
-| **WF04** — Metadata enrichment                | [workflows/wf04-metadata-enrichment/README.md](workflows/wf04-metadata-enrichment/README.md) | [workflow.json](workflows/wf04-metadata-enrichment/workflow.json) | [SPEC.functional.md](workflows/wf04-metadata-enrichment/SPEC.functional.md) | [SPEC.technical.md](workflows/wf04-metadata-enrichment/SPEC.technical.md)                                                                                              |
+| Tutorial                                                                       | Canonical graph                                                   | Product spec                                                                | Technical spec                                                                                                                                                         |
+| ------------------------------------------------------------------------------ | ----------------------------------------------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [WF01 — Email dispatch](workflows/wf01-email-dispatch/README.md)               | [workflow.json](workflows/wf01-email-dispatch/workflow.json)      | [SPEC.functional.md](workflows/wf01-email-dispatch/SPEC.functional.md)      | [SPEC.technical.md](workflows/wf01-email-dispatch/SPEC.technical.md)                                                                                                   |
+| [WF02 — Document validation](workflows/wf02-document-validation/README.md)     | [workflow.json](workflows/wf02-document-validation/workflow.json) | [SPEC.functional.md](workflows/wf02-document-validation/SPEC.functional.md) | [SPEC.technical.md](workflows/wf02-document-validation/SPEC.technical.md)                                                                                              |
+| [WF03 — Weekly steering preparation](workflows/wf03-weekly-steering/README.md) | [workflow.json](workflows/wf03-weekly-steering/workflow.json)     | [SPEC.functional.md](workflows/wf03-weekly-steering/SPEC.functional.md)     | [SPEC.technical.md](workflows/wf03-weekly-steering/SPEC.technical.md) |
+| [WF04 — Metadata enrichment](workflows/wf04-metadata-enrichment/README.md)     | [workflow.json](workflows/wf04-metadata-enrichment/workflow.json) | [SPEC.functional.md](workflows/wf04-metadata-enrichment/SPEC.functional.md) | [SPEC.technical.md](workflows/wf04-metadata-enrichment/SPEC.technical.md)                                                                                              |
 
 
 **Cross-cutting docs:** [docs/SPEC.md](docs/SPEC.md) (portfolio summary), [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) (setup, deploy, validation), [AGENTS.md](AGENTS.md) (contribution rules for this repo).
@@ -76,7 +68,7 @@ Each README opens with **Video walkthrough** (placeholder until you publish link
 
 ---
 
-## Four didactic chapters (overview)
+## Sample Workflows
 
 ### WF01 — External signal: from email to eXo tasks
 
@@ -139,14 +131,14 @@ These patterns appear across the portfolio; they are **intentional** for maintai
 
 ---
 
-## Deployment and validation (pointers)
+## Deployment and validation
 
-- **Environment:** copy `[.env.example](.env.example)` to `.env` and follow [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) (REST deploy, credentials, MCP).
+- **Environment:** copy `[.env.example](.env.example)` to `.env` and follow [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) (deploy, credentials, MCP).
 - **Deploy a workflow from the repo root:** `./tools/deploy.sh wf01` (and `wf02`, `wf03`, `wf04`); use `--dry-run` to inspect targets. Sub-workflow order is driven by each folder’s `subworkflow-dependencies.json` where present.
 - **Validation policy:** before publishing, validate the canonical `workflow.json` as described in [docs/WORKFLOW.md](docs/WORKFLOW.md) and [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#rest-deploy-to-n8n).
 
 ---
 
-## Context
+## Sample Data
 
 This project is part of a **demonstration** around the Art2Rue / festival scenario. Domain vocabulary and actor names in the specs are **illustrative**; adjust `project_id`, folder ids, and variables for your tenant as documented in each workflow’s technical spec.

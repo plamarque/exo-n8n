@@ -1,6 +1,6 @@
 # Workflow 03 — Weekly steering preparation
 
-> Technical exploration: [SPEC.technical-exo-mips.md](SPEC.technical-exo-mips.md) (MIPS) and [SPEC.technical-mcp.md](SPEC.technical-mcp.md) (QAUI). Note model: [fixtures/steering-template-note.md](fixtures/steering-template-note.md). Portfolio: [`../../docs/SPEC.md`](../../docs/SPEC.md).
+> Technical implementation: [SPEC.technical.md](SPEC.technical.md). Note model: [fixtures/steering-template-note.md](fixtures/steering-template-note.md). Portfolio: [`../../docs/SPEC.md`](../../docs/SPEC.md).
 
 ## 1) Goal
 
@@ -132,4 +132,4 @@ If a note for the same title already exists, the workflow can update in place; o
 - Hardening idempotency of note search by exact title.  
 - Optional: push chat notifications (out of current scope).  
 
-(Exact numeric IDs and n8n node map: see `SPEC.technical-exo-mips.md` and repo `workflow.json`.)
+(Exact numeric IDs and n8n node map: see [SPEC.technical.md](SPEC.technical.md) and repo `workflow.json`.)

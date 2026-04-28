@@ -1,58 +1,81 @@
 # Workflow 04 - Metadata enrichment (technical specification)
 
-> Product context: [`SPEC.functional.md`](SPEC.functional.md). Server diff snapshot: [`fixtures/workflow.export.snapshot.json`](fixtures/workflow.export.snapshot.json).
+> Product rules: [SPEC.functional.md](SPEC.functional.md). Canonical graph: [workflow.json](workflow.json). Secondary snapshot: [fixtures/workflow.export.snapshot.json](fixtures/workflow.export.snapshot.json).
 
-## 1) eXo MCP (QAUI) feasibility
+## 1) Scope and artifacts
 
-### Tools used in the current workflow
+- Canonical export in git: `workflows/wf04-metadata-enrichment/workflow.json`.
+- Secondary snapshot for diff/traceability: `workflows/wf04-metadata-enrichment/fixtures/workflow.export.snapshot.json`.
+- Remote id is tenant-bound through root `.env` (`N8N_WORKFLOW_ID_WF04`, optional when export carries a root `id`).
 
-- `get_my_spaces`, `search_documents`, `get_document_by_id`, `get_category_tree`, `update_document_description`, `add_content_to_category`
+## 2) Configuration
 
-### Conclusion
+Runtime inputs:
 
-The implementation is **MCP-first**; there is no REST fallback in the current version.
+- `EXO_SPACE_NAME` via n8n `$vars` - required.
 
-## 2) Settings and prerequisites
+Connectivity and credentials:
 
-### Variables / input
+- `EXO_MCP_ENDPOINT` configured on MCP nodes (or through node defaults in your n8n instance).
+- n8n MCP credential (`mcpOAuth2Api`) must allow read and write on target documents/categories.
+- LLM credential for chat/structured-output node(s).
 
-- `EXO_SPACE_NAME` via `$vars.EXO_SPACE_NAME` — **required**
+AI contract:
 
-### Connectivity
+- Model in the current graph: `gpt-4o-mini`.
+- Structured output target: `{ description, suggestedCategories[] }`.
 
-- MCP endpoint (e.g. `https://exo-mips-ft.meeds.io/mcp-server/mcp` — match your target env)
-- n8n auth: `mcpOAuth2Api`
+## 3) MCP contract
 
-### AI
+### 3.1 Tools used
 
-- Model: `gpt-4o-mini`
-- Temperature: `0.3`
-- Structured output: `{ description, suggestedCategories[] }`
+- `get_my_spaces`
+- `search_documents`
+- `get_document_by_id`
+- `get_category_tree`
+- `update_document_description`
+- `add_content_to_category`
 
-## 3) Detailed sequence (as observed)
+### 3.2 Response envelope
 
-1. **Trigger** — `Manual Start` or `Daily Schedule` (02:00)
-2. **Input** — `Workflow Input` sets `spaceName`; `Validate Input` fails if empty
-3. **Tracking** — `Ensure Tracking Table` creates `exo_processed_documents` if needed
-4. **Space** — `get_my_spaces` → map `spaceName` to `spaceId` (or stop on error)
-5. **List docs** — `search_documents` (limit 500)
-6. **Normalize** — `documentId`, `updatedDate`, `description` …
-7. **Incremental** — read tracking for batch, filter new/changed, **limit 5** per run
-8. **Per item** — `get_document_by_id`, `get_category_tree`, `Prepare AI Input`
-9. **LLM** — `Analyze Document` with structured output
-10. **Write** — `update_document_description`, then `add_content_to_category` with id resolution
-11. **Stops** — error nodes on MCP/assign failures
-12. **Record** — upsert tracking with metadata and URLs
-13. **Out** — `Processing Summary` with `processedCount`
+The workflow expects MCP responses that can be either wrapped text JSON or direct objects. Parsing/normalization nodes handle both patterns before write operations.
 
-## 4) Data structures
+### 3.3 Expected write behavior
 
-### Tracking table
+- Description is updated first (`update_document_description`).
+- Category assignment follows (`add_content_to_category`) using category ids resolved from `get_category_tree`.
+- Explicit stop/error nodes guard partial failure cases.
 
-- `exo_processed_documents` for idempotency and incremental re-run
-- columns include `documentId`, `lastProcessedDate`, `description`, `categories`, `spaceName`, `documentName`, `documentUrl`, `editorUrl`
+## 4) Technical sequence
 
-### LLM target shape
+1. Trigger (`Manual Start` or daily schedule).
+2. Validate input (`EXO_SPACE_NAME` must not be empty).
+3. Ensure tracking table `exo_processed_documents` exists.
+4. Resolve target space (`get_my_spaces` -> `spaceId`).
+5. List candidates (`search_documents`) and normalize fields.
+6. Compare with tracking data and keep only new/changed docs.
+7. Limit batch size (current graph hard-caps to 5 per run).
+8. Per document: load details + category tree + prepare LLM input.
+9. Run structured LLM analysis.
+10. Write description and categories via MCP.
+11. Upsert tracking row and emit processing summary.
+
+## 5) Data and mappings
+
+### 5.1 Tracking table
+
+`exo_processed_documents` stores idempotency metadata:
+
+- `documentId`
+- `lastProcessedDate`
+- `description`
+- `categories`
+- `spaceName`
+- `documentName`
+- `documentUrl`
+- `editorUrl`
+
+### 5.2 LLM schema
 
 ```json
 {
@@ -61,33 +84,26 @@ The implementation is **MCP-first**; there is no REST fallback in the current ve
 }
 ```
 
-## 5) Technical highlights
+Category labels are matched against the category tree to resolve `category_id` values.
 
-- Strong incremental check (`updatedDate` vs `lastProcessedDate`).
-- Explicit error stops after description update and after category add.
-- MCP + Data table centric.
+## 6) Validation and operations
 
-## 6) Demo runbook
+Validation checklist:
 
-1. Set `EXO_SPACE_NAME`.
-2. `Manual Start`.
-3. Observe which docs are new vs already processed.
-4. Check structured output.
-5. Verify in eXo: description and categories.
-6. Confirm tracking row in `exo_processed_documents`.
+1. Set `$vars.EXO_SPACE_NAME` to an existing target space.
+2. Run manually and confirm selection of new/changed docs.
+3. Verify generated structured output.
+4. Verify description/category updates in eXo.
+5. Confirm tracking rows in `exo_processed_documents`.
 
-## 7) Exported artifacts
+Operational notes:
 
-- Canonical: `workflows/wf04-metadata-enrichment/workflow.json`
-- Full server snapshot: `fixtures/workflow.export.snapshot.json`
+- Workflow is MCP-first (no REST fallback path documented).
+- Empty/missing `EXO_SPACE_NAME` is a deliberate hard stop.
+- Batch cap is a safety guard; increase only with quota/throughput review.
 
-## 8) Suggested follow-ups
+Suggested follow-ups:
 
-1. Single MCP endpoint variable in n8n.
-2. Configurable default when `EXO_SPACE_NAME` is empty (if desired).
-3. Retry/queue for transient MCP errors.
-4. Quality instrumentation (LLM confidence, prompt/output audit log).
-
-## 9) Status
-
-Reverse engineered from n8n workflow id `aze2wAktXHYrTBTr` (historically titled `eXo Document Enrichment with AI`; repository canonical name `WF04 - Metadata enrichment`) via MCP on 2026-04-22.
+1. Externalize batch limit as a variable.
+2. Add retries/queue behavior for transient MCP failures.
+3. Add quality instrumentation for LLM outputs.

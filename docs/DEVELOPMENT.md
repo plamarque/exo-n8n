@@ -35,7 +35,7 @@ Publishing workflows must follow the **deployment validation policy** in [WORKFL
 
 - Node.js **18+** with `npm install` at the repo root (ES modules in `tools/` plus `@n8n/workflow-sdk` and `dotenv` for validation and REST deploy).
 - Access to the target n8n instance when synchronizing workflows through the n8n **REST API** (root `.env` with `N8N_BASE_URL` / `N8N_API_KEY`) **or** through the **n8n MCP** in Cursor (separate bearer token in `.cursor/mcp.json`); pick one path per operation so the published artifact matches intent.
-- eXo MCP credentials configured in n8n for workflow execution. Demo endpoint (reference): `https://exo-mips-ft.meeds.io/mcp-server/mcp` — always match `EXO_MCP_ENDPOINT` to the environment under test.
+- eXo MCP credentials configured in n8n for workflow execution. Demo endpoint (reference): `https://exo.example.com/mcp-server/mcp` — always match `EXO_MCP_ENDPOINT` to the environment under test.
 - OpenAI or compatible credentials configured in n8n for workflows using AI nodes.
 - (Optional) **Cursor + MCP:** to use the n8n and eXo MCP servers from Cursor, see [Cursor and MCP (recommended)](#cursor-and-mcp-recommended).
 

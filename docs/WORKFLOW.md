@@ -57,7 +57,7 @@ Normative for contributors and AI agents whenever portfolio workflows are change
 - Portfolio overview and links: [SPEC.md](SPEC.md).
 - WF01: [workflows/wf01-email-dispatch/](../workflows/wf01-email-dispatch/).
 - WF02: [workflows/wf02-document-validation/](../workflows/wf02-document-validation/).
-- WF03: [workflows/wf03-weekly-steering/](../workflows/wf03-weekly-steering/) (includes `SPEC.technical-exo-mips.md`, `SPEC.technical-mcp.md`, `fixtures/steering-template-note.md`).
+- WF03: [workflows/wf03-weekly-steering/](../workflows/wf03-weekly-steering/) (includes `SPEC.technical.md` and `fixtures/steering-template-note.md`).
 - WF04: [workflows/wf04-metadata-enrichment/](../workflows/wf04-metadata-enrichment/).
 - Shared: [workflows/shared/subworkflows/unwrap-mcp-json/](../workflows/shared/subworkflows/unwrap-mcp-json/).
 - Tooling: [tools/](../tools/) (see [DEVELOPMENT.md](DEVELOPMENT.md)).

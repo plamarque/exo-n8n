@@ -12,7 +12,7 @@ Prefer a short screencast before the long read? Replace the placeholder with you
 
 ![WF03 — Weekly steering preparation workflow in the n8n editor](wf03.png)
 
-Triggers → notes/templates → task list for table → **Execute Workflow** UTILs (report + HTML) → LLM nudges → note upsert and agenda link. For tool-level detail, open [`workflow.json`](workflow.json) and the technical specs ([SPEC.technical-exo-mips.md](SPEC.technical-exo-mips.md), [SPEC.technical-mcp.md](SPEC.technical-mcp.md)).
+Triggers → notes/templates → task list for table → **Execute Workflow** UTILs (report + HTML) → LLM nudges → note upsert and agenda link. For tool-level detail, open [`workflow.json`](workflow.json) and [SPEC.technical.md](SPEC.technical.md).
 
 **Terminology:** **COPIL** is French project shorthand for a **steering committee** (*comité de pilotage*). In English, *steering committee* (or *steering group*) is the clearest wording. This workflow’s export still uses `COPIL` in several **node names** to match the demo environment; the portfolio workflow title uses English *steering*.
 
@@ -32,9 +32,9 @@ Governance meetings repeat on a **fixed cadence**, but preparation is often **ma
 
 ## Prerequisites (eXo tenant and n8n)
 
-WF03 binds to **specific eXo objects** (space, notes, project, agenda). On a **new tenant**, create the corresponding **space / note / project / calendar** structure (or clone the demo layout), then read ids from the eXo UI or via MCP exploration in [SPEC.technical-exo-mips.md](SPEC.technical-exo-mips.md). Align n8n **variables** with [config.env.example](config.env.example).
+WF03 binds to **specific eXo objects** (space, notes, project, agenda). On a **new tenant**, create the corresponding **space / note / project / calendar** structure (or clone the demo layout), then read ids from the eXo UI or MCP calls described in [SPEC.technical.md](SPEC.technical.md). Align n8n **variables** with [config.env.example](config.env.example).
 
-**eXo (ids are examples from MIPS exploration — replace for your tenant)**
+**eXo (ids are examples from the reference build — replace for your tenant)**
 
 | Prerequisite | Variable (typical) | Why |
 |--------------|-------------------|-----|
@@ -75,12 +75,12 @@ If any id is wrong, **create/upsert** paths in the technical spec may **fail** o
 | Readability        | **UTIL sub-workflows** for **build report context** and **compose HTML**                | Keeps the parent graph a **sequence of decisions**; heavy string work is isolated.                                                                         |
 | MCP parsing        | **Execute Workflow → [Unwrap MCP JSON](../shared/subworkflows/unwrap-mcp-json/)**       | Same envelope problem as other flows; shared UTIL avoids drift.                                                                                            |
 | Native vs Code     | **Set + Execute Workflow** preferred; **one small Code** for upsert decision if present | Aligns with native-first layout described in [docs/ISSUES.md](../../docs/ISSUES.md) and this README. |
-| Multiple contracts | Separate **MIPS** vs **QAUI** technical write-ups                                       | Exploration landed in two spec files; the functional story is one—see references below.                                                                    |
+| Technical contract | Single **SPEC.technical.md** for this workflow                                       | Keeps one source of truth for payloads, sequence, and operations.                                                                    |
 
 
 ## MCP eXo interaction model
 
-WF03 is the **broadest** demo: it touches **Notes**, **Tasks**, and **Agenda / calendar** style capabilities described in [SPEC.technical-exo-mips.md](SPEC.technical-exo-mips.md) (MIPS path) and [SPEC.technical-mcp.md](SPEC.technical-mcp.md) (QAUI exploration). Use those specs for **exact tool names and payload shapes**; they reflect live exploration notes and may differ per tenant.
+WF03 is the **broadest** demo: it touches **Notes**, **Tasks**, and **Agenda / calendar** capabilities documented in [SPEC.technical.md](SPEC.technical.md). Use that spec for exact tool names, payload shapes, and operational constraints.
 
 ## Operational considerations
 
@@ -95,8 +95,8 @@ WF03 is the **broadest** demo: it touches **Notes**, **Tasks**, and **Agenda / c
 | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | [workflow.json](workflow.json)                                             | Canonical n8n export (see [ADR 0002](../../docs/ADR/0002-repository-layout-workflows.md)). |
 | [SPEC.functional.md](SPEC.functional.md)                                   | Goals, actors, note shape, business rules.                                                 |
-| [SPEC.technical-exo-mips.md](SPEC.technical-exo-mips.md)                   | eXo MIPS MCP contract (notes, projects, agenda, etc.).                                     |
-| [SPEC.technical-mcp.md](SPEC.technical-mcp.md)                             | eXo QAUI MCP exploration (phase 1).                                                        |
+| [SPEC.technical.md](SPEC.technical.md)                                   | MCP technical contract (notes, projects, agenda, sequence, operations).                     |
+
 | [fixtures/steering-template-note.md](fixtures/steering-template-note.md)   | Editorial note template reference.                                                         |
 | [fixtures/api-response.snapshot.json](fixtures/api-response.snapshot.json) | Raw API response snapshot (traceability).                                                  |
 | [config.env.example](config.env.example)                                   | Example n8n variables.                                                                     |
@@ -113,8 +113,8 @@ WF03 is the **broadest** demo: it touches **Notes**, **Tasks**, and **Agenda / c
 | `[workflow.json](workflow.json)`                                             | Canonical n8n export (see [ADR 0002](../../docs/ADR/0002-repository-layout-workflows.md)).         |
 | `[fixtures/api-response.snapshot.json](fixtures/api-response.snapshot.json)` | Raw API response (workflow + `triggerInfo`) kept for traceability.                                 |
 | `[SPEC.functional.md](SPEC.functional.md)`                                   | Goals, rules, and acceptance criteria.                                                             |
-| `[SPEC.technical-exo-mips.md](SPEC.technical-exo-mips.md)`                   | eXo MIPS MCP contract (notes, projects, agenda, etc.).                                             |
-| `[SPEC.technical-mcp.md](SPEC.technical-mcp.md)`                             | eXo QAUI MCP exploration (phase 1).                                                                |
+| `[SPEC.technical.md](SPEC.technical.md)`                                   | MCP technical contract (notes, projects, agenda, sequence, operations).                             |
+
 | `[fixtures/steering-template-note.md](fixtures/steering-template-note.md)`   | Note template (editorial reference).                                                               |
 | `[config.env.example](config.env.example)`                                   | Example n8n variables.                                                                             |
 | `[subworkflows/](subworkflows/)`                                             | WF03-only UTIL exports (build report + compose HTML); not shared across other portfolio workflows. |

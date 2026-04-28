@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-27T22:44:10.913Z",
+  "updatedAt": "2026-04-28T11:54:50.549Z",
   "createdAt": "2026-04-22T04:35:52.578Z",
   "id": "zeVd0scWqU5vcOUq",
   "name": "WF01 - Email dispatch",
@@ -401,14 +401,58 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\\\"/g, '&quot;');\nconst excerpt = String($json.body || '').replace(/\\s+/g, ' ').slice(0, 400);\nconst description = ['<div>','<p><strong>Email from:</strong> ' + esc($json.sender) + '<br/><strong>Subject:</strong> ' + esc($json.subject) + '</p>','<h4>Context</h4>','<p>' + esc($json.summary || 'Summary not provided') + '</p>','<h4>Expected action</h4>','<p>' + esc($json.nextAction || 'Analyze and update status') + '</p>','<h4>AI decision</h4>','<ul>','<li><strong>Assignee:</strong> ' + esc($json.assigneeLabel || $json.resolvedAssignee) + ' (' + esc($json.resolvedAssignee) + ')</li>','<li><strong>Priority:</strong> ' + esc($json.resolvedPriority) + '</li>','<li><strong>Actionable confidence:</strong> ' + esc($json.actionConfidence) + '</li>','<li><strong>Rationale:</strong> ' + esc($json.rationale || 'AI decision') + '</li>','</ul>','<h4>Email excerpt</h4>','<blockquote>' + esc(excerpt) + '</blockquote>','</div>'].join('').slice(0, 5000);\nconst projectId = Number($vars.WF01_PROJECT_ID || 3);\nreturn { ...$json, aiDecision: { clearlyActionable: true, assignee: $json.resolvedAssignee, assigneeLabel: $json.assigneeLabel, priority: $json.resolvedPriority, actionConfidence: $json.actionConfidence, taskTitle: $json.taskTitle, summary: $json.summary, nextAction: $json.nextAction, rationale: $json.rationale }, createTaskInput: { project_id: projectId, title: $json.taskTitle, description, assignee: $json.resolvedAssignee, priority: $json.resolvedPriority } };"
+        "jsCode": "const esc = (v) => String(v ?? '')\n  .replace(/&/g, '&amp;')\n  .replace(/</g, '&lt;')\n  .replace(/>/g, '&gt;')\n  .replace(/\\\"/g, '&quot;');\n\nconst excerpt = String($json.body || '').replace(/\\s+/g, ' ').slice(0, 400);\n\nreturn {\n  ...$json,\n  senderSafe: esc($json.sender),\n  subjectSafe: esc($json.subject),\n  summarySafe: esc($json.summary || 'Summary not provided'),\n  nextActionSafe: esc($json.nextAction || 'Analyze and update status'),\n  assigneeLabelSafe: esc($json.assigneeLabel || $json.resolvedAssignee),\n  resolvedAssigneeSafe: esc($json.resolvedAssignee),\n  resolvedPrioritySafe: esc($json.resolvedPriority),\n  actionConfidenceSafe: esc($json.actionConfidence),\n  rationaleSafe: esc($json.rationale || 'AI decision'),\n  excerptSafe: esc(excerpt),\n};"
       },
       "id": "9ff29148-4ada-4dab-999e-c649d2408061",
-      "name": "Render Task Description HTML",
+      "name": "Prepare Safe Fields",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         2592,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "generateHtmlTemplate",
+        "template": "<div><p><strong>Email from:</strong> {{$json.senderSafe}}<br/><strong>Subject:</strong> {{$json.subjectSafe}}</p><h4>Context</h4><p>{{$json.summarySafe}}</p><h4>Expected action</h4><p>{{$json.nextActionSafe}}</p><h4>AI decision</h4><ul><li><strong>Assignee:</strong> {{$json.assigneeLabelSafe}} ({{$json.resolvedAssigneeSafe}})</li><li><strong>Priority:</strong> {{$json.resolvedPrioritySafe}}</li><li><strong>Actionable confidence:</strong> {{$json.actionConfidenceSafe}}</li><li><strong>Rationale:</strong> {{$json.rationaleSafe}}</li></ul><h4>Email excerpt</h4><blockquote>{{$json.excerptSafe}}</blockquote></div>"
+      },
+      "id": "9f1e2f40-73a6-4ca7-93b3-cf394f0deab5",
+      "name": "Render Task Description HTML",
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1,
+      "position": [
+        2816,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "aiDecision",
+              "name": "aiDecision",
+              "value": "={{ ({ clearlyActionable: true, assignee: $json.resolvedAssignee, assigneeLabel: $json.assigneeLabel, priority: $json.resolvedPriority, actionConfidence: $json.actionConfidence, taskTitle: $json.taskTitle, summary: $json.summary, nextAction: $json.nextAction, rationale: $json.rationale }) }}",
+              "type": "object"
+            },
+            {
+              "id": "createTaskInput",
+              "name": "createTaskInput",
+              "value": "={{ ({ project_id: Number($vars.WF01_PROJECT_ID || 3), title: $json.taskTitle, description: String($json.html || '').slice(0, 5000), assignee: $json.resolvedAssignee, priority: $json.resolvedPriority }) }}",
+              "type": "object"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "ec0fbb4f-d486-462b-a2ef-db53de4bc662",
+      "name": "Build Create Task Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3040,
         320
       ]
     },
@@ -432,7 +476,7 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        2816,
+        3264,
         320
       ],
       "credentials": {
@@ -452,7 +496,7 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        3040,
+        3488,
         320
       ]
     },
@@ -469,7 +513,7 @@
             {
               "id": "username",
               "name": "username",
-              "value": "={{ $('Render Task Description HTML').item.json.createTaskInput.assignee || 'claire' }}",
+              "value": "={{ $('Build Create Task Input').item.json.createTaskInput.assignee || 'claire' }}",
               "type": "string"
             },
             {
@@ -487,7 +531,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        3264,
+        3712,
         320
       ]
     },
@@ -520,7 +564,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        3488,
+        3936,
         320
       ]
     },
@@ -589,13 +633,13 @@
     {
       "parameters": {
         "content": "## Check Email\n\nUse MCP tool to read user inbox",
-        "height": 400,
+        "height": 512,
         "width": 1056
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
         416,
-        160
+        128
       ],
       "typeVersion": 1,
       "id": "69b13858-3f16-4af7-95c1-b7b474fa4c94",
@@ -610,8 +654,8 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        1504,
-        176
+        1520,
+        128
       ],
       "typeVersion": 1,
       "id": "223ec55f-37f4-4b1b-9740-479a1b307927",
@@ -760,6 +804,17 @@
       "main": [
         [
           {
+            "node": "Prepare Safe Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Safe Fields": {
+      "main": [
+        [
+          {
             "node": "Render Task Description HTML",
             "type": "main",
             "index": 0
@@ -768,6 +823,17 @@
       ]
     },
     "Render Task Description HTML": {
+      "main": [
+        [
+          {
+            "node": "Build Create Task Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Create Task Input": {
       "main": [
         [
           {
@@ -851,9 +917,9 @@
     "aiBuilderAssisted": true
   },
   "pinData": {},
-  "versionId": "e36415fd-94df-4b01-9630-a30b25e40d75",
+  "versionId": "2a5176da-5c84-42d5-a68d-525b6853ed1e",
   "activeVersionId": null,
-  "versionCounter": 76,
+  "versionCounter": 80,
   "triggerCount": 0,
   "shared": [
     {

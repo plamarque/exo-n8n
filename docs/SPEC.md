@@ -18,7 +18,7 @@ The observable portfolio covers four workflow families:
 | -------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | WF01     | [workflows/wf01-email-dispatch/](../workflows/wf01-email-dispatch/)                                   | [SPEC.functional.md](../workflows/wf01-email-dispatch/SPEC.functional.md), [SPEC.technical.md](../workflows/wf01-email-dispatch/SPEC.technical.md), [workflow.json](../workflows/wf01-email-dispatch/workflow.json)                                                                       |
 | WF02     | [workflows/wf02-document-validation/](../workflows/wf02-document-validation/)                       | [SPEC.functional.md](../workflows/wf02-document-validation/SPEC.functional.md), [SPEC.technical.md](../workflows/wf02-document-validation/SPEC.technical.md), [workflow.json](../workflows/wf02-document-validation/workflow.json)                                                     |
-| WF03     | [workflows/wf03-weekly-steering/](../workflows/wf03-weekly-steering/)                                     | [SPEC.functional.md](../workflows/wf03-weekly-steering/SPEC.functional.md), [SPEC.technical-exo-mips.md](../workflows/wf03-weekly-steering/SPEC.technical-exo-mips.md), [README.md](../workflows/wf03-weekly-steering/README.md), [workflow.json](../workflows/wf03-weekly-steering/workflow.json) |
+| WF03     | [workflows/wf03-weekly-steering/](../workflows/wf03-weekly-steering/)                                     | [SPEC.functional.md](../workflows/wf03-weekly-steering/SPEC.functional.md), [SPEC.technical.md](../workflows/wf03-weekly-steering/SPEC.technical.md), [README.md](../workflows/wf03-weekly-steering/README.md), [workflow.json](../workflows/wf03-weekly-steering/workflow.json) |
 | WF04     | [workflows/wf04-metadata-enrichment/](../workflows/wf04-metadata-enrichment/)                 | [SPEC.functional.md](../workflows/wf04-metadata-enrichment/SPEC.functional.md), [SPEC.technical.md](../workflows/wf04-metadata-enrichment/SPEC.technical.md), [workflow.json](../workflows/wf04-metadata-enrichment/workflow.json)                                            |
 | Shared   | [workflows/shared/subworkflows/unwrap-mcp-json/](../workflows/shared/subworkflows/unwrap-mcp-json/) | MCP unwrap sub-workflow used by WF01                                                                                                                                                                                                                                                   |
 
@@ -63,7 +63,7 @@ Observable intended behavior from specs and server export:
 - Insert a task-based progress report.
 - Generate AI suggestions for agenda and vigilance points.
 - Create or update a recurring agenda invitation that links to the note.
-- Use the reference project, note, and agenda IDs observed in the MIPS exploration material.
+- Use the reference project, note, and agenda IDs documented in the WF03 technical spec.
 
 Operational notes and file map: [workflows/wf03-weekly-steering/README.md](../workflows/wf03-weekly-steering/README.md). Optional follow-up for further native-only refactors is tracked in [ISSUES.md](ISSUES.md).
 

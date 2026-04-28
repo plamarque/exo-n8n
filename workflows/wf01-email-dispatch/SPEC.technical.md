@@ -1,56 +1,82 @@
 # Workflow 01 - Email dispatch (technical specification)
 
-> See `[SPEC.functional.md](SPEC.functional.md)` for product context and rules. n8n artifact: `[workflow.json](workflow.json)` ; shared sub-workflow: `[../shared/subworkflows/unwrap-mcp-json/](../shared/subworkflows/unwrap-mcp-json/)`.
+> Product rules: [SPEC.functional.md](SPEC.functional.md). Canonical graph: [workflow.json](workflow.json). Shared parser utility: [../shared/subworkflows/unwrap-mcp-json/](../shared/subworkflows/unwrap-mcp-json/).
 
-## 1) Reference artifacts
+## 1) Scope and artifacts
 
-- Final workflow (repo): `workflows/wf01-email-dispatch/workflow.json`.
-- Remote n8n workflow: `zeVd0scWqU5vcOUq` (`WF01 - Email dispatch`).
-- Utility sub-workflow: `UTIL - Unwrap MCP JSON` (`E4OAThogWRG93MUG`).
-- Local sub-workflow: `workflows/shared/subworkflows/unwrap-mcp-json/workflow.json`.
+- Canonical export in git: `workflows/wf01-email-dispatch/workflow.json`.
+- Shared dependency: `workflows/shared/subworkflows/unwrap-mcp-json/workflow.json`.
+- Deploy manifest: `workflows/wf01-email-dispatch/subworkflow-dependencies.json`.
+- Remote id is tenant-bound and configured through root `.env` (`N8N_WORKFLOW_ID_WF01`, optional when the export already carries a root `id`).
 
-## 2) MCP tools
+## 2) Configuration
 
-### 2.1 eXo MCP
+- `EXO_MCP_ENDPOINT` - MCP endpoint used by `MCP Client` nodes.
+- `WF01_PROJECT_ID` - optional target project id for `create_task_in_project`.
+- MCP OAuth credential (n8n `mcpOAuth2Api`) must be valid for the target tenant.
+- LLM credential must be configured for routing/model nodes.
+
+Default behavior: if `WF01_PROJECT_ID` is missing, the workflow falls back to project id `3` in the demo export. Override this on any other tenant.
+
+## 3) MCP contract
+
+### 3.1 Tools used
 
 - `list_emails`
 - `create_task_in_project`
 - `assign_task`
+- Shared utility `UTIL - Unwrap MCP JSON` called after list/create MCP nodes.
 
-### 2.2 n8n / utility sub-workflow
+### 3.2 Response envelope
 
-- `UTIL - Unwrap MCP JSON` (`E4OAThogWRG93MUG`) is called with `Execute Workflow` after `list_emails` and after `create_task_in_project`.
+Most MCP tools return text-wrapped JSON:
 
-## 3) Variables and configuration
+```json
+[ { "type": "text", "text": "{...json...}" } ]
+```
 
-- `EXO_MCP_ENDPOINT` — eXo MCP endpoint used by `MCP Client` nodes.
-- `WF01_PROJECT_ID` — optional eXo target project.
+The workflow unwraps this envelope before extraction (`Unwrap MCP Emails`, `Unwrap MCP Create Task`).
 
-If `WF01_PROJECT_ID` is not set, the workflow uses `3` (project `Festival Art2Rue` on the eXo MIPS instance).
+### 3.3 Reference payloads
 
-## 4) Current technical sequence
+Create task (`create_task_in_project`, built in `createTaskInput`):
 
-1. `Manual Start` or `Intake Every 5m`.
-2. `MCP List Emails`: `list_emails` with `{ "limit": 50, "offset": 0 }`.
-3. `Unwrap MCP Emails`: turns the MCP response into a usable JSON payload.
-4. `Split Out Emails`: one n8n item per email.
-5. `Normalize Email`: extracts useful fields.
-6. `Filter - Has Email ID`: drop items without `emailId`.
-7. `AI Router`: triage with `Routing Model` and `Routing Output Parser`.
-8. `Normalize AI Output`: maps LLM output to native fields.
-9. `IF Clearly Actionable`: enforces guardrails.
-10. `Build MCP Payload`: assignee, label, priority, title.
-11. `Render Task Description HTML`: builds HTML description and `createTaskInput`.
-12. `MCP Create Task`: `create_task_in_project`.
-13. `Unwrap MCP Create Task`: decodes the create response.
-14. `Extract Task Assignment`: `task_id`, `username`, `raw_create_payload`.
-15. `IF Has Task ID`: `task_id` must be a positive number.
-16. True branch: `MCP Assign Task` — `assign_task`.
-17. False branch: `Stop - Missing task_id` stops with a clear error.
+```json
+{
+  "project_id": 3,
+  "title": "Access issue to ticketing",
+  "description": "<div>...</div>",
+  "assignee": "louis",
+  "priority": "HIGH"
+}
+```
 
-## 5) Expected LLM output
+Assign task (`assign_task`):
 
-The structured parser expects output compatible with:
+```json
+{
+  "task_id": 14,
+  "username": "louis"
+}
+```
+
+## 4) Technical sequence
+
+1. Trigger (`Manual Start` or `Intake Every 5m`).
+2. `MCP List Emails` (`list_emails`, limit/offset).
+3. `Unwrap MCP Emails`.
+4. `Split Out Emails` (one item per message).
+5. `Normalize Email` and `Filter - Has Email ID`.
+6. `AI Router` + parser, then `Normalize AI Output`.
+7. `IF Clearly Actionable` guardrail.
+8. Build payload and HTML (`Build MCP Payload`, `Render Task Description HTML`).
+9. `MCP Create Task` then `Unwrap MCP Create Task`.
+10. Extract assignment fields (`task_id`, `username`) and validate (`IF Has Task ID`).
+11. Success branch: `MCP Assign Task`; failure branch: `Stop - Missing task_id`.
+
+## 5) Data and mappings
+
+### 5.1 Structured LLM output contract
 
 ```json
 {
@@ -67,66 +93,29 @@ The structured parser expects output compatible with:
 }
 ```
 
-`slaHours` is kept in the LLM contract for future use; the current workflow does not compute due dates or run an SLA sweep.
+`slaHours` is kept for future use; current WF01 does not compute due dates.
 
-## 6) Mapping rules
+### 5.2 Mapping rules
 
-### Assignee
+Assignee mapping:
 
 - Allowed: `louis`, `claire`, `lucie`.
-- Any other value falls back to `claire`.
-- Displayed labels: `Louis`, `Claire`, `Lucie`.
+- Fallback: `claire`.
 
-### Priority
+Priority mapping:
 
-- `create_task_in_project` accepts `LOW`, `NORMAL`, `HIGH`.
-- `URGENT` maps to `HIGH` (not a supported enum value in create).
+- Allowed by MCP create: `LOW`, `NORMAL`, `HIGH`.
+- `URGENT` is normalized to `HIGH`.
 - Unknown values fall back to `NORMAL`.
 
-## 7) Reference payloads
+## 6) Validation and operations
 
-### 7.1 Create task: `create_task_in_project`
 
-The workflow builds this under `createTaskInput`:
+1. Keep `N8N_WORKFLOW_ID_UNWRAP` aligned for REST deploy.
+2. Re-run behavior can create duplicates because email idempotency is not yet persisted.
 
-```json
-{
-  "project_id": 3,
-  "title": "Access issue to ticketing",
-  "description": "<div>...</div>",
-  "assignee": "louis",
-  "priority": "HIGH"
-}
-```
-
-### 7.2 Assign: `assign_task`
-
-```json
-{
-  "task_id": 14,
-  "username": "louis"
-}
-```
-
-## 8) Observed validation
-
-Last known server run:
-
-- n8n execution: `1117`;
-- status: success;
-- created tasks: `13` and `14`;
-- project: `Festival Art2Rue` (`project_id=3`);
-- `create_task_in_project` validated;
-- `task_id` extraction via `Unwrap MCP Create Task` validated.
-
-Direct `assign_task` with `{ "task_id": 13, "username": "louis" }` was also validated.
-
-## 9) Possible improvements
+Suggested follow-ups:
 
 1. Persist idempotency by `emailId`.
-2. Reintroduce an SLA sweep in a separate workflow if the demo needs it.
-3. Add a proof comment after task creation.
-4. Resolve the target project by name when multiple eXo environments are used.
-5. Externalize assignee/priority rules in a config table.
-6. Remove the last **Code** node if native HTML rendering becomes maintainable.
-
+2. Move SLA sweep/proof comments to dedicated follow-up flows if needed.
+3. Externalize assignee/priority mapping into a config source.

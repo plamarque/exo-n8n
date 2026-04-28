@@ -37,9 +37,9 @@ Create or locate the following **on eXo**, then copy identifiers into n8n **vari
 
 | Prerequisite | Why |
 |--------------|-----|
-| **Space** with a **document folder** used as the programming / intake area | Intake calls `search_documents` with a **`parent_folder_id`**. Default in the repo matches the **exo-mips-ft** path under *Festival Art de Rue* / `00_Programmation` — **`WF02_PARENT_FOLDER_ID`** (see [SPEC.functional.md](SPEC.functional.md) §9.1). **Create** the tree or **note** the real folder id from the DMS UI / MCP. |
-| **Task project (board)** — numeric **`project_id`** | `create_task_in_project` targets this board; demo default **`2`** on **exo-mips-ft** — set **`WF02_PROJECT_ID`** for your tenant. |
-| **Status ids** for *In progress* and *Done* (per project) | Call MCP **`list_project_statuses`** with your `project_id` and set **`WF02_INPROGRESS_STATUS_ID`** and **`WF02_DONE_STATUS_ID`** (defaults in [config.env.example](config.env.example) match project **2** on **exo-mips-ft**). |
+| **Space** with a **document folder** used as the programming / intake area | Intake calls `search_documents` with a **`parent_folder_id`**. Default in the repo matches the **reference tenant** path under *Festival Art de Rue* / `00_Programmation` — **`WF02_PARENT_FOLDER_ID`** (see [SPEC.functional.md](SPEC.functional.md) §9.1). **Create** the tree or **note** the real folder id from the DMS UI / MCP. |
+| **Task project (board)** — numeric **`project_id`** | `create_task_in_project` targets this board; demo default **`2`** on **reference tenant** — set **`WF02_PROJECT_ID`** for your tenant. |
+| **Status ids** for *In progress* and *Done* (per project) | Call MCP **`list_project_statuses`** with your `project_id` and set **`WF02_INPROGRESS_STATUS_ID`** and **`WF02_DONE_STATUS_ID`** (defaults in [config.env.example](config.env.example) match project **2** on **reference tenant**). |
 | **Actors** — usernames for **artistic** (`nadia`), **technical** (`etienne`), and **author fallback** (`claire`) | Must exist in the space; approval **links** in the first comment target these roles ([SPEC.functional.md](SPEC.functional.md) §3, §9.2). |
 | **Sample documents** (optional) | Upload [fixtures/](fixtures/) into the watched folder to exercise intake end-to-end. |
 
@@ -86,7 +86,7 @@ Webhook payloads drive approval branches; MCP carries **authoritative task updat
 
 ## Operational considerations
 
-- **Folder & project defaults** are pinned for the **exo-mips-ft** demo; override **`WF02_PARENT_FOLDER_ID`**, **`WF02_PROJECT_ID`**, and **status id** variables per your **list_project_statuses** output (see [SPEC.technical.md](SPEC.technical.md) §11).
+- **Folder & project defaults** are pinned for the **reference tenant** demo; override **`WF02_PARENT_FOLDER_ID`**, **`WF02_PROJECT_ID`**, and **status id** variables per your **list_project_statuses** output (see [SPEC.technical.md](SPEC.technical.md) §11).
 - **Empty folder** — `search_documents` returns no rows; the run **stops without error** after the split (expected).
 - **Sample files** for manual tests live in [fixtures/](fixtures/) — upload into the watched folder per [SPEC.functional.md](SPEC.functional.md) §9.
 
@@ -109,7 +109,7 @@ The [`fixtures/`](fixtures/) directory holds **three example `.docx` files** wit
 
 To exercise the intake branch end-to-end:
 
-1. In eXo (**exo-mips-ft**), open the programming folder **`00_Programmation`** (full path in [`SPEC.functional.md`](SPEC.functional.md) §9.1). This folder is the one whose **`parent_folder_id`** the workflow uses by default (`ced6e9c539805e114bd65696b26bd073`), unless you set n8n variable `WF02_PARENT_FOLDER_ID` to another id.
+1. In eXo (**reference tenant**), open the programming folder **`00_Programmation`** (full path in [`SPEC.functional.md`](SPEC.functional.md) §9.1). This folder is the one whose **`parent_folder_id`** the workflow uses by default (`ced6e9c539805e114bd65696b26bd073`), unless you set n8n variable `WF02_PARENT_FOLDER_ID` to another id.
 2. Upload the three files from `fixtures/` into that eXo folder (same filenames as in the repo).
 3. Run the workflow in n8n (**Manual Start** or wait for **Schedule Intake (5m)**).
 
