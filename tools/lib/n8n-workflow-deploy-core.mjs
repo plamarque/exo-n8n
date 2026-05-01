@@ -243,6 +243,51 @@ export function applyMcpOAuth2CredentialBinding(nodes, binding, opts = {}) {
 }
 
 /**
+ * Escape a URL (or any string) for use inside the double-quoted fallback of an n8n expression.
+ * @param {string} s
+ */
+export function escapeN8nExpressionStringLiteral(s) {
+  return s.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
+/**
+ * When `EXO_MCP_ENDPOINT` is set in the repository root `.env`, rewrite every MCP Client
+ * `parameters.endpointUrl` to `={{$vars.EXO_MCP_ENDPOINT || "<url>"}}` using that value as the
+ * fallback literal. Same env name as n8n Variables (`$vars.EXO_MCP_ENDPOINT`) for operator clarity.
+ *
+ * @param {unknown[] | undefined} nodes
+ * @returns {number} number of nodes updated
+ */
+export function applyExoMcpEndpointDeployOverride(nodes) {
+  const raw = (process.env.EXO_MCP_ENDPOINT || "").trim();
+  if (!raw) return 0;
+  if (!/^https?:\/\//i.test(raw)) {
+    console.warn(
+      "EXO_MCP_ENDPOINT is set but invalid (expected a URL starting with http:// or https://); skipping MCP endpoint injection.",
+    );
+    return 0;
+  }
+  const escaped = escapeN8nExpressionStringLiteral(raw);
+  const expression = `={{$vars.EXO_MCP_ENDPOINT || "${escaped}"}}`;
+  if (!Array.isArray(nodes)) return 0;
+  let count = 0;
+  for (const node of nodes) {
+    if (!node || typeof node !== "object") continue;
+    if (/** @type {{ type?: string }} */ (node).type !== MCP_CLIENT_NODE_TYPE) continue;
+    const n = /** @type {{ parameters?: { endpointUrl?: string } }} */ (node);
+    if (!n.parameters || typeof n.parameters.endpointUrl !== "string") continue;
+    n.parameters.endpointUrl = expression;
+    count++;
+  }
+  if (count > 0) {
+    console.log(
+      `Injected EXO_MCP_ENDPOINT fallback for ${count} MCP Client node(s) (from repository root .env).`,
+    );
+  }
+  return count;
+}
+
+/**
  * @param {unknown[] | undefined} nodes
  * @param {{ id: string; name: string } | null} binding
  * @returns {number}
@@ -556,6 +601,7 @@ export async function fetchMergeAndPutWorkflow(opts) {
     );
   }
   await applyCredentialMergeAndFallbacks(local, remote, base, apiKey);
+  applyExoMcpEndpointDeployOverride(/** @type {unknown[] | undefined} */ (local.nodes));
   const payload = buildWorkflowPutPayload(local);
   if (dryRun) {
     console.log("Dry run — would PUT", label || remoteId, url);

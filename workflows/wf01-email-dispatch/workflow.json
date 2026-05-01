@@ -20,7 +20,7 @@
     },
     {
       "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo.example.com/mcp-server/mcp\"}}",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -64,7 +64,21 @@
     },
     {
       "parameters": {
-        "fieldToSplitOut": "payload",
+        "mode": "runOnceForEachItem",
+        "jsCode": "const source = $json.payload;\n\nconst emails =\n  Array.isArray(source?.content?.[0]?.text)\n    ? source.content[0].text\n    : Array.isArray(source?.[0]?.text)\n      ? source[0].text\n      : Array.isArray(source?.[0]?.['0']?.text)\n        ? source[0]['0'].text\n        : Array.isArray(source?.['0']?.text)\n          ? source['0'].text\n          : Array.isArray(source)\n            ? source\n            : [];\n\nreturn {\n  ...$json,\n  payload_flat: emails,\n};"
+      },
+      "id": "9fcf8a0f-0a4c-4e40-9f53-4f7f38082f3b",
+      "name": "Extract Email Array",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "payload_flat",
         "options": {}
       },
       "id": "d419966a-c2b3-434c-a9f8-558717a611b6",
@@ -83,31 +97,31 @@
             {
               "id": "emailId",
               "name": "emailId",
-              "value": "={{ String($json.email_id ?? $json.messageId ?? $json.id ?? '') }}",
+              "value": "={{ String($json.email_id ?? $json['0']?.email_id ?? $json['0']?.text?.[0]?.email_id ?? $json.messageId ?? $json['0']?.messageId ?? $json['0']?.text?.[0]?.messageId ?? $json.id ?? $json['0']?.id ?? $json['0']?.text?.[0]?.id ?? '') }}",
               "type": "string"
             },
             {
               "id": "subject",
               "name": "subject",
-              "value": "={{ $json.subject || 'Email sans sujet' }}",
+              "value": "={{ $json.subject || $json['0']?.subject || $json['0']?.text?.[0]?.subject || 'Email without subject' }}",
               "type": "string"
             },
             {
               "id": "body",
               "name": "body",
-              "value": "={{ $json.content?.body || $json.body || '' }}",
+              "value": "={{ $json.content?.body || $json['0']?.content?.body || $json['0']?.text?.[0]?.content?.body || $json.body || $json['0']?.body || $json['0']?.text?.[0]?.body || '' }}",
               "type": "string"
             },
             {
               "id": "sender",
               "name": "sender",
-              "value": "={{ $json.sender?.address || $json.sender || $json.from || 'unknown' }}",
+              "value": "={{ $json.sender?.address || $json['0']?.sender?.address || $json['0']?.text?.[0]?.sender?.address || $json.sender || $json['0']?.sender || $json['0']?.text?.[0]?.sender || $json.from || $json['0']?.from || $json['0']?.text?.[0]?.from || 'unknown' }}",
               "type": "string"
             },
             {
               "id": "receivedAt",
               "name": "receivedAt",
-              "value": "={{ $json.receivedDate || $json.receivedAt || $now.toISO() }}",
+              "value": "={{ $json.receivedDate || $json['0']?.receivedDate || $json['0']?.text?.[0]?.receivedDate || $json.receivedAt || $json['0']?.receivedAt || $json['0']?.text?.[0]?.receivedAt || $now.toISO() }}",
               "type": "string"
             }
           ]
@@ -269,7 +283,7 @@
             {
               "id": "taskTitleCandidate",
               "name": "taskTitleCandidate",
-              "value": "={{ String((($json.output || $json).task_title || $('Normalize Email').item.json.subject || 'Email to process')).slice(0,80) }}",
+              "value": "={{ (() => { const out = ($json.output || $json); const aiTitle = String(out.task_title || '').trim(); const nextAction = String(out.next_action || '').trim(); const subject = String($('Normalize Email').item.json.subject || 'No subject').trim(); const base = (aiTitle || nextAction || subject).replace(/\\s+/g, ' ').slice(0, 120); return base ? `Inbound email - Action: ${base}`.slice(0, 180) : 'Inbound email - Action required'; })() }}",
               "type": "string"
             },
             {
@@ -289,6 +303,12 @@
               "name": "rationale",
               "value": "={{ String((($json.output || $json).rationale || 'AI decision')).slice(0,300) }}",
               "type": "string"
+            },
+            {
+              "id": "slaHours",
+              "name": "slaHours",
+              "value": "={{ Math.max(1, Number(($json.output || $json).slaHours || 72)) }}",
+              "type": "number"
             }
           ]
         },
@@ -363,7 +383,7 @@
             {
               "id": "resolvedAssignee",
               "name": "resolvedAssignee",
-              "value": "={{ ['louis','claire','lucie'].includes($json.assigneeCandidate) ? $json.assigneeCandidate : 'claire' }}",
+              "value": "={{ (() => { if (['louis','claire','lucie'].includes($json.assigneeCandidate)) return $json.assigneeCandidate; const text = `${String($json.subject || '')} ${String($json.body || '')} ${String($json.nextAction || '')}`.toLowerCase(); if (/(vpn|reseau|network|bug|incident|ko|acces|access|ged|security|securite|mot de passe|password|2-step|auth)/.test(text)) return 'louis'; if (/(mairie|permis|document|circulation|administratif|planning|coordination|dossier)/.test(text)) return 'claire'; if (/(partenaire|communication|campagne|newsletter|media|festival|billetterie)/.test(text)) return 'lucie'; return 'claire'; })() }}",
               "type": "string"
             },
             {
@@ -381,7 +401,7 @@
             {
               "id": "taskTitle",
               "name": "taskTitle",
-              "value": "={{$json.taskTitleCandidate}}",
+              "value": "={{ (() => { const ai = String($json.taskTitleCandidate || '').replace(/\\s+/g, ' ').trim(); const nextAction = String($json.nextAction || '').replace(/\\s+/g, ' ').trim(); const subject = String($json.subject || '').replace(/\\s+/g, ' ').trim(); const base = ai && !/^email to process$/i.test(ai) ? ai : (nextAction || subject || 'Clarify required action'); const clean = base.replace(/^inbound email\\s*-\\s*action\\s*:\\s*/i, '').replace(/^re:\\s*/i, '').trim(); return `Inbound email - Action: ${clean}`.slice(0, 180); })() }}",
               "type": "string"
             }
           ]
@@ -415,7 +435,7 @@
     {
       "parameters": {
         "operation": "generateHtmlTemplate",
-        "template": "<div><p><strong>Email from:</strong> {{$json.senderSafe}}<br/><strong>Subject:</strong> {{$json.subjectSafe}}</p><h4>Context</h4><p>{{$json.summarySafe}}</p><h4>Expected action</h4><p>{{$json.nextActionSafe}}</p><h4>AI decision</h4><ul><li><strong>Assignee:</strong> {{$json.assigneeLabelSafe}} ({{$json.resolvedAssigneeSafe}})</li><li><strong>Priority:</strong> {{$json.resolvedPrioritySafe}}</li><li><strong>Actionable confidence:</strong> {{$json.actionConfidenceSafe}}</li><li><strong>Rationale:</strong> {{$json.rationaleSafe}}</li></ul><h4>Email excerpt</h4><blockquote>{{$json.excerptSafe}}</blockquote></div>"
+        "html": "<div><p><strong>Email from:</strong> {{$json.senderSafe}}<br/><strong>Subject:</strong> {{$json.subjectSafe}}</p><h4>Context</h4><p>{{$json.summarySafe}}</p><h4>Expected action</h4><p>{{$json.nextActionSafe}}</p><h4>AI decision</h4><ul><li><strong>Assignee:</strong> {{$json.assigneeLabelSafe}} ({{$json.resolvedAssigneeSafe}})</li><li><strong>Priority:</strong> {{$json.resolvedPrioritySafe}}</li><li><strong>Actionable confidence:</strong> {{$json.actionConfidenceSafe}}</li><li><strong>Rationale:</strong> {{$json.rationaleSafe}}</li></ul><h4>Email excerpt</h4><blockquote>{{$json.excerptSafe}}</blockquote></div>"
       },
       "id": "9f1e2f40-73a6-4ca7-93b3-cf394f0deab5",
       "name": "Render Task Description HTML",
@@ -439,7 +459,7 @@
             {
               "id": "createTaskInput",
               "name": "createTaskInput",
-              "value": "={{ ({ project_id: Number($vars.WF01_PROJECT_ID || 3), title: $json.taskTitle, description: String($json.html || '').slice(0, 5000), assignee: $json.resolvedAssignee, priority: $json.resolvedPriority }) }}",
+              "value": "={{ (() => { const payload = $('Build MCP Payload').item.json; const sla = Math.max(1, Number(payload.slaHours || 72)); const due = new Date(Date.now() + sla * 60 * 60 * 1000).toISOString().slice(0, 10); const nextAction = String(payload.nextAction || '').replace(/\\s+/g, ' ').trim(); const subject = String(payload.subject || '').replace(/\\s+/g, ' ').trim(); const taskTitle = String(payload.taskTitle || '').replace(/\\s+/g, ' ').trim(); const effective = taskTitle && !/^email to process$/i.test(taskTitle) ? taskTitle : `Inbound email - Action: ${nextAction || subject || 'Clarify required action'}`; return { project_id: Number($vars.WF01_PROJECT_ID || 3), due_date: due, description: String($json.html || '').slice(0, 5000), title: effective.slice(0, 180), assignee: String(payload.resolvedAssignee || 'claire'), priority: String(payload.resolvedPriority || 'NORMAL').toUpperCase() }; })() }}",
               "type": "object"
             }
           ]
@@ -458,7 +478,7 @@
     },
     {
       "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo.example.com/mcp-server/mcp\"}}",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -570,7 +590,7 @@
     },
     {
       "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo.example.com/mcp-server/mcp\"}}",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -702,6 +722,17 @@
       ]
     },
     "Unwrap MCP Emails": {
+      "main": [
+        [
+          {
+            "node": "Extract Email Array",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Email Array": {
       "main": [
         [
           {

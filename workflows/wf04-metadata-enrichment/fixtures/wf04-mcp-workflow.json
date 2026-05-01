@@ -550,7 +550,7 @@
         480
       ],
       "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo.example.com/mcp-server/mcp\"}}",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -638,7 +638,7 @@
         672
       ],
       "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo.example.com/mcp-server/mcp\"}}",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -858,7 +858,7 @@
         576
       ],
       "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo.example.com/mcp-server/mcp\"}}",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -883,7 +883,7 @@
         576
       ],
       "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo.example.com/mcp-server/mcp\"}}",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -1090,7 +1090,7 @@
         576
       ],
       "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo.example.com/mcp-server/mcp\"}}",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -1278,7 +1278,7 @@
         672
       ],
       "parameters": {
-        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT}}",
+        "endpointUrl": "={{$vars.EXO_MCP_ENDPOINT || \"https://exo.example.com/mcp-server/mcp\"}}",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,

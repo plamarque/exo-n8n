@@ -26,6 +26,7 @@ import {
 } from "./lib/n8n-workflow-portfolio.mjs";
 import {
   applyCredentialMergeAndFallbacks,
+  applyExoMcpEndpointDeployOverride,
   buildWorkflowPostPayload,
   buildWorkflowPutPayload,
   fetchMergeAndPutWorkflow,
@@ -54,6 +55,7 @@ are deployed first by default (then parent). unwrap ignores portfolio manifests.
 Environment (from process env or repo root .env):
   N8N_BASE_URL       n8n instance base URL (no trailing slash)
   N8N_API_KEY        API key (header X-N8N-API-KEY)
+  EXO_MCP_ENDPOINT   optional; tenant MCP URL — injects MCP Client endpointUrl fallback before PUT (same name as n8n $vars.EXO_MCP_ENDPOINT)
   N8N_WORKFLOW_ID_WF01 … N8N_WORKFLOW_ID_WF04, N8N_WORKFLOW_ID_UNWRAP (optional if workflow.json has top-level "id")
   Plus any N8N_WORKFLOW_ID_* keys listed in subworkflow-dependencies.json (e.g. N8N_WORKFLOW_ID_WF03_BUILD_REPORT)
   N8N_MCP_OAUTH2_CREDENTIAL_ID       optional; when set, forces mcpOAuth2Api on all MCP Client (OAuth2) nodes
@@ -121,6 +123,7 @@ async function deployDeclaredSubworkflows(
       );
     }
     if (!remoteId && createMissingDeps) {
+      applyExoMcpEndpointDeployOverride(/** @type {unknown[] | undefined} */ (localDep.nodes));
       const created = await postCreateWorkflow(base, key, buildWorkflowPostPayload(localDep));
       remoteId = created.id;
       console.log(`Created sub-workflow on n8n: ${created.name} (${remoteId}). Add to repository root .env:`);
@@ -275,6 +278,7 @@ async function main() {
   }
 
   await applyCredentialMergeAndFallbacks(local, remote, base, key);
+  applyExoMcpEndpointDeployOverride(/** @type {unknown[] | undefined} */ (local.nodes));
   const payload = buildWorkflowPutPayload(local);
 
   if (wasActive) {

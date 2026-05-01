@@ -21,7 +21,7 @@ Publishing **SDK `code`** without going through the same `workflow.json` validat
 ## Prerequisites
 
 - **Normative policy:** [docs/WORKFLOW.md](../../../docs/WORKFLOW.md#deployment-validation-policy) (*Deployment validation policy*). Local validation on `workflow.json` is **mandatory** before any publish.
-- **REST push credentials:** copy [`.env.example`](../../../.env.example) → **`.env`** at the repository root; set `N8N_BASE_URL` and `N8N_API_KEY`. Set `N8N_WORKFLOW_ID_*` when the canonical `workflow.json` has no top-level `id` (see [docs/DEVELOPMENT.md](../../../docs/DEVELOPMENT.md#root-env-for-repository-tooling)).
+- **REST push credentials:** copy [`.env.example`](../../../.env.example) → **`.env`** at the repository root; set `N8N_BASE_URL` and `N8N_API_KEY`. Set `N8N_WORKFLOW_ID_*` when the canonical `workflow.json` has no top-level `id` (see [docs/DEVELOPMENT.md](../../../docs/DEVELOPMENT.md#root-env-for-repository-tooling)). Optionally set **`EXO_MCP_ENDPOINT`** (same name as n8n `$vars.EXO_MCP_ENDPOINT`) so REST deploy injects the MCP Client `endpointUrl` fallback literal before `PUT` — see [docs/DEVELOPMENT.md — REST deploy to n8n](../../../docs/DEVELOPMENT.md#rest-deploy-to-n8n).
 - **Cursor and MCP (SDK path only):** [docs/DEVELOPMENT.md](../../../docs/DEVELOPMENT.md#cursor-and-mcp-recommended). Copy [`.cursor/mcp.json.example`](../../mcp.json.example) to a **local, git-ignored** `.cursor/mcp.json`; never commit real secrets.
 - **Tooling commands:** [docs/DEVELOPMENT.md](../../../docs/DEVELOPMENT.md#useful-scripts) (`npm run validate:workflows`, [validate-workflow.sh](../../../tools/validate-workflow.sh)).
 
