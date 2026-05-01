@@ -8,7 +8,7 @@ There is no observed application package manifest at the repository root. The ex
 
 ## Repository Structure
 
-- `workflows/`: one folder per portfolio workflow (WF01–WF04) plus `shared/subworkflows/` for reusable pieces (for example [unwrap MCP JSON](../workflows/shared/subworkflows/unwrap-mcp-json/)).
+- `workflows/`: one folder per root workflow (canonical `workflow.json` at `workflows/<folder>/workflow.json`). Shared UTIL graphs may live as their own root folder (for example [unwrap MCP JSON](../workflows/unwrap-mcp-json/)) or under a parent’s `subworkflows/` when only that parent uses them.
 - `workflows/*/` layout: `workflow.json` (canonical), `README.md`, `SPEC.functional.md`, `SPEC.technical.md` (or split technical docs for WF03), `config.env.example`, optional `fixtures/`.
 - `tools/`: minimal maintenance scripts (validation of canonical `workflow.json`, optional REST push to n8n via [push-workflow-to-n8n-api.mjs](../tools/push-workflow-to-n8n-api.mjs)). See [DEVELOPMENT.md](DEVELOPMENT.md).
 - `docs/`: normative and tracking documentation (for example [SPEC.md](SPEC.md), [WORKFLOW.md](WORKFLOW.md), [ISSUES.md](ISSUES.md)).

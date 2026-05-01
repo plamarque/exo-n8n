@@ -1,11 +1,11 @@
 # Workflow 01 - Email dispatch (technical specification)
 
-> Product rules: [SPEC.functional.md](SPEC.functional.md). Canonical graph: [workflow.json](workflow.json). Shared parser utility: [../shared/subworkflows/unwrap-mcp-json/](../shared/subworkflows/unwrap-mcp-json/).
+> Product rules: [SPEC.functional.md](SPEC.functional.md). Canonical graph: [workflow.json](workflow.json). Shared parser utility: [../unwrap-mcp-json/](../unwrap-mcp-json/).
 
 ## 1) Scope and artifacts
 
 - Canonical export in git: `workflows/wf01-email-dispatch/workflow.json`.
-- Shared dependency: `workflows/shared/subworkflows/unwrap-mcp-json/workflow.json`.
+- Shared dependency: `workflows/unwrap-mcp-json/workflow.json`.
 - Deploy manifest: `workflows/wf01-email-dispatch/subworkflow-dependencies.json`.
 - Remote id is tenant-bound and configured through root `.env` (`N8N_WORKFLOW_ID_WF01`, optional when the export already carries a root `id`).
 

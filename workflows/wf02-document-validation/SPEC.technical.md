@@ -1,6 +1,6 @@
 # Workflow 02 - Document validation (technical specification)
 
-> Product rules: [SPEC.functional.md](SPEC.functional.md). Canonical graph: [workflow.json](workflow.json). Shared parser utility: [../shared/subworkflows/unwrap-mcp-json/](../shared/subworkflows/unwrap-mcp-json/).
+> Product rules: [SPEC.functional.md](SPEC.functional.md). Canonical graph: [workflow.json](workflow.json). Shared parser utility: [../unwrap-mcp-json/](../unwrap-mcp-json/).
 
 ## 1) Scope and artifacts
 

@@ -17,7 +17,7 @@ This document defines how project documentation is maintained. It is normative f
 - `.cursor/skills/n8n-workflow-deploy-gate/SKILL.md`: project **Cursor skill** (agent runbook: local validate, optional `--emit-sdk`, REST JSON deploy via [push-workflow-to-n8n-api.mjs](../tools/push-workflow-to-n8n-api.mjs), or n8n MCP `validate_workflow` / `update_workflow`); normative policy remains in this file’s *Deployment validation policy*.
 - [`.cursor/mcp.json.example`](../.cursor/mcp.json.example): committed **placeholder-only** template for the two MCP servers (n8n + eXo); the real [`.cursor/mcp.json`](../.cursor/mcp.json) (secrets) is git-ignored and not in the repository.
 
-Per-workflow documentation lives under `workflows/wf0X-*/` (`SPEC.*.md`, `README.md`). It should not contradict the normative governance docs.
+Per-workflow documentation lives under each root folder `workflows/<folder>/` (`SPEC.*.md`, `README.md`). It should not contradict the normative governance docs.
 
 ## Repository language
 
@@ -59,6 +59,6 @@ Normative for contributors and AI agents whenever portfolio workflows are change
 - WF02: [workflows/wf02-document-validation/](../workflows/wf02-document-validation/).
 - WF03: [workflows/wf03-weekly-steering/](../workflows/wf03-weekly-steering/) (includes `SPEC.technical.md` and `fixtures/steering-template-note.md`).
 - WF04: [workflows/wf04-metadata-enrichment/](../workflows/wf04-metadata-enrichment/).
-- Shared: [workflows/shared/subworkflows/unwrap-mcp-json/](../workflows/shared/subworkflows/unwrap-mcp-json/).
+- Unwrap UTIL (shared across flows): [workflows/unwrap-mcp-json/](../workflows/unwrap-mcp-json/).
 - Tooling: [tools/](../tools/) (see [DEVELOPMENT.md](DEVELOPMENT.md)).
 - Layout and canonical JSON: [ADR/0002-repository-layout-workflows.md](ADR/0002-repository-layout-workflows.md).

@@ -99,7 +99,7 @@ Tools used in this workflow (see [SPEC.technical.md](SPEC.technical.md)):
 - `create_task_in_project` — task creation in a configured **project**.
 - `assign_task` — explicit assignment using MCP `username`.
 
-After MCP nodes that return wrapped JSON, the graph calls the shared **[Unwrap MCP JSON](../shared/subworkflows/unwrap-mcp-json/)** sub-workflow again so downstream nodes extract `task_id` and payloads reliably.
+After MCP nodes that return wrapped JSON, the graph calls the shared **[Unwrap MCP JSON](../unwrap-mcp-json/)** sub-workflow again so downstream nodes extract `task_id` and payloads reliably.
 
 ## Operational considerations
 
@@ -116,7 +116,7 @@ After MCP nodes that return wrapped JSON, the graph calls the shared **[Unwrap M
 | [SPEC.functional.md](SPEC.functional.md)                                           | Goals, acceptance criteria, business rules.      |
 | [SPEC.technical.md](SPEC.technical.md)                                             | MCP sequence, variables, LLM contract, payloads. |
 | [subworkflow-dependencies.json](subworkflow-dependencies.json)                     | Deploy order for Unwrap dependency.              |
-| [../shared/subworkflows/unwrap-mcp-json/](../shared/subworkflows/unwrap-mcp-json/) | Shared MCP unwrap UTIL.                          |
+| [../unwrap-mcp-json/](../unwrap-mcp-json/) | Shared MCP unwrap UTIL.                          |
 
 
 ---

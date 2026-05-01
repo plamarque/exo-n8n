@@ -54,17 +54,17 @@ Together they enable:
 **Workflow tutorials (README chapters)** — open these on GitHub for the didactic walkthrough per workflow:
 
 
-| Tutorial                                                                       | Canonical graph                                                   | Product spec                                                                | Technical spec                                                                                                                                                         |
-| ------------------------------------------------------------------------------ | ----------------------------------------------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [WF01 — Email dispatch](workflows/wf01-email-dispatch/README.md)               | [workflow.json](workflows/wf01-email-dispatch/workflow.json)      | [SPEC.functional.md](workflows/wf01-email-dispatch/SPEC.functional.md)      | [SPEC.technical.md](workflows/wf01-email-dispatch/SPEC.technical.md)                                                                                                   |
-| [WF02 — Document validation](workflows/wf02-document-validation/README.md)     | [workflow.json](workflows/wf02-document-validation/workflow.json) | [SPEC.functional.md](workflows/wf02-document-validation/SPEC.functional.md) | [SPEC.technical.md](workflows/wf02-document-validation/SPEC.technical.md)                                                                                              |
-| [WF03 — Weekly steering preparation](workflows/wf03-weekly-steering/README.md) | [workflow.json](workflows/wf03-weekly-steering/workflow.json)     | [SPEC.functional.md](workflows/wf03-weekly-steering/SPEC.functional.md)     | [SPEC.technical.md](workflows/wf03-weekly-steering/SPEC.technical.md) |
-| [WF04 — Metadata enrichment](workflows/wf04-metadata-enrichment/README.md)     | [workflow.json](workflows/wf04-metadata-enrichment/workflow.json) | [SPEC.functional.md](workflows/wf04-metadata-enrichment/SPEC.functional.md) | [SPEC.technical.md](workflows/wf04-metadata-enrichment/SPEC.technical.md)                                                                                              |
+| Tutorial                                                                       | Canonical graph                                                   | Product spec                                                                | Technical spec                                                            |
+| ------------------------------------------------------------------------------ | ----------------------------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| [WF01 — Email dispatch](workflows/wf01-email-dispatch/README.md)               | [workflow.json](workflows/wf01-email-dispatch/workflow.json)      | [SPEC.functional.md](workflows/wf01-email-dispatch/SPEC.functional.md)      | [SPEC.technical.md](workflows/wf01-email-dispatch/SPEC.technical.md)      |
+| [WF02 — Document validation](workflows/wf02-document-validation/README.md)     | [workflow.json](workflows/wf02-document-validation/workflow.json) | [SPEC.functional.md](workflows/wf02-document-validation/SPEC.functional.md) | [SPEC.technical.md](workflows/wf02-document-validation/SPEC.technical.md) |
+| [WF03 — Weekly steering preparation](workflows/wf03-weekly-steering/README.md) | [workflow.json](workflows/wf03-weekly-steering/workflow.json)     | [SPEC.functional.md](workflows/wf03-weekly-steering/SPEC.functional.md)     | [SPEC.technical.md](workflows/wf03-weekly-steering/SPEC.technical.md)     |
+| [WF04 — Metadata enrichment](workflows/wf04-metadata-enrichment/README.md)     | [workflow.json](workflows/wf04-metadata-enrichment/workflow.json) | [SPEC.functional.md](workflows/wf04-metadata-enrichment/SPEC.functional.md) | [SPEC.technical.md](workflows/wf04-metadata-enrichment/SPEC.technical.md) |
 
 
 **Cross-cutting docs:** [docs/SPEC.md](docs/SPEC.md) (portfolio summary), [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) (setup, deploy, validation), [AGENTS.md](AGENTS.md) (contribution rules for this repo).
 
-**Shared sub-workflow:** several flows call **Unwrap MCP JSON** to normalize MCP responses—see [workflows/shared/subworkflows/unwrap-mcp-json/README.md](workflows/shared/subworkflows/unwrap-mcp-json/README.md).
+**Shared sub-workflow:** several flows call **Unwrap MCP JSON** to normalize MCP responses—see [workflows/unwrap-mcp-json/README.md](workflows/unwrap-mcp-json/README.md).
 
 ---
 

@@ -9,7 +9,7 @@
   - `workflows/wf03-weekly-steering/subworkflows/wf03-build-report-context/workflow.json`
   - `workflows/wf03-weekly-steering/subworkflows/wf03-compose-steering-note-html/workflow.json`
 - Shared utility graph:
-  - `workflows/shared/subworkflows/unwrap-mcp-json/workflow.json`
+  - `workflows/unwrap-mcp-json/workflow.json`
 - Dependency manifest: `workflows/wf03-weekly-steering/subworkflow-dependencies.json`.
 
 ## 2) Configuration

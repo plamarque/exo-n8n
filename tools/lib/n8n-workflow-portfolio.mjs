@@ -1,51 +1,91 @@
 /**
- * Shared resolution of portfolio ids (wf01..wf04, unwrap) to canonical workflow.json paths
- * and remote n8n workflow ids. Used by push and download REST scripts.
+ * Resolve workflow shortIds (from `workflows/<dirname>/workflow.json` folder names)
+ * to canonical workflow.json paths and remote n8n workflow id env keys.
+ * Used by push and download REST scripts.
+ *
+ * shortId rule: substring before the first `-` in the immediate folder name under
+ * `workflows/`, or the full folder name if there is no hyphen.
  */
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 
 /**
+ * @param {string} dirname immediate child name under workflows/ (not a full path)
+ * @returns {string}
+ */
+export function shortIdFromDirName(dirname) {
+  const i = dirname.indexOf("-");
+  if (i === -1) return dirname;
+  return dirname.slice(0, i);
+}
+
+/**
+ * Direct children of workflows/ that contain workflow.json at
+ * workflows/<name>/workflow.json
  * @param {string} repoRoot
- * @param {string} portfolioId
+ * @returns {Array<{ dirName: string; shortId: string; jsonPath: string }>}
+ */
+export function listRootWorkflowEntries(repoRoot) {
+  const workflowsDir = path.join(repoRoot, "workflows");
+  if (!fs.existsSync(workflowsDir)) {
+    throw new Error(`Missing ${workflowsDir}`);
+  }
+  /** @type {Array<{ dirName: string; shortId: string; jsonPath: string }>} */
+  const out = [];
+  /** @type {Map<string, string>} shortId -> dirName (detect collision) */
+  const seen = new Map();
+  for (const e of fs.readdirSync(workflowsDir, { withFileTypes: true })) {
+    if (!e.isDirectory()) continue;
+    const dirName = e.name;
+    const jsonPath = path.join(workflowsDir, dirName, "workflow.json");
+    if (!fs.existsSync(jsonPath)) continue;
+    const shortId = shortIdFromDirName(dirName);
+    const prev = seen.get(shortId);
+    if (prev !== undefined && prev !== dirName) {
+      throw new Error(
+        `Ambiguous shortId "${shortId}": both workflows/${prev} and workflows/${dirName} map to the same id (rename one folder so shortIds differ).`,
+      );
+    }
+    seen.set(shortId, dirName);
+    out.push({ dirName, shortId, jsonPath });
+  }
+  return out.sort((a, b) => a.shortId.localeCompare(b.shortId));
+}
+
+/**
+ * Sorted unique shortIds for workflows that have a root workflow.json.
+ * @param {string} repoRoot
+ * @returns {string[]}
+ */
+export function listWorkflowIds(repoRoot) {
+  return listRootWorkflowEntries(repoRoot).map((e) => e.shortId);
+}
+
+/**
+ * @param {string} repoRoot
+ * @param {string} portfolioId workflow shortId (not the word "all")
  * @returns {string} absolute path to workflow.json
  */
 export function resolvePortfolioJsonPath(repoRoot, portfolioId) {
-  const workflowsDir = path.join(repoRoot, "workflows");
-  if (portfolioId === "unwrap") {
-    const p = path.join(
-      workflowsDir,
-      "shared/subworkflows/unwrap-mcp-json/workflow.json",
-    );
-    if (!fs.existsSync(p)) {
-      throw new Error(`Missing ${p}`);
-    }
-    return p;
-  }
-  if (!/^wf0[1-4]$/.test(portfolioId)) {
+  const matches = listRootWorkflowEntries(repoRoot).filter(
+    (e) => e.shortId === portfolioId,
+  );
+  if (matches.length === 0) {
     throw new Error(
-      `Unknown portfolio id: ${portfolioId} (use wf01..wf04 or unwrap)`,
+      `Unknown workflow id: ${portfolioId} (no workflows/<name>/workflow.json where shortId matches; see docs/DEVELOPMENT.md).`,
     );
   }
-  const dirs = fs
-    .readdirSync(workflowsDir, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && e.name.startsWith(`${portfolioId}-`))
-    .map((e) => e.name);
-  if (dirs.length === 0) {
-    throw new Error(`No directory matching workflows/${portfolioId}-*/`);
-  }
-  if (dirs.length > 1) {
+  if (matches.length > 1) {
     throw new Error(
-      `Ambiguous: multiple workflows/${portfolioId}-*/ — ${dirs.join(", ")}`,
+      `Ambiguous workflow id: ${portfolioId} — ${matches.map((m) => m.dirName).join(", ")}`,
     );
   }
-  return path.join(workflowsDir, dirs[0], "workflow.json");
+  return matches[0].jsonPath;
 }
 
 /** @param {string} portfolioId */
 export function remoteIdEnvKey(portfolioId) {
-  if (portfolioId === "unwrap") return "N8N_WORKFLOW_ID_UNWRAP";
   return `N8N_WORKFLOW_ID_${portfolioId.toUpperCase()}`;
 }
 

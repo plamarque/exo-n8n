@@ -13,7 +13,7 @@ The repository is a collection of four n8n workflows integrating eXo via MCP, wi
 1. **Layout**
   - `workflows/wf01-email-dispatch/`, `workflows/wf02-document-validation/`, `workflows/wf03-weekly-steering/`, `workflows/wf04-metadata-enrichment/`.
   - Each contains at minimum: `README.md`, `SPEC.functional.md`, `SPEC.technical.md`, `workflow.json` (canonical), `config.env.example`, and optionally `fixtures/`.
-  - Cross-cutting sub-workflows live under `workflows/shared/subworkflows/<name>/` with their own `workflow.json` and `README.md`.
+  - Cross-cutting sub-workflows that should be first-class for REST deploy / validation may live as their own root folder `workflows/<name>/` with `workflow.json` and `README.md` (for example `workflows/unwrap-mcp-json/`). UTIL graphs used by a single portfolio may still live under that workflow’s `subworkflows/<name>/`.
   - Sub-workflows used by **only one** portfolio workflow may live under that workflow’s folder, e.g. `workflows/wf03-weekly-steering/subworkflows/<name>/`, with the same `workflow.json` + `README.md` pattern.
 2. **Canonical JSON**
   - `workflow.json` in each workflow folder is the **source of truth** for review, import, and MCP validation.

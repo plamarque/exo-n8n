@@ -12,7 +12,7 @@ This document is tracking-only. It does not define expected behavior.
 
 ### WF02
 
-- Remote n8n workflow id for WF02 is pinned in the repository root `.env` as `N8N_WORKFLOW_ID_WF02`; the repository deploys it via `./tools/deploy.sh wf02` with the new [subworkflow-dependencies.json](../workflows/wf02-document-validation/subworkflow-dependencies.json) (auto-deploys the shared unwrap sub-workflow first and injects its remote id into the three `Unwrap MCP …` Execute Workflow nodes).
+- Remote n8n workflow id for WF02 is pinned in the repository root `.env` as `N8N_WORKFLOW_ID_WF02`; the repository deploys it via `./tools/deploy.sh wf02` with the new [subworkflow-dependencies.json](../workflows/wf02-document-validation/subworkflow-dependencies.json) (auto-deploys the unwrap UTIL workflow first and injects its remote id into the three `Unwrap MCP …` Execute Workflow nodes).
 - **Breaking change (repo anglicization):** approval query params and state keys are now `role=artistic|technical` with decisions `PENDING|APPROVED|REJECTED` (replaces French `artistique` / `technique` and `EN_ATTENTE` / `APPROUVE`). Update any saved approval URLs or tests.
 - The workflow uses static/demo actor mappings (`nadia`, `etienne`, fallback `claire`).
 - **Resolved (2026-04-27):** approval state and intake idempotency now persist in two n8n Data Tables (`wf02_approvals`, `wf02_processed_documents`) instead of `$getWorkflowStaticData`; the workflow self-bootstraps via `Ensure Tracking Table` / `Ensure Approvals Table`. See [SPEC.technical.md](../workflows/wf02-document-validation/SPEC.technical.md) section 12.5. New tenant prerequisite: the n8n Data Tables feature must be enabled (already required by WF04).

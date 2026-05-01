@@ -10,7 +10,7 @@ Decodes eXo MCP responses (often wrapped) into JSON usable by downstream n8n nod
 
 ## Consumers
 
-Used in particular by [WF01 - Email dispatch](../../wf01-email-dispatch/README.md) (`Execute Workflow`).
+Used in particular by [WF01 - Email dispatch](../wf01-email-dispatch/README.md) (`Execute Workflow`).
 
 ## Remote id (reference)
 

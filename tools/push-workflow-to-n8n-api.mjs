@@ -3,7 +3,7 @@
  * Push canonical workflow.json to n8n via REST API (PUT /api/v1/workflows/:id).
  * Loads `.env` from the repository root (see root `.env.example`).
  *
- * When `subworkflow-dependencies.json` exists next to the portfolio `workflow.json`,
+ * When `subworkflow-dependencies.json` exists next to the root `workflow.json`,
  * deploys those sub-workflows first (same credential merge as the parent), injects
  * remote `workflowId` values from `.env` into parent **Execute Workflow** nodes in memory,
  * then PUTs the parent. Use `--no-deps` to skip. Use `--create-missing-deps` to POST
@@ -12,6 +12,7 @@
  * Usage:
  *   node tools/push-workflow-to-n8n-api.mjs wf01
  *   node tools/push-workflow-to-n8n-api.mjs wf03 --dry-run
+ *   node tools/push-workflow-to-n8n-api.mjs all
  *   node tools/push-workflow-to-n8n-api.mjs wf03 --no-deps
  *   node tools/push-workflow-to-n8n-api.mjs wf03 --create-missing-deps
  */
@@ -19,6 +20,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { loadRepoDotenv } from "./load-repo-dotenv.mjs";
 import {
+  listWorkflowIds,
   remoteIdEnvKey,
   resolvePortfolioJsonPath,
   resolveRemoteWorkflowId,
@@ -41,7 +43,10 @@ import {
 
 function usage() {
   console.log(`Usage:
-  node tools/push-workflow-to-n8n-api.mjs <wf01|wf02|wf03|wf04|unwrap> [options]
+  node tools/push-workflow-to-n8n-api.mjs <shortId|all> [options]
+
+  shortId: first segment of workflows/<name>/ folder before "-" (or full folder name if no hyphen).
+  Examples: wf01 (from wf01-email-dispatch), unwrap (from unwrap-mcp-json).
 
 Options:
   --dry-run              No PUT/POST; still GETs remotes for merge logs (see docs/DEVELOPMENT.md)
@@ -49,20 +54,20 @@ Options:
   --no-deps              Do not deploy subworkflow-dependencies.json even if present
   --create-missing-deps  POST-create dependencies missing remote id; print .env lines
 
-When subworkflow-dependencies.json exists next to the portfolio workflow, dependencies
-are deployed first by default (then parent). unwrap ignores portfolio manifests.
+When subworkflow-dependencies.json exists next to the workflow, dependencies
+are deployed first by default (then parent).
 
 Environment (from process env or repo root .env):
   N8N_BASE_URL       n8n instance base URL (no trailing slash)
   N8N_API_KEY        API key (header X-N8N-API-KEY)
   EXO_MCP_ENDPOINT   optional; tenant MCP URL — injects MCP Client endpointUrl fallback before PUT (same name as n8n $vars.EXO_MCP_ENDPOINT)
-  N8N_WORKFLOW_ID_WF01 … N8N_WORKFLOW_ID_WF04, N8N_WORKFLOW_ID_UNWRAP (optional if workflow.json has top-level "id")
+  N8N_WORKFLOW_ID_<SHORTID> for each root workflow (e.g. N8N_WORKFLOW_ID_WF01, N8N_WORKFLOW_ID_UNWRAP), optional if workflow.json has top-level "id"
   Plus any N8N_WORKFLOW_ID_* keys listed in subworkflow-dependencies.json (e.g. N8N_WORKFLOW_ID_WF03_BUILD_REPORT)
   N8N_MCP_CREDENTIAL_ID              optional; when set, forces mcpOAuth2Api on all MCP Client (OAuth2) nodes
   N8N_MCP_CREDENTIAL_NAME            with ID: optional {name} in workflow JSON; without ID: exact n8n credential display name for lookup (forces apply when unique match)
-  N8N_OPENAI_CREDENTIAL_ID              optional; when set, forces openAiApi on all lmChatOpenAi nodes
-  N8N_OPENAI_CREDENTIAL_NAME            with ID: optional {name} in workflow JSON; without ID: exact n8n credential display name for lookup (forces apply when unique match)
-  N8N_OPENAI_REFERENCE_WORKFLOW_ID      optional: copy openAiApi ref from first lmChatOpenAi on that workflow (forces apply); else defaults to N8N_WORKFLOW_ID_WF01 when set
+  N8N_OPENAI_CREDENTIAL_ID           optional override for lmChatOpenAi nodes still missing credentials after merge
+  N8N_OPENAI_CREDENTIAL_NAME         optional display name for that override
+  N8N_OPENAI_REFERENCE_WORKFLOW_ID   optional: copy openAiApi ref from first lmChatOpenAi on that workflow id
 `);
 }
 
@@ -75,7 +80,7 @@ Environment (from process env or repo root .env):
  * @param {boolean} dryRun
  * @param {boolean} skipValidate
  * @param {boolean} createMissingDeps
- * @param {Record<string, unknown>} parentLocal parsed portfolio `workflow.json` (for resolving dep ids from parent Execute Workflow nodes when env is unset)
+ * @param {Record<string, unknown>} parentLocal parsed portfolio \`workflow.json\` (for resolving dep ids from parent Execute Workflow nodes when env is unset)
  * @returns {Promise<Map<string, string>>}
  */
 async function deployDeclaredSubworkflows(
@@ -89,9 +94,6 @@ async function deployDeclaredSubworkflows(
   createMissingDeps,
   parentLocal,
 ) {
-  if (portfolioId === "unwrap") {
-    return new Map();
-  }
   const deps = loadSubworkflowDependencyManifest(workflowDir);
   if (!deps || deps.length === 0) {
     return new Map();
@@ -157,77 +159,42 @@ async function deployDeclaredSubworkflows(
   return injectionMap;
 }
 
-const repoRoot = loadRepoDotenv();
+/**
+ * @param {string} repoRoot
+ * @param {string} portfolioId
+ * @param {object} opts
+ * @param {string} opts.base
+ * @param {string} opts.key
+ * @param {boolean} opts.dryRun
+ * @param {boolean} opts.skipValidate
+ * @param {boolean} opts.noDeps
+ * @param {boolean} opts.createMissingDeps
+ */
+async function deployOneWorkflow(repoRoot, portfolioId, opts) {
+  const { base, key, dryRun, skipValidate, noDeps, createMissingDeps } = opts;
+  const jsonPath = resolvePortfolioJsonPath(repoRoot, portfolioId);
+  const workflowDir = path.dirname(jsonPath);
 
-const argv = process.argv.slice(2);
-if (
-  argv.length === 0 ||
-  argv[0] === "-h" ||
-  argv[0] === "--help"
-) {
-  usage();
-  process.exit(argv.length === 0 ? 1 : 0);
-}
-
-const KNOWN_FLAGS = new Set([
-  "--dry-run",
-  "--skip-validate",
-  "--no-deps",
-  "--create-missing-deps",
-]);
-
-const portfolioId = argv[0];
-const flagArgs = argv.slice(1);
-const dryRun = flagArgs.includes("--dry-run");
-const skipValidate = flagArgs.includes("--skip-validate");
-const noDeps = flagArgs.includes("--no-deps");
-const createMissingDeps = flagArgs.includes("--create-missing-deps");
-const unknown = flagArgs.filter((a) => !KNOWN_FLAGS.has(a));
-if (unknown.length > 0) {
-  console.error("Unexpected arguments:", unknown.join(" "));
-  usage();
-  process.exit(1);
-}
-
-let jsonPath;
-try {
-  jsonPath = resolvePortfolioJsonPath(repoRoot, portfolioId);
-} catch (e) {
-  console.error(/** @type {Error} */ (e).message);
-  process.exit(1);
-}
-
-const workflowDir = path.dirname(jsonPath);
-const base = (process.env.N8N_BASE_URL || "").replace(/\/$/, "");
-const key = process.env.N8N_API_KEY;
-
-if (!base || !key) {
-  console.error("Set N8N_BASE_URL and N8N_API_KEY (repo root .env or environment).");
-  process.exit(1);
-}
-
-if (!skipValidate) {
-  if (!runLocalValidation(repoRoot, path.relative(repoRoot, jsonPath))) {
-    process.exit(1);
+  if (!skipValidate) {
+    if (!runLocalValidation(repoRoot, path.relative(repoRoot, jsonPath))) {
+      process.exit(1);
+    }
   }
-}
 
-const envKey = remoteIdEnvKey(portfolioId);
-
-async function main() {
+  const envKey = remoteIdEnvKey(portfolioId);
   const rawParent = fs.readFileSync(jsonPath, "utf8");
   const local = /** @type {Record<string, unknown>} */ (JSON.parse(rawParent));
 
   /** @type {Map<string, string>} */
   let injectionMap = new Map();
-  const manifestPresent =
-    portfolioId !== "unwrap" &&
-    fs.existsSync(path.join(workflowDir, "subworkflow-dependencies.json"));
+  const manifestPresent = fs.existsSync(
+    path.join(workflowDir, "subworkflow-dependencies.json"),
+  );
   const runDeps = manifestPresent && !noDeps;
 
   if (runDeps) {
     console.log(
-      `Portfolio ${portfolioId}: deploying subworkflow-dependencies.json before parent (use --no-deps to skip).`,
+      `Workflow ${portfolioId}: deploying subworkflow-dependencies.json before parent (use --no-deps to skip).`,
     );
     injectionMap = await deployDeclaredSubworkflows(
       repoRoot,
@@ -262,7 +229,7 @@ async function main() {
   const url = `${base}/api/v1/workflows/${remoteId}`;
   if (dryRun) {
     console.log("Dry run — would PUT parent", url);
-    console.log("Portfolio:", portfolioId, "JSON:", path.relative(repoRoot, jsonPath));
+    console.log("Workflow:", portfolioId, "JSON:", path.relative(repoRoot, jsonPath));
     console.log("Remote id:", remoteId);
     return;
   }
@@ -311,6 +278,72 @@ async function main() {
       console.log("Re-activated workflow after successful PUT.");
     }
   }
+}
+
+const repoRoot = loadRepoDotenv();
+
+const argv = process.argv.slice(2);
+if (
+  argv.length === 0 ||
+  argv[0] === "-h" ||
+  argv[0] === "--help"
+) {
+  usage();
+  process.exit(argv.length === 0 ? 1 : 0);
+}
+
+const KNOWN_FLAGS = new Set([
+  "--dry-run",
+  "--skip-validate",
+  "--no-deps",
+  "--create-missing-deps",
+]);
+
+const portfolioId = argv[0];
+const flagArgs = argv.slice(1);
+const dryRun = flagArgs.includes("--dry-run");
+const skipValidate = flagArgs.includes("--skip-validate");
+const noDeps = flagArgs.includes("--no-deps");
+const createMissingDeps = flagArgs.includes("--create-missing-deps");
+const unknown = flagArgs.filter((a) => !KNOWN_FLAGS.has(a));
+if (unknown.length > 0) {
+  console.error("Unexpected arguments:", unknown.join(" "));
+  usage();
+  process.exit(1);
+}
+
+const base = (process.env.N8N_BASE_URL || "").replace(/\/$/, "");
+const key = process.env.N8N_API_KEY;
+
+if (!base || !key) {
+  console.error("Set N8N_BASE_URL and N8N_API_KEY (repo root .env or environment).");
+  process.exit(1);
+}
+
+const deployOpts = { base, key, dryRun, skipValidate, noDeps, createMissingDeps };
+
+async function main() {
+  if (portfolioId === "all") {
+    let ids;
+    try {
+      ids = listWorkflowIds(repoRoot);
+    } catch (e) {
+      console.error(/** @type {Error} */ (e).message);
+      process.exit(1);
+    }
+    if (ids.length === 0) {
+      console.error("No root workflows found under workflows/*/workflow.json");
+      process.exit(1);
+    }
+    console.log(`Deploy all: ${ids.join(", ")}`);
+    for (const id of ids) {
+      console.log(`\n--- ${id} ---\n`);
+      await deployOneWorkflow(repoRoot, id, deployOpts);
+    }
+    return;
+  }
+
+  await deployOneWorkflow(repoRoot, portfolioId, deployOpts);
 }
 
 main().catch((e) => {

@@ -2,7 +2,7 @@
   "version": 1,
   "dependencies": [
     {
-      "path": "../shared/subworkflows/unwrap-mcp-json/workflow.json",
+      "path": "../unwrap-mcp-json/workflow.json",
       "remoteIdEnv": "N8N_WORKFLOW_ID_UNWRAP",
       "parentExecuteWorkflowNodeNames": [
         "Unwrap MCP Emails",
