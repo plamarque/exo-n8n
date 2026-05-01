@@ -141,23 +141,62 @@ export function resolveMcpOAuth2CredentialBindingFromList(all) {
 }
 
 /**
+ * @typedef {"explicit" | "resolveByName" | "singleton" | "none"} OpenAiBindingSourceSync
+ * @typedef {OpenAiBindingSourceSync | "referenceWorkflow"} OpenAiBindingSource
+ */
+
+/**
+ * Resolve which OpenAI API credential reference to apply during deploy (sync path only).
+ * Priority: `N8N_OPENAI_CREDENTIAL_ID` → `N8N_OPENAI_CREDENTIAL_NAME` as exact n8n display name when id is unset → singleton `openAiApi` on the instance.
+ * `N8N_OPENAI_CREDENTIAL_NAME` is also the optional `{name}` label in the workflow JSON when `N8N_OPENAI_CREDENTIAL_ID` is set.
+ * `referenceWorkflow` is assigned in `applyCredentialMergeAndFallbacks` after optional GET of another workflow.
+ *
  * @param {Array<{ id: string; name: string; type: string }> | null} all
+ * @returns {{ binding: { id: string; name: string } | null; source: OpenAiBindingSourceSync }}
  */
 export function resolveOpenAiCredentialBindingFromList(all) {
   const explicitId = (process.env.N8N_OPENAI_CREDENTIAL_ID || "").trim();
-  const explicitName = (process.env.N8N_OPENAI_CREDENTIAL_NAME || "").trim();
+  const credName = (process.env.N8N_OPENAI_CREDENTIAL_NAME || "").trim();
   if (explicitId) {
-    return { id: explicitId, name: explicitName || "OpenAI API" };
+    return {
+      binding: { id: explicitId, name: credName || "OpenAI API" },
+      source: "explicit",
+    };
   }
-  if (!all) return null;
+
+  if (credName && all) {
+    const oaList = all.filter((c) => c.type === OPENAI_API_CREDENTIAL_TYPE);
+    const matches = oaList.filter((c) => c.name === credName);
+    if (matches.length === 1) {
+      return {
+        binding: { id: matches[0].id, name: matches[0].name },
+        source: "resolveByName",
+      };
+    }
+    if (matches.length === 0) {
+      console.warn(
+        `N8N_OPENAI_CREDENTIAL_NAME="${credName}": no ${OPENAI_API_CREDENTIAL_TYPE} credential with that exact display name on the instance.`,
+      );
+    } else {
+      console.warn(
+        `N8N_OPENAI_CREDENTIAL_NAME="${credName}": ambiguous — ${matches.length} ${OPENAI_API_CREDENTIAL_TYPE} credentials match that name (expected exactly one).`,
+      );
+    }
+  }
+
+  if (!all) {
+    return { binding: null, source: "none" };
+  }
   const list = all.filter((c) => c.type === OPENAI_API_CREDENTIAL_TYPE);
-  if (list.length === 1) return { id: list[0].id, name: list[0].name };
+  if (list.length === 1) {
+    return { binding: { id: list[0].id, name: list[0].name }, source: "singleton" };
+  }
   if (list.length > 1) {
     console.warn(
-      `Multiple ${OPENAI_API_CREDENTIAL_TYPE} credentials (${list.map((c) => c.name).join(", ")}). Set N8N_OPENAI_CREDENTIAL_ID for fallback injection when merge leaves OpenAI nodes still missing credentials.`,
+      `Multiple ${OPENAI_API_CREDENTIAL_TYPE} credentials (${list.map((c) => c.name).join(", ")}). Set N8N_OPENAI_CREDENTIAL_ID, N8N_OPENAI_CREDENTIAL_NAME (exact display name when id is unset), N8N_OPENAI_REFERENCE_WORKFLOW_ID, or use a single credential when merge leaves OpenAI nodes without credentials.`,
     );
   }
-  return null;
+  return { binding: null, source: "none" };
 }
 
 /** @param {unknown} node */
@@ -288,11 +327,17 @@ export function applyExoMcpEndpointDeployOverride(nodes) {
 }
 
 /**
+ * Attach `openAiApi` to `lmChatOpenAi` nodes.
+ * When `force` is true, overwrites existing references (explicit id, resolve-by-name, or reference workflow).
+ * When false, only nodes with a missing reference are updated (singleton heuristic).
+ *
  * @param {unknown[] | undefined} nodes
  * @param {{ id: string; name: string } | null} binding
+ * @param {{ force?: boolean }} [opts]
  * @returns {number}
  */
-export function injectOpenAiCredentialsMissing(nodes, binding) {
+export function applyOpenAiCredentialBinding(nodes, binding, opts = {}) {
+  const force = opts.force === true;
   if (!binding || !Array.isArray(nodes)) return 0;
   let count = 0;
   for (const node of nodes) {
@@ -303,7 +348,7 @@ export function injectOpenAiCredentialsMissing(nodes, binding) {
     ) {
       continue;
     }
-    if (!credentialRefMissing(node, OPENAI_API_CREDENTIAL_TYPE)) continue;
+    if (!force && !credentialRefMissing(node, OPENAI_API_CREDENTIAL_TYPE)) continue;
     /** @type {{ credentials?: Record<string, { id: string; name: string }> }} */ (node).credentials = {
       ...(/** @type {{ credentials?: Record<string, { id: string; name: string }> }} */ (node).credentials || {}),
       [OPENAI_API_CREDENTIAL_TYPE]: { id: binding.id, name: binding.name },
@@ -453,31 +498,46 @@ export async function applyCredentialMergeAndFallbacks(local, remote, base, apiK
     }
   }
 
-  let openAiBinding = resolveOpenAiCredentialBindingFromList(credList);
+  let openAiResolution = resolveOpenAiCredentialBindingFromList(credList);
   if (
-    !openAiBinding &&
+    !openAiResolution.binding &&
     workflowUsesLmChatOpenAi(/** @type {unknown[] | undefined} */ (local.nodes))
   ) {
     const refWorkflowId =
       (process.env.N8N_OPENAI_REFERENCE_WORKFLOW_ID || "").trim() ||
       (process.env.N8N_WORKFLOW_ID_WF01 || "").trim();
     if (refWorkflowId) {
-      openAiBinding = await extractOpenAiCredentialRefFromRemoteWorkflow(base, apiKey, refWorkflowId);
-      if (openAiBinding) {
+      const refBinding = await extractOpenAiCredentialRefFromRemoteWorkflow(base, apiKey, refWorkflowId);
+      if (refBinding) {
+        openAiResolution = {
+          binding: refBinding,
+          source: "referenceWorkflow",
+        };
         console.log(
           `OpenAI credential reference resolved from workflow ${refWorkflowId} (reuse an existing lmChatOpenAi binding when the /credentials list is ambiguous or unavailable).`,
         );
       }
     }
   }
-  const filledOpenAi = injectOpenAiCredentialsMissing(
+  const openAiForceApply =
+    openAiResolution.source === "explicit" ||
+    openAiResolution.source === "resolveByName" ||
+    openAiResolution.source === "referenceWorkflow";
+  const filledOpenAi = applyOpenAiCredentialBinding(
     /** @type {unknown[] | undefined} */ (local.nodes),
-    openAiBinding,
+    openAiResolution.binding,
+    { force: openAiForceApply },
   );
   if (filledOpenAi > 0) {
-    console.log(
-      `Fallback: attached ${OPENAI_API_CREDENTIAL_TYPE} to ${filledOpenAi} OpenAI chat model node(s) still missing credentials.`,
-    );
+    if (openAiForceApply) {
+      console.log(
+        `Fallback: applied ${OPENAI_API_CREDENTIAL_TYPE} to ${filledOpenAi} OpenAI chat model node(s) (${openAiResolution.source}; overwrites existing references).`,
+      );
+    } else {
+      console.log(
+        `Fallback: attached ${OPENAI_API_CREDENTIAL_TYPE} to ${filledOpenAi} OpenAI chat model node(s) still missing credentials.`,
+      );
+    }
   }
 
   if (workflowUsesMcpOAuth2(/** @type {unknown[] | undefined} */ (local.nodes))) {
