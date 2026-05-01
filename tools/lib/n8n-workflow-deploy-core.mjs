@@ -89,25 +89,25 @@ export async function fetchCredentialsList(base, apiKey) {
 
 /**
  * Resolve which MCP OAuth2 credential reference to apply during deploy.
- * Priority: `N8N_MCP_OAUTH2_CREDENTIAL_ID` → `N8N_MCP_OAUTH2_RESOLVE_BY_NAME` (exact display name) → singleton `mcpOAuth2Api` on the instance.
+ * Priority: `N8N_MCP_CREDENTIAL_ID` → `N8N_MCP_CREDENTIAL_NAME` as exact n8n display name when id is unset → singleton `mcpOAuth2Api` on the instance.
+ * `N8N_MCP_CREDENTIAL_NAME` is also the optional `{name}` label in the workflow JSON when `N8N_MCP_CREDENTIAL_ID` is set.
  *
  * @param {Array<{ id: string; name: string; type: string }> | null} all
  * @returns {{ binding: { id: string; name: string } | null; source: McpOAuth2BindingSource }}
  */
 export function resolveMcpOAuth2CredentialBindingFromList(all) {
-  const explicitId = (process.env.N8N_MCP_OAUTH2_CREDENTIAL_ID || "").trim();
-  const explicitDisplayName = (process.env.N8N_MCP_OAUTH2_CREDENTIAL_NAME || "").trim();
+  const explicitId = (process.env.N8N_MCP_CREDENTIAL_ID || "").trim();
+  const credName = (process.env.N8N_MCP_CREDENTIAL_NAME || "").trim();
   if (explicitId) {
     return {
-      binding: { id: explicitId, name: explicitDisplayName || "MCP OAuth2 API" },
+      binding: { id: explicitId, name: credName || "MCP OAuth2 API" },
       source: "explicit",
     };
   }
 
-  const resolveByName = (process.env.N8N_MCP_OAUTH2_RESOLVE_BY_NAME || "").trim();
-  if (resolveByName && all) {
+  if (credName && all) {
     const mcpList = all.filter((c) => c.type === MCP_OAUTH2_CREDENTIAL_TYPE);
-    const matches = mcpList.filter((c) => c.name === resolveByName);
+    const matches = mcpList.filter((c) => c.name === credName);
     if (matches.length === 1) {
       return {
         binding: { id: matches[0].id, name: matches[0].name },
@@ -116,11 +116,11 @@ export function resolveMcpOAuth2CredentialBindingFromList(all) {
     }
     if (matches.length === 0) {
       console.warn(
-        `N8N_MCP_OAUTH2_RESOLVE_BY_NAME="${resolveByName}": no ${MCP_OAUTH2_CREDENTIAL_TYPE} credential with that exact display name on the instance.`,
+        `N8N_MCP_CREDENTIAL_NAME="${credName}": no ${MCP_OAUTH2_CREDENTIAL_TYPE} credential with that exact display name on the instance.`,
       );
     } else {
       console.warn(
-        `N8N_MCP_OAUTH2_RESOLVE_BY_NAME="${resolveByName}": ambiguous — ${matches.length} ${MCP_OAUTH2_CREDENTIAL_TYPE} credentials match that name (expected exactly one).`,
+        `N8N_MCP_CREDENTIAL_NAME="${credName}": ambiguous — ${matches.length} ${MCP_OAUTH2_CREDENTIAL_TYPE} credentials match that name (expected exactly one).`,
       );
     }
   }
@@ -134,7 +134,7 @@ export function resolveMcpOAuth2CredentialBindingFromList(all) {
   }
   if (list.length > 1) {
     console.warn(
-      `Multiple ${MCP_OAUTH2_CREDENTIAL_TYPE} credentials (${list.map((c) => c.name).join(", ")}). Set N8N_MCP_OAUTH2_CREDENTIAL_ID, N8N_MCP_OAUTH2_RESOLVE_BY_NAME, or use a single credential when merge leaves MCP nodes without credentials.`,
+      `Multiple ${MCP_OAUTH2_CREDENTIAL_TYPE} credentials (${list.map((c) => c.name).join(", ")}). Set N8N_MCP_CREDENTIAL_ID, N8N_MCP_CREDENTIAL_NAME (exact display name when id is unset), or use a single credential when merge leaves MCP nodes without credentials.`,
     );
   }
   return { binding: null, source: "none" };
