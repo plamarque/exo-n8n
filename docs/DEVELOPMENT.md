@@ -41,7 +41,7 @@ Publishing workflows must follow the **deployment validation policy** in [WORKFL
 
 ## Root `.env` for repository tooling
 
-Optional **local-only** file at the repository root (git-ignored). Use it for **n8n instance API** credentials consumed by [push-workflow-to-n8n-api.mjs](../tools/push-workflow-to-n8n-api.mjs) and [download-workflow-from-n8n-api.mjs](../tools/download-workflow-from-n8n-api.mjs), not for n8n workflow runtime variables (those stay in n8n **Variables** / per-workflow `config.env.example`).
+Optional **local-only** file at the repository root (git-ignored). Primary use: **n8n instance API** credentials for [push-workflow-to-n8n-api.mjs](../tools/push-workflow-to-n8n-api.mjs) and [download-workflow-from-n8n-api.mjs](../tools/download-workflow-from-n8n-api.mjs). It may also hold `**EXO_MCP_ENDPOINT`** (REST deploy injects MCP Client fallbacks) and **optional mirrors** of workflow `$vars` merged by the [exo-fixture-bootstrap](../.cursor/skills/exo-fixture-bootstrap/SKILL.md) skill—**n8n execution** still needs the same keys in **Variables** unless you sync manually. Per-workflow `[config.env.example](../workflows/wf02-document-validation/config.env.example)` documents the canonical key names.
 
 1. Copy `[.env.example](../.env.example)` → `.env` at the repo root.
 2. Set `N8N_BASE_URL` and `N8N_API_KEY`. For each **root** workflow under `workflows/<folder>/workflow.json`, set `N8N_WORKFLOW_ID_<SHORTID>` (shortId = folder name before the first `-`, or the full folder name if there is no hyphen; uppercase in env, e.g. `wf01` → `N8N_WORKFLOW_ID_WF01`, `unwrap` → `N8N_WORKFLOW_ID_UNWRAP`) **unless** the canonical `workflow.json` already contains a top-level `"id"` (remote n8n workflow id from that tenant’s export). Workflows without a root `id` still need the matching `N8N_WORKFLOW_ID_*` entry. See per-workflow `SPEC.technical.md` / `README.md` for reference ids.
@@ -85,7 +85,7 @@ This section is the **recommended setup for [Cursor](https://cursor.com/)** in t
 Prepare tenant ids for WF01–WF04 without inventing JSON manifests:
 
 - **Convention:** [FIXTURE_BOOTSTRAP_PROMPTS.md](FIXTURE_BOOTSTRAP_PROMPTS.md) (`workflows/*/fixtures/FIXTURE_BOOTSTRAP_PROMPT.md`).
-- **Cursor skill:** `[.cursor/skills/exo-fixture-bootstrap/SKILL.md](../.cursor/skills/exo-fixture-bootstrap/SKILL.md)` (MCP URL/auth confirmation, load Markdown prompts, emit `**local/generated-wf0x.env`**).
+- **Cursor skill:** `[.cursor/skills/exo-fixture-bootstrap/SKILL.md](../.cursor/skills/exo-fixture-bootstrap/SKILL.md)` (MCP URL/auth confirmation, load Markdown prompts, **merge** discovered keys into repository root `**.env`** with user conflict handling; optional `local/generated-wf0x.env` scratch copy).
 - **Tool inventory + bootstrap audits:** [EXO-MCP-WORKFLOW-TOOL-MAP.md](EXO-MCP-WORKFLOW-TOOL-MAP.md).
 
 ## Workflow lifecycle
@@ -150,7 +150,7 @@ There are two different configuration channels in this repository:
 
 - `workflow.json` is the canonical graph and is not templated by this repository.
 - Runtime variables are not expanded into `workflow.json` during local validation.
-- During execution, n8n resolves `$vars.*` from the target instance variable store.
+- During execution, n8n resolves `$vars.`* from the target instance variable store.
 
 ## Configuration
 

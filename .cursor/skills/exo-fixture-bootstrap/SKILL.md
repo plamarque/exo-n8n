@@ -4,7 +4,8 @@ description: >-
   Configure and use eXo MCP in Cursor to bootstrap demo data for portfolio workflows. Enumerates
   root workflow folders under workflows/ that contain fixtures/FIXTURE_BOOTSTRAP_PROMPT.md, loads
   those prompts as imperative natural-language instructions, follows SPEC + config.env.example,
-  emits gitignored env output. Use when preparing a tenant for n8n demos.
+  merges discovered KEY=value into the repository root .env (with user conflict resolution), and
+  optionally writes local/generated-<shortId>.env as a scratch copy. Use when preparing a tenant.
 ---
 
 # eXo fixture bootstrap (meta-skill)
@@ -43,8 +44,18 @@ description: >-
 1. **Read** `workflows/<folder>/fixtures/FIXTURE_BOOTSTRAP_PROMPT.md` end-to-end.
 2. **Read** the same folder’s **`SPEC.technical.md`** and **`config.env.example`** for exact **MCP tool names**, payload shapes, and **variable keys** (these override any drift in the prompt).
 3. Follow the prompt’s **ordered steps** using **search-then-create** (idempotent names). Call only tools the spec allows; note **gaps** where the prompt says MANUAL or n8n-only.
-4. **Output:** write **`local/generated-<shortId>.env`** (e.g. `local/generated-wf03.env`) at the repo root with `KEY=value` lines for every variable the workflow needs (from `config.env.example`), using discovered values or `MISSING=` comments. See [`local/README.md`](../../../local/README.md). **Do not commit** `*.env`.
-5. Remind the user to **paste** values into **n8n Variables** (or instance env) for the target workflow.
+4. **Output — merge into repository root `.env`** (primary):
+   - Build the **bootstrap map**: one entry per key in `config.env.example` (skip comment-only lines), using discovered values or a `# MISSING: <reason>` comment if you add a placeholder line (prefer omitting unset keys unless the prompt requires a stub).
+   - **Path:** `.env` at the **repository root** (same file as [`.env.example`](../../../.env.example); gitignored). If `.env` does **not** exist, tell the user to copy `.env.example` → `.env` first **or** create `.env` with only the merged keys plus a short header comment—**do not** overwrite a missing file silently if the user expected API keys elsewhere.
+   - **Parse safely:** preserve existing lines (comments, blanks, unrelated keys). For each bootstrap `KEY`:
+     - If **absent** from `.env`: append under a trailing marker block  
+       `# --- exo-fixture-bootstrap (<shortId>) ---`  
+       then `KEY=value`.
+     - If **present** and value **equals** (trimmed, ignore surrounding quotes rules consistent with existing file): skip.
+     - If **present** and value **differs**: **stop and ask the user** (e.g. AskQuestion): **Overwrite** with the newly discovered value or **Keep existing** (skip that key only). Do not pick silently. If the user aborts the whole run, leave `.env` unchanged from before this workflow.
+   - **Never** delete or reorder unrelated keys. Do not commit `.env`.
+5. **Optional scratch copy:** write **`local/generated-<shortId>.env`** with the same bootstrap map for that run (helps diffing). See [`local/README.md`](../../../local/README.md).
+6. **Remind:** root `.env` already drives **`EXO_MCP_ENDPOINT`** injection for REST deploy ([`tools/lib/n8n-workflow-deploy-core.mjs`](../../../tools/lib/n8n-workflow-deploy-core.mjs)). **`WF*_*` keys** are **not** read by deploy today—operators must still set matching **n8n `$vars`** for runtime (or copy from `.env`).
 
 ## Part D — Portfolio order and audits
 
@@ -57,7 +68,8 @@ If MCP **lacks** a tool for a step, document the gap in the operator response an
 | Artifact | Committed? |
 |----------|------------|
 | `FIXTURE_BOOTSTRAP_PROMPT.md` | Yes |
-| `local/generated-<shortId>.env` | **No** (gitignored via `*.env` and `local/*` exception rules) |
+| Repository root `.env` | **No** (gitignored); **primary** merge target for bootstrap keys |
+| `local/generated-<shortId>.env` | **No** (optional scratch copy) |
 | `.cursor/mcp.json` | **No** |
 
 ## Escalation

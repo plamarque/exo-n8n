@@ -15,6 +15,10 @@ docs/ARTICLE-FR-partenaires-eXo.md
 !.env.example
 !*.env.example
 
+# Generated fixture env under local/ (keep only README tracked)
+local/*
+!local/README.md
+
 # Cursor IDE: ignore everything under .cursor except shared rules, project skills, and mcp example (no secrets)
 .cursor/*
 !.cursor/rules/
