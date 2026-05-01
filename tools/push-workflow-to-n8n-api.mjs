@@ -56,8 +56,9 @@ Environment (from process env or repo root .env):
   N8N_API_KEY        API key (header X-N8N-API-KEY)
   N8N_WORKFLOW_ID_WF01 … N8N_WORKFLOW_ID_WF04, N8N_WORKFLOW_ID_UNWRAP (optional if workflow.json has top-level "id")
   Plus any N8N_WORKFLOW_ID_* keys listed in subworkflow-dependencies.json (e.g. N8N_WORKFLOW_ID_WF03_BUILD_REPORT)
-  N8N_MCP_OAUTH2_CREDENTIAL_ID   optional override for MCP Client nodes still missing credentials after merge
-  N8N_MCP_OAUTH2_CREDENTIAL_NAME optional display name for that override
+  N8N_MCP_OAUTH2_CREDENTIAL_ID       optional; when set, forces mcpOAuth2Api on all MCP Client (OAuth2) nodes
+  N8N_MCP_OAUTH2_CREDENTIAL_NAME     optional display label next to CREDENTIAL_ID only (not a lookup key)
+  N8N_MCP_OAUTH2_RESOLVE_BY_NAME     optional exact n8n credential display name when ID is unset; forces apply when unique match
   N8N_OPENAI_CREDENTIAL_ID       optional override for lmChatOpenAi nodes still missing credentials after merge
   N8N_OPENAI_CREDENTIAL_NAME     optional display name for that override
   N8N_OPENAI_REFERENCE_WORKFLOW_ID  optional: copy openAiApi ref from first lmChatOpenAi on that workflow id

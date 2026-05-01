@@ -84,23 +84,60 @@ export async function fetchCredentialsList(base, apiKey) {
 }
 
 /**
+ * @typedef {"explicit" | "resolveByName" | "singleton" | "none"} McpOAuth2BindingSource
+ */
+
+/**
+ * Resolve which MCP OAuth2 credential reference to apply during deploy.
+ * Priority: `N8N_MCP_OAUTH2_CREDENTIAL_ID` → `N8N_MCP_OAUTH2_RESOLVE_BY_NAME` (exact display name) → singleton `mcpOAuth2Api` on the instance.
+ *
  * @param {Array<{ id: string; name: string; type: string }> | null} all
+ * @returns {{ binding: { id: string; name: string } | null; source: McpOAuth2BindingSource }}
  */
 export function resolveMcpOAuth2CredentialBindingFromList(all) {
   const explicitId = (process.env.N8N_MCP_OAUTH2_CREDENTIAL_ID || "").trim();
-  const explicitName = (process.env.N8N_MCP_OAUTH2_CREDENTIAL_NAME || "").trim();
+  const explicitDisplayName = (process.env.N8N_MCP_OAUTH2_CREDENTIAL_NAME || "").trim();
   if (explicitId) {
-    return { id: explicitId, name: explicitName || "MCP OAuth2 API" };
+    return {
+      binding: { id: explicitId, name: explicitDisplayName || "MCP OAuth2 API" },
+      source: "explicit",
+    };
   }
-  if (!all) return null;
+
+  const resolveByName = (process.env.N8N_MCP_OAUTH2_RESOLVE_BY_NAME || "").trim();
+  if (resolveByName && all) {
+    const mcpList = all.filter((c) => c.type === MCP_OAUTH2_CREDENTIAL_TYPE);
+    const matches = mcpList.filter((c) => c.name === resolveByName);
+    if (matches.length === 1) {
+      return {
+        binding: { id: matches[0].id, name: matches[0].name },
+        source: "resolveByName",
+      };
+    }
+    if (matches.length === 0) {
+      console.warn(
+        `N8N_MCP_OAUTH2_RESOLVE_BY_NAME="${resolveByName}": no ${MCP_OAUTH2_CREDENTIAL_TYPE} credential with that exact display name on the instance.`,
+      );
+    } else {
+      console.warn(
+        `N8N_MCP_OAUTH2_RESOLVE_BY_NAME="${resolveByName}": ambiguous — ${matches.length} ${MCP_OAUTH2_CREDENTIAL_TYPE} credentials match that name (expected exactly one).`,
+      );
+    }
+  }
+
+  if (!all) {
+    return { binding: null, source: "none" };
+  }
   const list = all.filter((c) => c.type === MCP_OAUTH2_CREDENTIAL_TYPE);
-  if (list.length === 1) return { id: list[0].id, name: list[0].name };
+  if (list.length === 1) {
+    return { binding: { id: list[0].id, name: list[0].name }, source: "singleton" };
+  }
   if (list.length > 1) {
     console.warn(
-      `Multiple ${MCP_OAUTH2_CREDENTIAL_TYPE} credentials (${list.map((c) => c.name).join(", ")}). Set N8N_MCP_OAUTH2_CREDENTIAL_ID for fallback injection when merge leaves MCP nodes without credentials.`,
+      `Multiple ${MCP_OAUTH2_CREDENTIAL_TYPE} credentials (${list.map((c) => c.name).join(", ")}). Set N8N_MCP_OAUTH2_CREDENTIAL_ID, N8N_MCP_OAUTH2_RESOLVE_BY_NAME, or use a single credential when merge leaves MCP nodes without credentials.`,
     );
   }
-  return null;
+  return { binding: null, source: "none" };
 }
 
 /**
@@ -171,11 +208,17 @@ export function mergeCredentialsFromRemote(localNodes, remoteNodes) {
 }
 
 /**
+ * Attach `mcpOAuth2Api` to MCP Client nodes using OAuth2 authentication.
+ * When `force` is true, overwrites existing references (used for explicit id / resolve-by-name).
+ * When false, only nodes with a missing reference are updated (singleton heuristic).
+ *
  * @param {unknown[] | undefined} nodes
  * @param {{ id: string; name: string } | null} binding
+ * @param {{ force?: boolean }} [opts]
  * @returns {number}
  */
-export function injectMcpOAuth2CredentialsMissing(nodes, binding) {
+export function applyMcpOAuth2CredentialBinding(nodes, binding, opts = {}) {
+  const force = opts.force === true;
   if (!binding || !Array.isArray(nodes)) return 0;
   let count = 0;
   for (const node of nodes) {
@@ -189,7 +232,7 @@ export function injectMcpOAuth2CredentialsMissing(nodes, binding) {
     ) {
       continue;
     }
-    if (!credentialRefMissing(node, MCP_OAUTH2_CREDENTIAL_TYPE)) continue;
+    if (!force && !credentialRefMissing(node, MCP_OAUTH2_CREDENTIAL_TYPE)) continue;
     /** @type {{ credentials?: Record<string, { id: string; name: string }> }} */ (node).credentials = {
       ...(/** @type {{ credentials?: Record<string, { id: string; name: string }> }} */ (node).credentials || {}),
       [MCP_OAUTH2_CREDENTIAL_TYPE]: { id: binding.id, name: binding.name },
@@ -345,15 +388,24 @@ export async function applyCredentialMergeAndFallbacks(local, remote, base, apiK
   }
 
   const credList = await fetchCredentialsList(base, apiKey);
-  const mcpBinding = resolveMcpOAuth2CredentialBindingFromList(credList);
-  const filledMcp = injectMcpOAuth2CredentialsMissing(
+  const mcpResolution = resolveMcpOAuth2CredentialBindingFromList(credList);
+  const mcpForceApply =
+    mcpResolution.source === "explicit" || mcpResolution.source === "resolveByName";
+  const filledMcp = applyMcpOAuth2CredentialBinding(
     /** @type {unknown[] | undefined} */ (local.nodes),
-    mcpBinding,
+    mcpResolution.binding,
+    { force: mcpForceApply },
   );
   if (filledMcp > 0) {
-    console.log(
-      `Fallback: attached ${MCP_OAUTH2_CREDENTIAL_TYPE} to ${filledMcp} MCP Client node(s) still missing credentials.`,
-    );
+    if (mcpForceApply) {
+      console.log(
+        `Fallback: applied ${MCP_OAUTH2_CREDENTIAL_TYPE} to ${filledMcp} MCP Client node(s) (${mcpResolution.source}; overwrites existing references).`,
+      );
+    } else {
+      console.log(
+        `Fallback: attached ${MCP_OAUTH2_CREDENTIAL_TYPE} to ${filledMcp} MCP Client node(s) still missing credentials.`,
+      );
+    }
   }
 
   let openAiBinding = resolveOpenAiCredentialBindingFromList(credList);
