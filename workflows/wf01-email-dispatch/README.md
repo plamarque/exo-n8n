@@ -66,7 +66,7 @@ Set these in **n8n Variables** (or equivalent instance env mapping), because the
 | `WF01_PROJECT_ID`  | Target eXo project id for created tasks (optional; workflow default applies when missing). | n8n Variables.                          |
 
 
-Repository root `.env` is different: it is only for repo tooling (`N8N_*` deploy/pull settings), not for WF01 runtime business variables.
+Repository root `.env` also supplies **`N8N_*`** API settings and, when present, **`EXO_MCP_ENDPOINT`** / **`WF01_PROJECT_ID`** for REST deploy: push rewrites MCP endpoint expressions and the **`WF01_PROJECT_ID` fallback literal** in memory before PUT ([docs/DEVELOPMENT.md](../../../docs/DEVELOPMENT.md)); n8n **`$vars`** still override at runtime when set.
 
 ## High-level flow (conceptual)
 

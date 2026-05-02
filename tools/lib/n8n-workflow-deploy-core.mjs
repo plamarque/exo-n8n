@@ -326,6 +326,155 @@ export function applyExoMcpEndpointDeployOverride(nodes) {
   return count;
 }
 
+/** Portfolio workflow keys mirrored as n8n `$vars.*`; REST deploy may rewrite fallback literals from root `.env`. */
+export const PORTFOLIO_INTEGER_VAR_KEYS = [
+  "WF01_PROJECT_ID",
+  "WF02_PROJECT_ID",
+  "WF02_INPROGRESS_STATUS_ID",
+  "WF02_DONE_STATUS_ID",
+  "WF03_SPACE_ID",
+  "WF03_PROJECT_ID",
+  "WF03_TEMPLATE_NOTE_ID",
+  "WF03_REPORTS_PARENT_NOTE_ID",
+  "WF03_AGENDA_PARENT_EVENT_ID",
+  "WF03_STAGNATION_DAYS",
+  "WF03_BLOCKED_DAYS",
+  "WF03_OVERLOAD_THRESHOLD",
+];
+
+/**
+ * Escape `value` for use inside a JavaScript single-quoted literal embedded in an n8n expression.
+ * @param {string} s
+ */
+export function escapeSingleQuotedJsStringLiteral(s) {
+  return String(s).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+}
+
+/**
+ * @param {unknown} value
+ * @param {(s: string) => string} fn
+ * @returns {unknown}
+ */
+function mapDeepStringsInPlace(value, fn) {
+  if (typeof value === "string") return fn(value);
+  if (Array.isArray(value)) {
+    for (let i = 0; i < value.length; i++) {
+      value[i] = mapDeepStringsInPlace(value[i], fn);
+    }
+    return value;
+  }
+  if (value && typeof value === "object") {
+    for (const k of Object.keys(value)) {
+      /** @type {Record<string, unknown>} */ (value)[k] = mapDeepStringsInPlace(
+        /** @type {Record<string, unknown>} */ (value)[k],
+        fn,
+      );
+    }
+    return value;
+  }
+  return value;
+}
+
+/**
+ * Rewrite expression fragments using each portfolio env key when set (same key name as `$vars`).
+ * Mutates strings in-place under each workflow node.
+ *
+ * @param {unknown[] | undefined} nodes
+ * @returns {number} nodes whose serialized shape changed after rewriting
+ */
+export function applyN8nPortfolioVarsFallbackOverrides(nodes) {
+  if (!Array.isArray(nodes)) return 0;
+
+  /** @param {string} str */
+  function applyRules(str) {
+    let out = str;
+
+    for (const key of PORTFOLIO_INTEGER_VAR_KEYS) {
+      const raw = (process.env[key] || "").trim();
+      if (!raw) continue;
+      if (!/^\d+$/.test(raw)) {
+        console.warn(
+          `${key} is set but invalid (expected digits only); skipping portfolio var fallback injection.`,
+        );
+        continue;
+      }
+      const re = new RegExp(`(\\$vars\\.${key}\\s*\\|\\|\\s*)\\d+`, "g");
+      out = out.replace(re, `$1${raw}`);
+    }
+
+    const folderRaw = (process.env.WF02_PARENT_FOLDER_ID || "").trim();
+    if (folderRaw) {
+      if (!/^[a-f0-9]+$/i.test(folderRaw)) {
+        console.warn(
+          "WF02_PARENT_FOLDER_ID is set but invalid (expected hex folder id); skipping portfolio var fallback injection.",
+        );
+      } else {
+        out = out.replace(
+          /(\(\(\$vars\.WF02_PARENT_FOLDER_ID && String\(\$vars\.WF02_PARENT_FOLDER_ID\)\.trim\(\)\)\s*\|\|\s*")([a-f0-9]+)(")/gi,
+          `$1${folderRaw}$3`,
+        );
+      }
+    }
+
+    const approvalRaw = (process.env.WF02_APPROVAL_BASE_URL || "").trim();
+    if (approvalRaw) {
+      if (!/^https?:\/\//i.test(approvalRaw)) {
+        console.warn(
+          "WF02_APPROVAL_BASE_URL is set but invalid (expected http(s) URL); skipping portfolio var fallback injection.",
+        );
+      } else {
+        const escaped = escapeN8nExpressionStringLiteral(approvalRaw);
+        out = out.replace(/(\$vars\.WF02_APPROVAL_BASE_URL\s*\|\|\s*")[^"]*(")/g, `$1${escaped}$2`);
+      }
+    }
+
+    const attendeeRaw = (process.env.WF03_ATTENDEE_USERNAMES || "").trim();
+    if (attendeeRaw) {
+      const esc = escapeSingleQuotedJsStringLiteral(attendeeRaw);
+      out = out.replace(
+        /(\$vars\.WF03_ATTENDEE_USERNAMES\s*\|\|\s*')([^'\\]|\\.)*(')/g,
+        `$1${esc}$3`,
+      );
+    }
+
+    const ownerRaw = (process.env.WF03_MEETING_OWNER || "").trim();
+    if (ownerRaw) {
+      const esc = escapeSingleQuotedJsStringLiteral(ownerRaw);
+      out = out.replace(
+        /(\$vars\.WF03_MEETING_OWNER\s*\|\|\s*')([^'\\]|\\.)*(')/g,
+        `$1${esc}$3`,
+      );
+    }
+
+    const spaceRaw = (process.env.EXO_SPACE_NAME || "").trim();
+    if (spaceRaw) {
+      const escaped = escapeN8nExpressionStringLiteral(spaceRaw);
+      out = out.replace(
+        /(\$vars\.EXO_SPACE_NAME\s*\|\|\s*")(?:[^"\\]|\\.)*(")/g,
+        `$1${escaped}$2`,
+      );
+    }
+
+    return out;
+  }
+
+  let touched = 0;
+  for (const node of nodes) {
+    if (!node || typeof node !== "object") continue;
+    const before = JSON.stringify(node);
+    mapDeepStringsInPlace(node, applyRules);
+    if (JSON.stringify(node) !== before) touched++;
+  }
+
+  if (touched > 0) {
+    console.log(
+      `Injected portfolio $vars fallback literals from repository root .env (${touched} workflow node object(s) updated).`,
+    );
+  }
+
+  return touched;
+}
+
 /**
  * Attach `openAiApi` to `lmChatOpenAi` nodes.
  * When `force` is true, overwrites existing references (explicit id, resolve-by-name, or reference workflow).
@@ -662,6 +811,7 @@ export async function fetchMergeAndPutWorkflow(opts) {
   }
   await applyCredentialMergeAndFallbacks(local, remote, base, apiKey);
   applyExoMcpEndpointDeployOverride(/** @type {unknown[] | undefined} */ (local.nodes));
+  applyN8nPortfolioVarsFallbackOverrides(/** @type {unknown[] | undefined} */ (local.nodes));
   const payload = buildWorkflowPutPayload(local);
   if (dryRun) {
     console.log("Dry run — would PUT", label || remoteId, url);

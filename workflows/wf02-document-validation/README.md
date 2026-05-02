@@ -65,7 +65,7 @@ Set these in **n8n Variables** (or equivalent instance env mapping), because WF0
 | `WF02_DONE_STATUS_ID` | Project status id used when both approvals are `APPROVED`. | n8n Variables. |
 | `WF02_APPROVAL_BASE_URL` | Hosted n8n **Form** URL used in task comments for reviewer links. | n8n Variables. |
 
-Use `config.env.example` as a naming/meaning template, then copy values into n8n Variables for your tenant.
+Use `config.env.example` as a naming/meaning template. Copy values into **n8n Variables** and/or repository root **`.env`**: REST deploy rewrites **`$vars` fallback literals** from `.env` when keys are set ([docs/DEVELOPMENT.md](../../docs/DEVELOPMENT.md)).
 
 ## High-level flow (conceptual)
 

@@ -27,7 +27,7 @@
             {
               "id": "1",
               "name": "spaceName",
-              "value": "={{ $vars.EXO_SPACE_NAME }}",
+              "value": "={{ $vars.EXO_SPACE_NAME || \"Festival Art2Rue - Documents\" }}",
               "type": "string"
             }
           ]

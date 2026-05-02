@@ -12,7 +12,7 @@
 
 Runtime inputs:
 
-- `EXO_SPACE_NAME` via n8n `$vars` - required.
+- `EXO_SPACE_NAME` via n8n **`$vars.EXO_SPACE_NAME`** when set; otherwise the canonical graph uses a **demo fallback literal** (REST deploy may replace that literal from repository root `.env`). Operators must align the resolved name with a real space on the tenant.
 
 Connectivity and credentials:
 
@@ -49,7 +49,7 @@ The workflow expects MCP responses that can be either wrapped text JSON or direc
 ## 4) Technical sequence
 
 1. Trigger (`Manual Start` or daily schedule).
-2. Validate input (`EXO_SPACE_NAME` must not be empty).
+2. Validate input (resolved space name must not be empty after trim — `$vars` overrides demo fallback literal).
 3. Ensure tracking table `exo_processed_documents` exists.
 4. Resolve target space (`get_my_spaces` -> `spaceId`).
 5. List candidates (`search_documents`) and normalize fields.
@@ -90,7 +90,7 @@ Category labels are matched against the category tree to resolve `category_id` v
 
 Validation checklist:
 
-1. Set `$vars.EXO_SPACE_NAME` to an existing target space.
+1. Set **`$vars.EXO_SPACE_NAME`** to an existing target space on the instance (or rely on the canonical fallback literal after aligning `.env` / demo export with your tenant).
 2. Run manually and confirm selection of new/changed docs.
 3. Verify generated structured output.
 4. Verify description/category updates in eXo.
@@ -99,7 +99,7 @@ Validation checklist:
 Operational notes:
 
 - Workflow is MCP-first (no REST fallback path documented).
-- Empty/missing `EXO_SPACE_NAME` is a deliberate hard stop.
+- Trim-empty resolved space name is a deliberate hard stop before MCP reads (`$vars` unset falls through to the demo fallback literal unless rewritten at deploy).
 - Batch cap is a safety guard; increase only with quota/throughput review.
 
 Suggested follow-ups:

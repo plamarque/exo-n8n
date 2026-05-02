@@ -22,7 +22,7 @@ Without steady upkeep, document libraries accumulate **weak titles**, **missing 
 
 ## Automation objective
 
-- **Require** a configured space name (fail fast if missing).
+- **Resolve** a space name from **`$vars.EXO_SPACE_NAME`** when set, otherwise the **demo fallback literal** in `workflow.json` (REST deploy may replace that literal from root `.env`). Fail fast when the trimmed value is empty.
 - **Ensure** a tracking table exists for processed documents.
 - **List** space documents, **normalize** fields, and **filter** to items that are new or **changed** since last run.
 - For each selected item: **read** full document context, **load category tree**, run **structured** LLM analysis, **update description**, **assign categories** by resolved ids.
@@ -43,7 +43,7 @@ Without steady upkeep, document libraries accumulate **weak titles**, **missing 
 
 | Prerequisite | Why |
 |--------------|-----|
-| **`$vars.EXO_SPACE_NAME`** set (strict) | Same as space name on eXo; no default. |
+| **`$vars.EXO_SPACE_NAME`** when set | Overrides the canonical demo fallback literal; must match an eXo space name. |
 | **MCP Client** + endpoint | All reads and writes are MCP-first. |
 | **OpenAI** (or configured **lmChatOpenAi**) for **`gpt-4o-mini`** structured output | As in [SPEC.technical.md](SPEC.technical.md) §2–3. |
 | **Data Table** `exo_processed_documents` | Auto-created by the graph for **idempotency**; no manual bootstrap. |
@@ -56,15 +56,15 @@ Set these in **n8n Variables** (or equivalent instance env mapping), because WF0
 
 | Variable | Meaning | Where to set |
 |----------|---------|--------------|
-| `EXO_SPACE_NAME` | Target eXo space name (required, strict). | n8n Variables. |
+| `EXO_SPACE_NAME` | Target eXo space name (`$vars` overrides demo fallback literal in `workflow.json`). | n8n Variables (optional); REST deploy may rewrite fallback from root `.env`. |
 | `EXO_MCP_ENDPOINT` | MCP endpoint used by WF04 MCP nodes. | n8n Variables (or node-level default expression). |
 
-WF04's runtime behavior depends on these variables in n8n; root `.env` remains reserved for repository deploy/pull tooling.
+Root `.env` may mirror `EXO_SPACE_NAME` / `EXO_MCP_ENDPOINT` for tooling and **REST deploy**: push scripts rewrite MCP endpoint expressions and portfolio **`$vars` fallback literals** from `.env` before PUT when keys are set ([docs/DEVELOPMENT.md](../../../docs/DEVELOPMENT.md)).
 
 ## High-level flow (conceptual)
 
 1. **Trigger** — manual start or daily schedule.
-2. **Validate input** — require `$vars.EXO_SPACE_NAME` (strict).
+2. **Validate input** — require non-empty trimmed space name after resolving **`$vars`** or demo fallback.
 3. **Bootstrap** — create `exo_processed_documents` Data Table if needed.
 4. **Resolve space** — `get_my_spaces` → pick id by name.
 5. **Search & normalize** — `search_documents`, map ids and timestamps.
@@ -97,7 +97,7 @@ Tools used (see [SPEC.technical.md](SPEC.technical.md)):
 
 ## Operational considerations
 
-- **`EXO_SPACE_NAME`** — mandatory `$vars` setting; workflow stops if empty ([SPEC.functional.md](SPEC.functional.md)).
+- **`EXO_SPACE_NAME`** — set **`$vars`** on the instance or rely on the canonical fallback literal (updated at REST deploy when present in root `.env`). The IF node stops when the trimmed resolved value is empty ([SPEC.functional.md](SPEC.functional.md)).
 - **Tenant differences** — category names and ids vary; always resolve via **`get_category_tree`** output rather than hardcoding ids except in demos.
 - **Snapshots** — secondary exports under `fixtures/` are for traceability, not canonical graphs ([SPEC.technical.md](SPEC.technical.md)).
 
@@ -127,7 +127,7 @@ Tools used (see [SPEC.technical.md](SPEC.technical.md)):
 ## Runtime behavior (summary)
 
 - Manual trigger or daily schedule (e.g. 02:00).
-- Requires `$vars.EXO_SPACE_NAME` (strict).
+- Resolves space name from **`$vars.EXO_SPACE_NAME`** or demo fallback literal (trim-empty stops).
 - eXo MCP for spaces, documents, categories.
 - `gpt-4o-mini` with structured output for description and categories.
 - Data table `exo_processed_documents` for idempotency.
