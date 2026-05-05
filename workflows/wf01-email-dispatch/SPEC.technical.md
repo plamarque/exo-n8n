@@ -63,7 +63,7 @@ Assign task (`assign_task`):
 ## 4) Technical sequence
 
 1. Trigger (`Manual Start` or `Intake Every 5m`).
-2. `MCP List Emails` (`list_emails`, limit/offset).
+2. `MCP List Emails` (`list_emails`, empty JSON object `{}` — the tenant MCP tool does not accept pagination fields such as `limit` / `offset`).
 3. `Unwrap MCP Emails`.
 4. `Split Out Emails` (one item per message).
 5. `Normalize Email` and `Filter - Has Email ID`.

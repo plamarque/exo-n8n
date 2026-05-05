@@ -28,7 +28,7 @@
           "value": "list_emails"
         },
         "inputMode": "json",
-        "jsonInput": "{\"limit\":50,\"offset\":0}",
+        "jsonInput": "{}",
         "options": {
           "timeout": 60000
         }

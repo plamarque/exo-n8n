@@ -27,7 +27,7 @@ Ensure **eXo MCP** can **list mailbox traffic**, **create tasks** in a known **p
 2. Call `**list_projects`** (per WF02 discovery pattern—same tenancy tool surface). Search results for `**DEMO_PROJECT_NAME`** (case-insensitive substring acceptable unless tenant forbids).
   - If no match and MCP exposes **no** create-project tool: **MANUAL** — create project in eXo UI, repeat `**list_projects`**.
   - Capture numeric `**project_id`** → `**WF01_PROJECT_ID`** (graph defaults to `**3**` if unset—override on non-demo tenants).
-3. Optionally call `**list_emails**` with small limit to prove mailbox visibility (non-empty optional depending on tenant mail volume).
+3. Optionally call `**list_emails**` (no arguments) to prove mailbox visibility (non-empty optional depending on tenant mail volume).
 4. **Merge** into repository root **`.env`** (see meta-skill Part C): at least `EXO_MCP_ENDPOINT`, `WF01_PROJECT_ID`; ask the user on conflicting existing values (overwrite vs keep). Optionally also write `local/generated-wf01.env` as a scratch copy.
 
 ## Fixture files (paths)
