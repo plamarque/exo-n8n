@@ -51,7 +51,7 @@ WF03 binds to **specific eXo objects** (space, notes, project, agenda). On a **n
 
 | Prerequisite | Why |
 |--------------|-----|
-| **MCP OAuth** + **`EXO_MCP_ENDPOINT`** | Notes, tasks, agenda calls. |
+| **MCP OAuth** + tenant MCP URL (`npm run generate:workflow-json` or edit nodes) | Notes, tasks, agenda calls. |
 | **OpenAI** (or equivalent) for LLM nodes | Agenda / watch suggestions. |
 | **Three sub-workflows** deployed: Unwrap + **WF03 build report** + **WF03 compose** | Parent **Execute Workflow** references; set **`N8N_WORKFLOW_ID_UNWRAP`**, **`N8N_WORKFLOW_ID_WF03_BUILD_REPORT`**, **`N8N_WORKFLOW_ID_WF03_COMPOSE`** for REST deploy ([subworkflow-dependencies.json](subworkflow-dependencies.json), [Import and deploy](#import-and-deploy)). |
 
@@ -63,7 +63,7 @@ Set these in **n8n Variables** (or equivalent instance env mapping), because WF0
 
 | Variable | Meaning | Where to set |
 |----------|---------|--------------|
-| `EXO_MCP_ENDPOINT` | MCP endpoint for notes/tasks/agenda calls. | n8n Variables. |
+| `EXO_MCP_ENDPOINT` | MCP endpoint for notes/tasks/agenda calls. | Root `.env` → **`npm run generate:workflow-json`**. |
 | `WF03_SPACE_ID` | eXo space id used by the workflow scope. | n8n Variables. |
 | `WF03_PROJECT_ID` | eXo project id used for the progress report table. | n8n Variables. |
 | `WF03_TEMPLATE_NOTE_ID` | Template note id used as source content. | n8n Variables. |
@@ -162,4 +162,4 @@ WF03’s main graph favors **Set**, **Execute Workflow** (shared unwrap + two WF
 
 **REST (recommended):** From the repo root, `./tools/deploy.sh wf03` (see [docs/DEVELOPMENT.md](../../docs/DEVELOPMENT.md#portfolio-deploy-dependencies-manifest)). First-time UTILs on a new n8n tenant: `./tools/deploy.sh wf03 --create-missing-deps`, then add printed lines to `.env`. Use `./tools/deploy.sh wf03 --dry-run` to print PUT targets (GETs still run for credential merge). Use `./tools/deploy.sh wf03 --no-deps` only if you intentionally skip the manifest.
 
-**Manual UI:** Import [UTIL - Unwrap MCP JSON](../unwrap-mcp-json/workflow.json), [UTIL - WF03 build report context](subworkflows/wf03-build-report-context/workflow.json), and [UTIL - WF03 compose steering note HTML](subworkflows/wf03-compose-steering-note-html/workflow.json); align **Execute Workflow** ids in `workflow.json` if your instance assigned different ids. Then import `workflow.json` (or MCP `validate_workflow` / `update_workflow`). Set `EXO_MCP_ENDPOINT` and the `WF03_`* variables from the graph / technical specs; verify MCP OAuth and OpenAI on the target instance.
+**Manual UI:** Import [UTIL - Unwrap MCP JSON](../unwrap-mcp-json/workflow.json), [UTIL - WF03 build report context](subworkflows/wf03-build-report-context/workflow.json), and [UTIL - WF03 compose steering note HTML](subworkflows/wf03-compose-steering-note-html/workflow.json); align **Execute Workflow** ids in `workflow.json` if your instance assigned different ids. Then import `workflow.json` (or MCP `validate_workflow` / `update_workflow`). Use **`npm run generate:workflow-json`** (root `.env`) or n8n Variables so MCP **`endpointUrl`** and `WF03_*` match your tenant; verify MCP OAuth and OpenAI on the target instance.

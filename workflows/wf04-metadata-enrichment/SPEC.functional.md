@@ -26,8 +26,8 @@ The workflow targets eXo document governance with scheduled, incremental runs:
 
 ## 4) Current product limits
 
-1. Canonical `workflow.json` carries a **demo fallback literal** after `$vars.EXO_SPACE_NAME`; execution uses **n8n Variables when set**, otherwise that literal (REST deploy may rewrite the literal from repository root `.env`). Operators must align the resolved name with a real space on the tenant or runs target the wrong library by design.
-2. MCP endpoint may be duplicated in several nodes (see technical spec).
+1. Canonical `workflow.json` carries a **demo fallback literal** after `$vars.EXO_SPACE_NAME`; execution uses **n8n Variables when set**, otherwise that literal (**`npm run generate:workflow-json`** may hardcode from repository root `.env`). Operators must align the resolved name with a real space on the tenant or runs target the wrong library by design.
+2. MCP **`endpointUrl`** is repeated on each MCP Client node as a **plain URL** (demo literal in git until **`npm run generate:workflow-json`** applies **`EXO_MCP_ENDPOINT`**).
 3. Hard cap: 5 documents per run.
 4. No rollback if description update succeeds but category assign fails (partially handled with explicit stops).
 

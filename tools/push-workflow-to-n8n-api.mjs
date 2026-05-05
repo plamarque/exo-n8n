@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 /**
  * Push canonical workflow.json to n8n via REST API (PUT /api/v1/workflows/:id).
- * Loads `.env` from the repository root (see root `.env.example`).
+ * Loads `.env` from the repository root (see root `.env.example`). Before each PUT/POST, applies
+ * **`EXO_MCP_ENDPOINT`** (MCP Client URLs) and portfolio **`WF*_*` / `EXO_SPACE_NAME`** fallback
+ * rewrites in memory (see `applyPortfolioEnvOverridesBeforePush`). Optional: **`npm run generate:workflow-json`**
+ * to persist literals into `workflow.json` on disk (removes `$vars` indirection in saved files).
  *
  * When `subworkflow-dependencies.json` exists next to the root `workflow.json`,
  * deploys those sub-workflows first (same credential merge as the parent), injects
@@ -28,8 +31,7 @@ import {
 } from "./lib/n8n-workflow-portfolio.mjs";
 import {
   applyCredentialMergeAndFallbacks,
-  applyExoMcpEndpointDeployOverride,
-  applyN8nPortfolioVarsFallbackOverrides,
+  applyPortfolioEnvOverridesBeforePush,
   buildWorkflowPostPayload,
   buildWorkflowPutPayload,
   fetchMergeAndPutWorkflow,
@@ -61,8 +63,7 @@ are deployed first by default (then parent).
 Environment (from process env or repo root .env):
   N8N_BASE_URL       n8n instance base URL (no trailing slash)
   N8N_API_KEY        API key (header X-N8N-API-KEY)
-  EXO_MCP_ENDPOINT   optional; tenant MCP URL — injects MCP Client endpointUrl fallback before PUT (same name as n8n $vars.EXO_MCP_ENDPOINT)
-  WF01_PROJECT_ID, WF02_* … EXO_SPACE_NAME  optional; when set, REST deploy rewrites matching $vars fallback literals in workflow expressions before PUT (see docs/DEVELOPMENT.md)
+  EXO_MCP_ENDPOINT, WF01_PROJECT_ID, WF02_* … EXO_SPACE_NAME  optional; applied **in memory** before each PUT/POST (MCP URLs + $vars fallback literals). Run **npm run generate:workflow-json** instead if you want those values written into workflow.json on disk (see docs/DEVELOPMENT.md)
   N8N_WORKFLOW_ID_<SHORTID> for each root workflow (e.g. N8N_WORKFLOW_ID_WF01, N8N_WORKFLOW_ID_UNWRAP), optional if workflow.json has top-level "id"
   Plus any N8N_WORKFLOW_ID_* keys listed in subworkflow-dependencies.json (e.g. N8N_WORKFLOW_ID_WF03_BUILD_REPORT)
   N8N_MCP_CREDENTIAL_ID              optional; when set, forces mcpOAuth2Api on all MCP Client (OAuth2) nodes
@@ -126,8 +127,7 @@ async function deployDeclaredSubworkflows(
       );
     }
     if (!remoteId && createMissingDeps) {
-      applyExoMcpEndpointDeployOverride(/** @type {unknown[] | undefined} */ (localDep.nodes));
-      applyN8nPortfolioVarsFallbackOverrides(/** @type {unknown[] | undefined} */ (localDep.nodes));
+      applyPortfolioEnvOverridesBeforePush(/** @type {unknown[] | undefined} */ (localDep.nodes));
       const created = await postCreateWorkflow(base, key, buildWorkflowPostPayload(localDep));
       remoteId = created.id;
       console.log(`Created sub-workflow on n8n: ${created.name} (${remoteId}). Add to repository root .env:`);
@@ -247,8 +247,7 @@ async function deployOneWorkflow(repoRoot, portfolioId, opts) {
   }
 
   await applyCredentialMergeAndFallbacks(local, remote, base, key);
-  applyExoMcpEndpointDeployOverride(/** @type {unknown[] | undefined} */ (local.nodes));
-  applyN8nPortfolioVarsFallbackOverrides(/** @type {unknown[] | undefined} */ (local.nodes));
+  applyPortfolioEnvOverridesBeforePush(/** @type {unknown[] | undefined} */ (local.nodes));
   const payload = buildWorkflowPutPayload(local);
 
   if (wasActive) {

@@ -21,7 +21,7 @@ Publishing **SDK `code`** without going through the same `workflow.json` validat
 ## Prerequisites
 
 - **Normative policy:** [docs/WORKFLOW.md](../../../docs/WORKFLOW.md#deployment-validation-policy) (*Deployment validation policy*). Local validation on `workflow.json` is **mandatory** before any publish.
-- **REST push credentials:** copy [`.env.example`](../../../.env.example) → **`.env`** at the repository root; set `N8N_BASE_URL` and `N8N_API_KEY`. Set `N8N_WORKFLOW_ID_<SHORTID>` when the canonical `workflow.json` has no top-level `id` (see [docs/DEVELOPMENT.md — Root workflow shortId](../../../docs/DEVELOPMENT.md#root-workflow-shortid)). Optionally set **`EXO_MCP_ENDPOINT`** (same name as n8n `$vars.EXO_MCP_ENDPOINT`) so REST deploy injects the MCP Client `endpointUrl` fallback literal before `PUT`, and **`WF01_PROJECT_ID`**, **`WF02_*`**, **`WF03_*`**, **`EXO_SPACE_NAME`** so portfolio **`$vars || …`** fallback literals match your tenant — see [docs/DEVELOPMENT.md — REST deploy to n8n](../../../docs/DEVELOPMENT.md#rest-deploy-to-n8n).
+- **REST push credentials:** copy [`.env.example`](../../../.env.example) → **`.env`** at the repository root; set `N8N_BASE_URL` and `N8N_API_KEY`. Set `N8N_WORKFLOW_ID_<SHORTID>` when the canonical `workflow.json` has no top-level `id` (see [docs/DEVELOPMENT.md — Root workflow shortId](../../../docs/DEVELOPMENT.md#root-workflow-shortid)). Set **`EXO_MCP_ENDPOINT`** (and optional **`WF01_PROJECT_ID`**, **`WF02_*`**, **`WF03_*`**, **`EXO_SPACE_NAME`**) so REST deploy injects MCP URLs and portfolio fallback literals **in memory** before PUT (`applyPortfolioEnvOverridesBeforePush`). Optionally run **`npm run generate:workflow-json`** to persist the same into `workflow.json` on disk — see [docs/DEVELOPMENT.md — Generate workflow JSON from `.env`](../../../docs/DEVELOPMENT.md#generate-workflow-json-from-env).
 - **Cursor and MCP (SDK path only):** [docs/DEVELOPMENT.md](../../../docs/DEVELOPMENT.md#cursor-and-mcp-recommended). Copy [`.cursor/mcp.json.example`](../../mcp.json.example) to a **local, git-ignored** `.cursor/mcp.json`; never commit real secrets.
 - **Tooling commands:** [docs/DEVELOPMENT.md](../../../docs/DEVELOPMENT.md#useful-scripts) (`npm run validate:workflows`, [validate-workflow.sh](../../../tools/validate-workflow.sh)).
 
@@ -46,7 +46,7 @@ MCP `validate_workflow` does **not** apply to this path.
 ### 2b. Optional: emit SDK code for the n8n MCP (when using MCP to deploy, not JSON import)
 
 - `./tools/validate-workflow.sh wf01 --emit-sdk` (writes `work/wf01.generated.mjs` by default, git-ignored) **after** local validation passes.
-- Read the generated file content as the MCP `code` string. The MCP `validate_workflow` tool only accepts **fluent SDK `code`**, not raw `workflow.json`.
+- Read the generated file content as the MCP `code` string. The MCP `validate_workflow` tool only accepts **fluent SDK `code`**, not raw `workflow.json`. Regenerate from the **current** canonical `workflow.json` (after **`npm run generate:workflow-json`** if you bake tenant URLs from `.env`).
 
 ### 3. n8n MCP: validate then update (recommended when passing SDK `code`)
 

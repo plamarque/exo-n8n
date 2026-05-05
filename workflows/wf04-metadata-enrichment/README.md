@@ -22,7 +22,7 @@ Without steady upkeep, document libraries accumulate **weak titles**, **missing 
 
 ## Automation objective
 
-- **Resolve** a space name from **`$vars.EXO_SPACE_NAME`** when set, otherwise the **demo fallback literal** in `workflow.json` (REST deploy may replace that literal from root `.env`). Fail fast when the trimmed value is empty.
+- **Resolve** a space name from **`$vars.EXO_SPACE_NAME`** when set, otherwise the **demo fallback literal** in `workflow.json` (**`npm run generate:workflow-json`** may hardcode from root `.env`). Fail fast when the trimmed value is empty.
 - **Ensure** a tracking table exists for processed documents.
 - **List** space documents, **normalize** fields, and **filter** to items that are new or **changed** since last run.
 - For each selected item: **read** full document context, **load category tree**, run **structured** LLM analysis, **update description**, **assign categories** by resolved ids.
@@ -56,10 +56,10 @@ Set these in **n8n Variables** (or equivalent instance env mapping), because WF0
 
 | Variable | Meaning | Where to set |
 |----------|---------|--------------|
-| `EXO_SPACE_NAME` | Target eXo space name (`$vars` overrides demo fallback literal in `workflow.json`). | n8n Variables (optional); REST deploy may rewrite fallback from root `.env`. |
-| `EXO_MCP_ENDPOINT` | MCP endpoint used by WF04 MCP nodes. | n8n Variables (or node-level default expression). |
+| `EXO_SPACE_NAME` | Target eXo space name (`$vars` overrides demo fallback literal in `workflow.json`). | n8n Variables (optional); or root `.env` + **`npm run generate:workflow-json`**. |
+| `EXO_MCP_ENDPOINT` | MCP endpoint used by WF04 MCP nodes. | Root `.env` + **`npm run generate:workflow-json`**; canonical graph may store a demo literal until then. |
 
-Root `.env` may mirror `EXO_SPACE_NAME` / `EXO_MCP_ENDPOINT` for tooling and **REST deploy**: push scripts rewrite MCP endpoint expressions and portfolio **`$vars` fallback literals** from `.env` before PUT when keys are set ([docs/DEVELOPMENT.md](../../../docs/DEVELOPMENT.md)).
+Root `.env` may hold `EXO_SPACE_NAME` / `EXO_MCP_ENDPOINT` for **`npm run generate:workflow-json`**, which rewrites `workflow.json` on disk ([docs/DEVELOPMENT.md](../../../docs/DEVELOPMENT.md)).
 
 ## High-level flow (conceptual)
 
@@ -97,7 +97,7 @@ Tools used (see [SPEC.technical.md](SPEC.technical.md)):
 
 ## Operational considerations
 
-- **`EXO_SPACE_NAME`** — set **`$vars`** on the instance or rely on the canonical fallback literal (updated at REST deploy when present in root `.env`). The IF node stops when the trimmed resolved value is empty ([SPEC.functional.md](SPEC.functional.md)).
+- **`EXO_SPACE_NAME`** — set **`$vars`**, rely on the demo literal, or run **`npm run generate:workflow-json`**. The IF node stops when the trimmed resolved value is empty ([SPEC.functional.md](SPEC.functional.md)).
 - **Tenant differences** — category names and ids vary; always resolve via **`get_category_tree`** output rather than hardcoding ids except in demos.
 - **Snapshots** — secondary exports under `fixtures/` are for traceability, not canonical graphs ([SPEC.technical.md](SPEC.technical.md)).
 

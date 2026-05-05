@@ -55,7 +55,7 @@ description: >-
      - If **present** and value **differs**: **stop and ask the user** (e.g. AskQuestion): **Overwrite** with the newly discovered value or **Keep existing** (skip that key only). Do not pick silently. If the user aborts the whole run, leave `.env` unchanged from before this workflow.
    - **Never** delete or reorder unrelated keys. Do not commit `.env`.
 5. **Optional scratch copy:** write **`local/generated-<shortId>.env`** with the same bootstrap map for that run (helps diffing). See [`local/README.md`](../../../local/README.md).
-6. **Remind:** root `.env` already drives **`EXO_MCP_ENDPOINT`** injection for REST deploy ([`tools/lib/n8n-workflow-deploy-core.mjs`](../../../tools/lib/n8n-workflow-deploy-core.mjs)). **`WF*_*` keys** are **not** read by deploy today—operators must still set matching **n8n `$vars`** for runtime (or copy from `.env`).
+6. **Remind:** REST deploy injects **`EXO_MCP_ENDPOINT`** and portfolio fallbacks from `.env` **before PUT** ([`applyPortfolioEnvOverridesBeforePush`](../../../tools/lib/n8n-workflow-deploy-core.mjs)). Run **`npm run generate:workflow-json`** only if you want those values **saved** into `workflow.json` in git (full hardcode, no `$vars`).
 
 ## Part D — Portfolio order and audits
 

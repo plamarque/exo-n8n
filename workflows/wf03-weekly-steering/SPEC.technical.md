@@ -16,7 +16,7 @@
 
 Variables expected by the parent workflow (see `config.env.example`):
 
-- `EXO_MCP_ENDPOINT`
+- `EXO_MCP_ENDPOINT` in root `.env` — **`npm run generate:workflow-json`** sets MCP Client `endpointUrl`; canonical graph may use a demo literal until then.
 - `WF03_SPACE_ID`
 - `WF03_PROJECT_ID`
 - `WF03_TEMPLATE_NOTE_ID`

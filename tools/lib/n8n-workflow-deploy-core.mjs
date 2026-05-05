@@ -291,14 +291,22 @@ export function escapeN8nExpressionStringLiteral(s) {
 
 /**
  * When `EXO_MCP_ENDPOINT` is set in the repository root `.env`, rewrite every MCP Client
- * `parameters.endpointUrl` to `={{$vars.EXO_MCP_ENDPOINT || "<url>"}}` using that value as the
- * fallback literal. Same env name as n8n Variables (`$vars.EXO_MCP_ENDPOINT`) for operator clarity.
+ * `parameters.endpointUrl` to that URL as a **plain string** (not an n8n expression). Used by
+ * {@link applyPortfolioHardcodeFromEnv} (and tests). REST deploy does **not** read `.env` for this;
+ * run `generate-workflow-json-from-env` first if you need tenant URLs in JSON on disk.
  *
  * @param {unknown[] | undefined} nodes
+ * @param {{ silent?: boolean }} [opts] when `silent`, omit success log line
  * @returns {number} number of nodes updated
  */
-export function applyExoMcpEndpointDeployOverride(nodes) {
-  const raw = (process.env.EXO_MCP_ENDPOINT || "").trim();
+export function applyExoMcpEndpointDeployOverride(nodes, opts = {}) {
+  let raw = (process.env.EXO_MCP_ENDPOINT || "").trim();
+  if (
+    (raw.startsWith('"') && raw.endsWith('"')) ||
+    (raw.startsWith("'") && raw.endsWith("'"))
+  ) {
+    raw = raw.slice(1, -1).trim();
+  }
   if (!raw) return 0;
   if (!/^https?:\/\//i.test(raw)) {
     console.warn(
@@ -306,8 +314,6 @@ export function applyExoMcpEndpointDeployOverride(nodes) {
     );
     return 0;
   }
-  const escaped = escapeN8nExpressionStringLiteral(raw);
-  const expression = `={{$vars.EXO_MCP_ENDPOINT || "${escaped}"}}`;
   if (!Array.isArray(nodes)) return 0;
   let count = 0;
   for (const node of nodes) {
@@ -315,18 +321,18 @@ export function applyExoMcpEndpointDeployOverride(nodes) {
     if (/** @type {{ type?: string }} */ (node).type !== MCP_CLIENT_NODE_TYPE) continue;
     const n = /** @type {{ parameters?: { endpointUrl?: string } }} */ (node);
     if (!n.parameters || typeof n.parameters.endpointUrl !== "string") continue;
-    n.parameters.endpointUrl = expression;
+    n.parameters.endpointUrl = raw;
     count++;
   }
-  if (count > 0) {
+  if (count > 0 && opts.silent !== true) {
     console.log(
-      `Injected EXO_MCP_ENDPOINT fallback for ${count} MCP Client node(s) (from repository root .env).`,
+      `Injected EXO_MCP_ENDPOINT as literal URL for ${count} MCP Client node(s) (from repository root .env).`,
     );
   }
   return count;
 }
 
-/** Portfolio workflow keys mirrored as n8n `$vars.*`; REST deploy may rewrite fallback literals from root `.env`. */
+/** Portfolio workflow keys mirrored as n8n `$vars.*` in canonical expressions (hardcode via {@link applyPortfolioHardcodeFromEnv}). */
 export const PORTFOLIO_INTEGER_VAR_KEYS = [
   "WF01_PROJECT_ID",
   "WF02_PROJECT_ID",
@@ -378,6 +384,9 @@ function mapDeepStringsInPlace(value, fn) {
 /**
  * Rewrite expression fragments using each portfolio env key when set (same key name as `$vars`).
  * Mutates strings in-place under each workflow node.
+ *
+ * **Note:** REST deploy uses this only via {@link applyPortfolioEnvOverridesBeforePush} (fallback
+ * literals). For full hardcoding to disk, use {@link applyPortfolioHardcodeFromEnv}.
  *
  * @param {unknown[] | undefined} nodes
  * @returns {number} nodes whose serialized shape changed after rewriting
@@ -473,6 +482,111 @@ export function applyN8nPortfolioVarsFallbackOverrides(nodes) {
   }
 
   return touched;
+}
+
+/**
+ * Apply repository root `.env` to workflow nodes **in memory** immediately before REST PUT/POST.
+ * Does not modify files on disk.
+ *
+ * - {@link applyExoMcpEndpointDeployOverride} — sets each MCP Client `endpointUrl` when `EXO_MCP_ENDPOINT` is set
+ * - {@link applyN8nPortfolioVarsFallbackOverrides} — rewrites `||` fallback literals inside `$vars` expressions
+ *
+ * To **remove** `$vars` entirely and persist literals into `workflow.json`, use
+ * {@link applyPortfolioHardcodeFromEnv} (`**npm run generate:workflow-json**`).
+ *
+ * @param {unknown[] | undefined} nodes
+ */
+export function applyPortfolioEnvOverridesBeforePush(nodes) {
+  applyExoMcpEndpointDeployOverride(nodes);
+  applyN8nPortfolioVarsFallbackOverrides(nodes);
+}
+
+/**
+ * Replace portfolio `$vars.* || …` patterns with literals from repository root `.env` (same keys as
+ * {@link applyN8nPortfolioVarsFallbackOverrides}) so workflows no longer depend on n8n Variables.
+ * Also applies {@link applyExoMcpEndpointDeployOverride} when `EXO_MCP_ENDPOINT` is set.
+ *
+ * Intended for **`tools/generate-workflow-json-from-env.mjs`** (mutate JSON on disk). REST deploy uses
+ * {@link applyPortfolioEnvOverridesBeforePush} instead (fallback rewrites only, leaves `$vars` in place).
+ *
+ * @param {unknown[] | undefined} nodes
+ * @param {{ silent?: boolean }} [opts] when `silent`, omit per-call summary log (batch generators)
+ * @returns {{ mcpNodes: number; stringNodes: number }}
+ */
+export function applyPortfolioHardcodeFromEnv(nodes, opts = {}) {
+  const mcpNodes = applyExoMcpEndpointDeployOverride(nodes, { silent: true });
+  if (!Array.isArray(nodes)) return { mcpNodes, stringNodes: 0 };
+
+  /** @param {string} str */
+  function hardcode(str) {
+    let out = str;
+
+    for (const key of PORTFOLIO_INTEGER_VAR_KEYS) {
+      const raw = (process.env[key] || "").trim();
+      if (!raw || !/^\d+$/.test(raw)) continue;
+      const re = new RegExp(`Number\\(\\$vars\\.${key}\\s*\\|\\|\\s*\\d+\\)`, "g");
+      out = out.replace(re, `Number(${raw})`);
+    }
+
+    const folderRaw = (process.env.WF02_PARENT_FOLDER_ID || "").trim();
+    if (folderRaw && /^[a-f0-9]+$/i.test(folderRaw)) {
+      out = out.replace(
+        /\(\(\$vars\.WF02_PARENT_FOLDER_ID && String\(\$vars\.WF02_PARENT_FOLDER_ID\)\.trim\(\)\)\s*\|\|\s*"([a-f0-9]+)"\)/gi,
+        `"${folderRaw}"`,
+      );
+    }
+
+    const approvalRaw = (process.env.WF02_APPROVAL_BASE_URL || "").trim();
+    if (approvalRaw && /^https?:\/\//i.test(approvalRaw)) {
+      const escaped = escapeN8nExpressionStringLiteral(approvalRaw);
+      out = out.replace(
+        /String\(\$vars\.WF02_APPROVAL_BASE_URL\s*\|\|\s*"[^"]*"\)/g,
+        `String("${escaped}")`,
+      );
+    }
+
+    const attendeeRaw = (process.env.WF03_ATTENDEE_USERNAMES || "").trim();
+    if (attendeeRaw) {
+      const esc = escapeSingleQuotedJsStringLiteral(attendeeRaw);
+      out = out.replace(
+        /String\(\$vars\.WF03_ATTENDEE_USERNAMES\s*\|\|\s*'(?:[^'\\]|\\.)*'\)/g,
+        `String('${esc}')`,
+      );
+    }
+
+    const ownerRaw = (process.env.WF03_MEETING_OWNER || "").trim();
+    if (ownerRaw) {
+      const esc = escapeSingleQuotedJsStringLiteral(ownerRaw);
+      out = out.replace(
+        /String\(\$vars\.WF03_MEETING_OWNER\s*\|\|\s*'(?:[^'\\]|\\.)*'\)/g,
+        `String('${esc}')`,
+      );
+    }
+
+    const spaceRaw = (process.env.EXO_SPACE_NAME || "").trim();
+    if (spaceRaw) {
+      const escaped = escapeN8nExpressionStringLiteral(spaceRaw);
+      out = out.replace(/\$vars\.EXO_SPACE_NAME\s*\|\|\s*"(?:[^"\\]|\\.)*"/g, `"${escaped}"`);
+      out = out.replace(/\$vars\.EXO_SPACE_NAME\b/g, `"${escaped}"`);
+    }
+
+    return out;
+  }
+
+  let stringNodes = 0;
+  for (const node of nodes) {
+    if (!node || typeof node !== "object") continue;
+    const before = JSON.stringify(node);
+    mapDeepStringsInPlace(node, hardcode);
+    if (JSON.stringify(node) !== before) stringNodes++;
+  }
+
+  if (opts.silent !== true && (mcpNodes > 0 || stringNodes > 0)) {
+    console.log(
+      `Hardcoded portfolio values from repository root .env (${mcpNodes} MCP Client endpointUrl, ${stringNodes} node object(s) with updated strings).`,
+    );
+  }
+  return { mcpNodes, stringNodes };
 }
 
 /**
@@ -810,8 +924,7 @@ export async function fetchMergeAndPutWorkflow(opts) {
     );
   }
   await applyCredentialMergeAndFallbacks(local, remote, base, apiKey);
-  applyExoMcpEndpointDeployOverride(/** @type {unknown[] | undefined} */ (local.nodes));
-  applyN8nPortfolioVarsFallbackOverrides(/** @type {unknown[] | undefined} */ (local.nodes));
+  applyPortfolioEnvOverridesBeforePush(/** @type {unknown[] | undefined} */ (local.nodes));
   const payload = buildWorkflowPutPayload(local);
   if (dryRun) {
     console.log("Dry run — would PUT", label || remoteId, url);

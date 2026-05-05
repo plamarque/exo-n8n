@@ -48,7 +48,7 @@ Create or locate the following **on eXo**, then copy identifiers into n8n **vari
 
 | Prerequisite                                                                                                                                                                                                                                 | Why                                                                                                                    |
 | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| **MCP Client** credential + **`EXO_MCP_ENDPOINT`** (or graph default to your tenant URL) | All eXo steps go through MCP. |
+| **MCP Client** credential + tenant MCP URL (`npm run generate:workflow-json` from root `.env`, or edit nodes) | All eXo steps go through MCP. |
 | **LLM / OpenAI** credentials for the routing + parser chain                                                                                                                                                                                  | Structured triage node(s) require a configured model (see `workflow.json` and [SPEC.technical.md](SPEC.technical.md)). |
 | **Sub-workflow** **Unwrap MCP JSON** deployed and **`N8N_WORKFLOW_ID_UNWRAP`** in root `.env` when using **REST deploy** ([subworkflow-dependencies.json](subworkflow-dependencies.json), [docs/DEVELOPMENT.md](../../docs/DEVELOPMENT.md)). | Required for dependency id injection during REST deployment. |
 
@@ -57,16 +57,16 @@ Create or locate the following **on eXo**, then copy identifiers into n8n **vari
 
 ## Runtime variables (what they mean, and where to set them)
 
-Set these in **n8n Variables** (or equivalent instance env mapping), because the workflow reads them at runtime via `$vars.*`.
+Either run **`npm run generate:workflow-json`** so **`WF01_PROJECT_ID`** and MCP **`endpointUrl`** are hardcoded in `workflow.json`, or keep **`$vars.WF01_PROJECT_ID`** and set n8n Variables at runtime.
 
 
 | Variable           | Meaning                                                                                    | Where to set                            |
 | ------------------ | ------------------------------------------------------------------------------------------ | --------------------------------------- |
-| `EXO_MCP_ENDPOINT` | Base MCP endpoint used by WF01 MCP nodes.                                                  | n8n Variables (instance/project scope). |
-| `WF01_PROJECT_ID`  | Target eXo project id for created tasks (optional; workflow default applies when missing). | n8n Variables.                          |
+| `EXO_MCP_ENDPOINT` | Tenant MCP base URL for WF01 MCP nodes.                                                  | Root `.env` → **`npm run generate:workflow-json`** ([docs/DEVELOPMENT.md](../../../docs/DEVELOPMENT.md)). |
+| `WF01_PROJECT_ID`  | Target eXo project id for created tasks (optional; workflow default applies when missing). | Root `.env` → generate, or n8n Variables. |
 
 
-Repository root `.env` also supplies **`N8N_*`** API settings and, when present, **`EXO_MCP_ENDPOINT`** / **`WF01_PROJECT_ID`** for REST deploy: push rewrites MCP endpoint expressions and the **`WF01_PROJECT_ID` fallback literal** in memory before PUT ([docs/DEVELOPMENT.md](../../../docs/DEVELOPMENT.md)); n8n **`$vars`** still override at runtime when set.
+Repository root `.env` supplies **`N8N_*`** for REST deploy and optional keys for **`generate:workflow-json`** ([docs/DEVELOPMENT.md](../../../docs/DEVELOPMENT.md)).
 
 ## High-level flow (conceptual)
 
@@ -103,7 +103,7 @@ After MCP nodes that return wrapped JSON, the graph calls the shared **[Unwrap M
 
 ## Operational considerations
 
-- **Variables:** `EXO_MCP_ENDPOINT`; optional `WF01_PROJECT_ID` (defaults documented in [SPEC.technical.md](SPEC.technical.md)).
+- **MCP URL / project id:** **`npm run generate:workflow-json`** from root `.env`, or n8n Variables / manual edits. Defaults: [SPEC.technical.md](SPEC.technical.md).
 - **Limits (product):** no persisted email idempotency yet—re-runs may duplicate tasks if messages are still listed; see [SPEC.functional.md](SPEC.functional.md) out-of-scope section.
 - **Assignees:** LLM output is mapped to an **allow-list** of demo users with fallback (see technical spec §6).
 

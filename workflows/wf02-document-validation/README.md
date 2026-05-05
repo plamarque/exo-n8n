@@ -47,7 +47,7 @@ Create or locate the following **on eXo**, then copy identifiers into n8n **vari
 
 | Prerequisite | Why |
 |--------------|-----|
-| **MCP Client** + **`EXO_MCP_ENDPOINT`** | All eXo mutations and reads use MCP. |
+| **MCP Client** + tenant MCP URL (`npm run generate:workflow-json` or edit nodes) | All eXo mutations and reads use MCP. |
 | **Public approval / form base URL** — **`WF02_APPROVAL_BASE_URL`** | Must be the hosted **Form** URL (e.g. `.../form/...`), **not** a raw webhook path, so approvers get the n8n Form UI ([config.env.example](config.env.example) comment, [SPEC.technical.md](SPEC.technical.md) if referenced). |
 | **Data Tables** `wf02_processed_documents` / `wf02_approvals` | Created on first run by the graph (`createIfNotExists`); **no manual SQL** required. |
 | **Unwrap** sub-workflow id for deploy | **`N8N_WORKFLOW_ID_UNWRAP`** + [subworkflow-dependencies.json](subworkflow-dependencies.json). |
@@ -58,14 +58,14 @@ Set these in **n8n Variables** (or equivalent instance env mapping), because WF0
 
 | Variable | Meaning | Where to set |
 |----------|---------|--------------|
-| `EXO_MCP_ENDPOINT` | MCP endpoint for document/task/comment/status operations. | n8n Variables. |
+| `EXO_MCP_ENDPOINT` | MCP endpoint for document/task/comment/status operations. | Root `.env` → **`npm run generate:workflow-json`**. |
 | `WF02_PARENT_FOLDER_ID` | Watched eXo folder id for document intake. | n8n Variables. |
 | `WF02_PROJECT_ID` | Target eXo project id where validation tasks are created. | n8n Variables. |
 | `WF02_INPROGRESS_STATUS_ID` | Project status id used after create and on non-final outcomes. | n8n Variables. |
 | `WF02_DONE_STATUS_ID` | Project status id used when both approvals are `APPROVED`. | n8n Variables. |
 | `WF02_APPROVAL_BASE_URL` | Hosted n8n **Form** URL used in task comments for reviewer links. | n8n Variables. |
 
-Use `config.env.example` as a naming/meaning template. Copy values into **n8n Variables** and/or repository root **`.env`**: REST deploy rewrites **`$vars` fallback literals** from `.env` when keys are set ([docs/DEVELOPMENT.md](../../docs/DEVELOPMENT.md)).
+Use `config.env.example` as a naming/meaning template. Copy values into **n8n Variables** and/or root **`.env`**, then run **`npm run generate:workflow-json`** to hardcode matching expressions ([docs/DEVELOPMENT.md](../../docs/DEVELOPMENT.md)).
 
 ## High-level flow (conceptual)
 

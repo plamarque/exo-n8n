@@ -37,7 +37,7 @@ Derived from **per-workflow technical specs** ([WF01](../workflows/wf01-email-di
 | Requirement | MCP likely? | Notes |
 |-------------|:-------------:|-------|
 | Resolve **`WF01_PROJECT_ID`** (fallback `3` in graph) | Yes | Use **`list_projects`** (or tenant equivalent); pick/create board matching demo naming in prompt. |
-| **`EXO_MCP_ENDPOINT`** | n8n-only | Cursor MCP URL must match what n8n HTTP/MCP nodes call. |
+| **`EXO_MCP_ENDPOINT`** | n8n-only | Cursor MCP URL must match the MCP Client `endpointUrl` in JSON pushed to n8n (use **`npm run generate:workflow-json`** from root `.env`, or edit nodes). |
 | Assignee usernames (`claire`, `louis`, …) exist | Often **manual/admin** | MCP rarely provisions users; verify or edit workflow mapping per [SPEC.technical.md §6](../workflows/wf01-email-dispatch/SPEC.technical.md). |
 | Mailbox visible to **`list_emails`** | Config | OAuth identity must see demo mailbox; **no bootstrap object** besides permission/mail setup. |
 
@@ -74,7 +74,7 @@ Derived from **per-workflow technical specs** ([WF01](../workflows/wf01-email-di
 | Requirement | MCP likely? | Notes |
 |-------------|:-------------:|-------|
 | **`EXO_SPACE_NAME`** must match existing space | Partial | **`get_my_spaces`** resolves by name—**create space in UI** if missing (or MCP if server supports it). |
-| **`EXO_MCP_ENDPOINT`** | n8n-only | Align with Cursor MCP tenant. |
+| **`EXO_MCP_ENDPOINT`** | n8n-only | Align with Cursor MCP tenant via generated JSON literal (not n8n `$vars` when hardcoded). |
 | Category tree / document writes | Runtime | **`get_category_tree`**, **`update_document_description`**, **`add_content_to_category`** — categories **discovered at runtime**; no static id file required for categories. |
 | **`exo_processed_documents` Data Table** | **n8n auto** | Graph creates table; **no eXo bootstrap**. |
 | Optional tuning vars | No | Canonical **`config.env.example`** lists **`EXO_MCP_ENDPOINT`** + **`EXO_SPACE_NAME`** only—additional knobs belong in workflow edits or future vars. |

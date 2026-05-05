@@ -24,7 +24,7 @@ Ensure a target **space exists** whose **display name exactly matches** **`EXO_S
 1. **`EXO_MCP_ENDPOINT`:** verify parity Cursor ↔ n8n MCP nodes.
 2. **`get_my_spaces`** (SPEC §3): locate entry whose **`name`/`displayName`** field equals **`TARGET_SPACE_DISPLAY_NAME`** exactly as configured for **`EXO_SPACE_NAME`**.
    - If missing: **create space** via **eXo UI** (or MCP create-space tool **only if** documented on tenant); rerun listing until match exists.
-3. Do **not** require separate **`EXO_SPACE_ID`** for canonical graph—confirm **`workflow.json`** reads **`$vars.EXO_SPACE_NAME`** only alongside **`EXO_MCP_ENDPOINT`**.
+3. Do **not** require separate **`EXO_SPACE_ID`** for canonical graph—confirm **`workflow.json`** resolves space via **`$vars.EXO_SPACE_NAME`** (or run **`npm run generate:workflow-json`** to hardcode); MCP **`endpointUrl`** is updated the same way from **`EXO_MCP_ENDPOINT`**.
 4. **Merge** into repository root **`.env`** (meta-skill Part C; conflict → ask overwrite vs keep):
 
 ```env

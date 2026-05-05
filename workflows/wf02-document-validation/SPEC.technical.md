@@ -13,7 +13,7 @@
 
 Required runtime variables:
 
-- `EXO_MCP_ENDPOINT` - MCP endpoint used by all MCP Client nodes.
+- `EXO_MCP_ENDPOINT` in root `.env` — **`npm run generate:workflow-json`** writes the MCP Client `parameters.endpointUrl` literals; canonical graph may use a demo URL until then.
 - `WF02_PARENT_FOLDER_ID` - watched folder id for document intake.
 - `WF02_PROJECT_ID` - target project id for created validation tasks.
 - `WF02_INPROGRESS_STATUS_ID` - status id used after task creation and on rejection branch.

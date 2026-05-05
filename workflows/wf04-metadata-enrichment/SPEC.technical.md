@@ -12,11 +12,11 @@
 
 Runtime inputs:
 
-- `EXO_SPACE_NAME` via n8n **`$vars.EXO_SPACE_NAME`** when set; otherwise the canonical graph uses a **demo fallback literal** (REST deploy may replace that literal from repository root `.env`). Operators must align the resolved name with a real space on the tenant.
+- `EXO_SPACE_NAME` via n8n **`$vars.EXO_SPACE_NAME`** when set; otherwise the canonical graph uses a **demo fallback literal** (**`npm run generate:workflow-json`** may replace it from repository root `.env`). Operators must align the resolved name with a real space on the tenant.
 
 Connectivity and credentials:
 
-- `EXO_MCP_ENDPOINT` configured on MCP nodes (or through node defaults in your n8n instance).
+- `EXO_MCP_ENDPOINT` in root `.env` — **`npm run generate:workflow-json`** writes MCP Client `endpointUrl`; canonical nodes may ship a demo literal until then.
 - n8n MCP credential (`mcpOAuth2Api`) must allow read and write on target documents/categories.
 - LLM credential for chat/structured-output node(s).
 

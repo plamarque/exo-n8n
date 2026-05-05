@@ -11,7 +11,7 @@
 
 ## 2) Configuration
 
-- `EXO_MCP_ENDPOINT` - MCP endpoint used by `MCP Client` nodes.
+- `EXO_MCP_ENDPOINT` in root `.env` — consumed by **`npm run generate:workflow-json`** to set each MCP Client `parameters.endpointUrl`; canonical git JSON may hold a demo literal until you generate.
 - `WF01_PROJECT_ID` - optional target project id for `create_task_in_project`.
 - MCP OAuth credential (n8n `mcpOAuth2Api`) must be valid for the target tenant.
 - LLM credential must be configured for routing/model nodes.

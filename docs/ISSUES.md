@@ -27,7 +27,7 @@ This document is tracking-only. It does not define expected behavior.
 ### WF04
 
 - `EXO_SPACE_NAME` is mandatory and missing values stop the workflow.
-- The MCP endpoint is documented as hardcoded in multiple nodes in the reverse-engineered workflow.
+- MCP **`endpointUrl`** is repeated on each MCP Client node (demo literal in git until **`npm run generate:workflow-json`** rewrites from **`EXO_MCP_ENDPOINT`**).
 - Processing is capped at five documents per run.
 - There is no rollback if description update succeeds but category assignment fails.
 - One Code node remains for category assignment mapping after the native-node refactor.

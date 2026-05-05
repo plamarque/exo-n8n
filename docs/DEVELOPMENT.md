@@ -28,20 +28,20 @@ Publishing workflows must follow the **deployment validation policy** in [WORKFL
 
 **Deploy channel (choose deliberately):**
 
-- **REST + canonical `workflow.json`** (default for parity with git and for CI): `./tools/deploy.sh <shortId|all>` or `npm run deploy:workflow -- <same>` after filling root `.env` (see [Root workflow shortId](#root-workflow-shortid)). Pushes the same graph you validate locally (the deploy script strips export-only fields the n8n API rejects).
+- **REST + canonical `workflow.json`** (default for parity with git and for CI): `./tools/deploy.sh <shortId|all>` or `npm run deploy:workflow -- <same>` after filling root `.env` (see [Root workflow shortId](#root-workflow-shortid)). Pushes the same graph you validate locally (the deploy script strips export-only fields the n8n API rejects). **Tenant literals** (MCP URL, WF\*\* ids, space name, …) come from committed or generated JSON — use [Generate workflow JSON from `.env`](#generate-workflow-json-from-env) before validate/deploy when you maintain values in `.env` instead of n8n Variables.
 - **n8n MCP + SDK `code`:** use when you are already in Cursor with MCP configured: `--emit-sdk` then `validate_workflow` → `update_workflow`. Does not replace gate (1) on `workflow.json`.
 
 ## Local Prerequisites
 
 - Node.js **18+** with `npm install` at the repo root (ES modules in `tools/` plus `@n8n/workflow-sdk` and `dotenv` for validation and REST deploy).
 - Access to the target n8n instance when synchronizing workflows through the n8n **REST API** (root `.env` with `N8N_BASE_URL` / `N8N_API_KEY`) **or** through the **n8n MCP** in Cursor (separate bearer token in `.cursor/mcp.json`); pick one path per operation so the published artifact matches intent.
-- eXo MCP credentials configured in n8n for workflow execution. Demo endpoint (reference): `https://exo.example.com/mcp-server/mcp` — always match `EXO_MCP_ENDPOINT` to the environment under test.
+- eXo MCP credentials configured in n8n for workflow execution. Canonical graphs may carry demo literals and `$vars || …` patterns; run **`npm run generate:workflow-json`** (root `.env`) to hardcode tenant values into `workflow.json` on disk before validate/deploy when you do not rely on n8n Variables.
 - OpenAI or compatible credentials configured in n8n for workflows using AI nodes.
 - (Optional) **Cursor + MCP:** to use the n8n and eXo MCP servers from Cursor, see [Cursor and MCP (recommended)](#cursor-and-mcp-recommended).
 
 ## Root `.env` for repository tooling
 
-Optional **local-only** file at the repository root (git-ignored). Primary use: **n8n instance API** credentials for [push-workflow-to-n8n-api.mjs](../tools/push-workflow-to-n8n-api.mjs) and [download-workflow-from-n8n-api.mjs](../tools/download-workflow-from-n8n-api.mjs). It may also hold `**EXO_MCP_ENDPOINT`** (REST deploy injects MCP Client fallbacks) and **optional mirrors** of workflow `$vars` merged by the [exo-fixture-bootstrap](../.cursor/skills/exo-fixture-bootstrap/SKILL.md) skill—**n8n execution** still needs the same keys in **Variables** unless you sync manually. Per-workflow `[config.env.example](../workflows/wf02-document-validation/config.env.example)` documents the canonical key names.
+Optional **local-only** file at the repository root (git-ignored). Primary use: **n8n instance API** credentials for [push-workflow-to-n8n-api.mjs](../tools/push-workflow-to-n8n-api.mjs) and [download-workflow-from-n8n-api.mjs](../tools/download-workflow-from-n8n-api.mjs). It may also hold **`EXO_MCP_ENDPOINT`**, **`WF01_PROJECT_ID`**, **`WF02_*`**, **`WF03_*`**, **`EXO_SPACE_NAME`**, … — [push-workflow-to-n8n-api.mjs](../tools/push-workflow-to-n8n-api.mjs) applies MCP URLs and portfolio **fallback literals** in **memory** before each PUT/POST (`applyPortfolioEnvOverridesBeforePush`). Optionally run **`npm run generate:workflow-json`** to **persist** the same values into `workflow.json` on disk. The [exo-fixture-bootstrap](../.cursor/skills/exo-fixture-bootstrap/SKILL.md) skill merges bootstrap keys into the same `.env`. Per-workflow `[config.env.example](../workflows/wf02-document-validation/config.env.example)` documents the canonical key names.
 
 1. Copy `[.env.example](../.env.example)` → `.env` at the repo root.
 2. Set `N8N_BASE_URL` and `N8N_API_KEY`. For each **root** workflow under `workflows/<folder>/workflow.json`, set `N8N_WORKFLOW_ID_<SHORTID>` (shortId = folder name before the first `-`, or the full folder name if there is no hyphen; uppercase in env, e.g. `wf01` → `N8N_WORKFLOW_ID_WF01`, `unwrap` → `N8N_WORKFLOW_ID_UNWRAP`) **unless** the canonical `workflow.json` already contains a top-level `"id"` (remote n8n workflow id from that tenant’s export). Workflows without a root `id` still need the matching `N8N_WORKFLOW_ID_*` entry. See per-workflow `SPEC.technical.md` / `README.md` for reference ids.
@@ -88,9 +88,21 @@ Prepare tenant ids for WF01–WF04 without inventing JSON manifests:
 - **Cursor skill:** `[.cursor/skills/exo-fixture-bootstrap/SKILL.md](../.cursor/skills/exo-fixture-bootstrap/SKILL.md)` (MCP URL/auth confirmation, load Markdown prompts, **merge** discovered keys into repository root `**.env`** with user conflict handling; optional `local/generated-wf0x.env` scratch copy).
 - **Tool inventory + bootstrap audits:** [EXO-MCP-WORKFLOW-TOOL-MAP.md](EXO-MCP-WORKFLOW-TOOL-MAP.md).
 
+## Generate workflow JSON from `.env`
+
+When your n8n plan cannot rely on **Variables** (`$vars`), put tenant values in the repository root `.env`:
+
+1. **Deploy only:** `./tools/deploy.sh` already injects `EXO_MCP_ENDPOINT` (MCP Client URLs) and portfolio **`||` fallbacks** from `.env` **in memory** before PUT — no separate step required for that behavior.
+2. **Persist into git JSON:** run **`npm run generate:workflow-json`** (or `node tools/generate-workflow-json-from-env.mjs`) to rewrite `workflows/**/workflow.json` (skips `fixtures/`; use `--dry-run` to preview). That removes `$vars` indirection in saved files for keys you set in `.env`.
+3. **Validate** and **deploy** as usual.
+
+Implementation: [tools/generate-workflow-json-from-env.mjs](../tools/generate-workflow-json-from-env.mjs) calls `applyPortfolioHardcodeFromEnv` in [tools/lib/n8n-workflow-deploy-core.mjs](../tools/lib/n8n-workflow-deploy-core.mjs).
+
+**Git:** either commit generated JSON on a tenant branch or regenerate locally before each deploy — do not commit production secrets in tracked files you publish.
+
 ## Workflow lifecycle
 
-1. **Edit** the canonical JSON in the repo: `workflows/<folder>/workflow.json`.
+1. **Edit** the canonical JSON in the repo: `workflows/<folder>/workflow.json` (optionally after **`npm run generate:workflow-json`**).
 2. **Validate locally** `./tools/validate-workflow.sh <workflowId>`
 3. **Deploy to n8n**: `./tools/deploy.sh <workflowId>`
 4. **Run** on the instance and **inspect executions** in n8n for debugging.
@@ -136,21 +148,21 @@ There are two different configuration channels in this repository:
 1. **Repository root `.env`** (copied from `[.env.example](../.env.example)`)
   - Used by repository tooling (`deploy.sh`, REST push/pull scripts, credential/id merge logic).
   - Not read by n8n workflow runtime nodes directly.
-2. **n8n runtime variables** (used in workflow expressions such as `$vars.EXO_MCP_ENDPOINT` or `$vars.WF02_PROJECT_ID`)
-  - Set these in your **n8n instance** (Variables UI), or through your n8n environment variable mechanism.
-  - These values are resolved when the workflow executes in n8n.
+2. **n8n runtime variables** (`$vars.*`) — optional if you run **`npm run generate:workflow-json`**, which removes those indirections from JSON for keys present in root `.env`.
+  - If you skip generation, set matching keys in the **n8n Variables** UI (or instance env) so expressions resolve at execution time.
 
 ### Recommended setup flow
 
-1. Open each workflow's `config.env.example` and copy the variables relevant to your tenant.
-2. In n8n, set those keys as runtime variables (same names) before first run.
-3. Keep root `.env` only for repository tooling (`N8N_BASE_URL`, `N8N_API_KEY`, `N8N_WORKFLOW_ID_`*, optional deploy overrides).
+1. Open each workflow's `config.env.example` and copy the variables relevant to your tenant into root `.env`.
+2. Either run **`npm run generate:workflow-json`** then validate/deploy, **or** paste the same keys into n8n Variables and deploy canonical JSON without generating.
+3. Keep root `.env` for API deploy credentials (`N8N_BASE_URL`, `N8N_API_KEY`, `N8N_WORKFLOW_ID_*`) and, when using the generator, for `EXO_MCP_ENDPOINT` / portfolio keys.
 
 ### Important behavior
 
-- `workflow.json` is the canonical graph and is not templated by this repository.
-- Runtime variables are not expanded into `workflow.json` during local validation.
-- During execution, n8n resolves `$vars.`* from the target instance variable store.
+- `workflow.json` is the canonical graph. **`generate-workflow-json-from-env`** mutates it on disk when you choose that workflow.
+- Local **validation** does not load `.env`; generation is an explicit step.
+- After generation, n8n **Variables** are not required for fields that no longer reference `$vars`.
+- **Without generation**, canonical JSON may still use demo literals and `$vars || …` patterns; align Variables or edit nodes in the UI.
 
 ## Configuration
 
@@ -158,7 +170,7 @@ Example `config.env.example` files live **next to each workflow** (for example [
 
 - Do not put real tokens in example files.
 - Verify each example against the current workflow-specific README and specs before using it in an environment.
-- Prefer n8n **Variables** for runtime values that differ across environments.
+- Prefer **`npm run generate:workflow-json`** when n8n **Variables** are unavailable; otherwise Variables remain valid for `$vars` expressions in canonical JSON.
 
 ## Validation notes
 

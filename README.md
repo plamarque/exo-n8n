@@ -28,7 +28,7 @@ You need **two runtimes** before the demos are useful end to end:
 2. **OpenAI (or compatible)** — Create an **OpenAI** (or provider-appropriate) credential and attach it to the **AI / LLM** nodes. The portfolio uses structured and chat-style model calls; without a working credential or hosted-model quota, those nodes will fail at execution time.
 3. **n8n Cloud trial** — n8n Cloud often offers a **free trial** that may include a small **bundled AI credit** pool (wording and limits change with the product). That is a practical way to **walk through the demos** before wiring your own billable OpenAI key—check your tenant’s billing / credits panel.
 
-Operational detail (deploy script, local validation, optional Cursor MCP) is in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+Operational detail (deploy script, **`npm run generate:workflow-json`** to hardcode tenant values from `.env`, local validation, optional Cursor MCP) is in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
 ---
 

@@ -4,7 +4,9 @@
  */
 import assert from "node:assert/strict";
 import {
+  applyExoMcpEndpointDeployOverride,
   applyN8nPortfolioVarsFallbackOverrides,
+  applyPortfolioHardcodeFromEnv,
   escapeSingleQuotedJsStringLiteral,
 } from "./n8n-workflow-deploy-core.mjs";
 
@@ -120,6 +122,78 @@ function testWf02ParentFolder() {
   assert.ok(nodes[0].parameters.j.includes("aaaabbbbccccddddeeeeffff00001111"));
 }
 
+function testExoMcpEndpointLiteral() {
+  const prev = process.env.EXO_MCP_ENDPOINT;
+  const tenantUrl = "https://tenant.example.com/mcp-server/mcp";
+  try {
+    process.env.EXO_MCP_ENDPOINT = tenantUrl;
+    const nodes = [
+      {
+        type: "@n8n/n8n-nodes-langchain.mcpClient",
+        parameters: {
+          endpointUrl:
+            '={{$vars.EXO_MCP_ENDPOINT || "https://exo.example.com/mcp-server/mcp"}}',
+        },
+      },
+    ];
+    const n = applyExoMcpEndpointDeployOverride(nodes);
+    assert.equal(n, 1);
+    assert.equal(nodes[0].parameters.endpointUrl, tenantUrl);
+    assert.ok(!String(nodes[0].parameters.endpointUrl).includes("$vars"));
+  } finally {
+    if (prev === undefined) delete process.env.EXO_MCP_ENDPOINT;
+    else process.env.EXO_MCP_ENDPOINT = prev;
+  }
+}
+
+function testExoMcpEndpointInvalidSkips() {
+  const prev = process.env.EXO_MCP_ENDPOINT;
+  try {
+    process.env.EXO_MCP_ENDPOINT = "ftp://wrong";
+    const original =
+      '={{$vars.EXO_MCP_ENDPOINT || "https://exo.example.com/mcp-server/mcp"}}';
+    const nodes = [
+      {
+        type: "@n8n/n8n-nodes-langchain.mcpClient",
+        parameters: { endpointUrl: original },
+      },
+    ];
+    const n = applyExoMcpEndpointDeployOverride(nodes);
+    assert.equal(n, 0);
+    assert.equal(nodes[0].parameters.endpointUrl, original);
+  } finally {
+    if (prev === undefined) delete process.env.EXO_MCP_ENDPOINT;
+    else process.env.EXO_MCP_ENDPOINT = prev;
+  }
+}
+
+function testPortfolioHardcodeRemovesVars() {
+  const prevP = process.env.WF01_PROJECT_ID;
+  const prevS = process.env.EXO_SPACE_NAME;
+  try {
+    process.env.WF01_PROJECT_ID = "42";
+    process.env.EXO_SPACE_NAME = "Tenant Space";
+    const nodes = [
+      {
+        parameters: {
+          a: "={{ Number($vars.WF01_PROJECT_ID || 3) }}",
+          b: '={{ $vars.EXO_SPACE_NAME || "demo" }}',
+        },
+      },
+    ];
+    applyPortfolioHardcodeFromEnv(nodes);
+    assert.match(nodes[0].parameters.a, /Number\(42\)/);
+    assert.ok(!nodes[0].parameters.a.includes("$vars"));
+    assert.ok(nodes[0].parameters.b.includes("Tenant Space"));
+    assert.ok(!nodes[0].parameters.b.includes("$vars"));
+  } finally {
+    if (prevP === undefined) delete process.env.WF01_PROJECT_ID;
+    else process.env.WF01_PROJECT_ID = prevP;
+    if (prevS === undefined) delete process.env.EXO_SPACE_NAME;
+    else process.env.EXO_SPACE_NAME = prevS;
+  }
+}
+
 const prev = stashEnv();
 try {
   testEscapeSingleQuoted();
@@ -128,6 +202,9 @@ try {
   testWf03MeetingOwner();
   testWf02ApprovalUrl();
   testWf02ParentFolder();
+  testExoMcpEndpointLiteral();
+  testExoMcpEndpointInvalidSkips();
+  testPortfolioHardcodeRemovesVars();
   console.log("n8n-workflow-deploy-core.vars-injection.test.mjs: OK");
 } finally {
   restoreEnv(prev);
