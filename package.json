@@ -10,7 +10,7 @@
     "deploy:workflow": "node tools/push-workflow-to-n8n-api.mjs",
     "download:workflow": "node tools/download-workflow-from-n8n-api.mjs",
     "generate:workflow-json": "node tools/generate-workflow-json-from-env.mjs",
-    "test": "node tools/lib/n8n-workflow-deploy-core.vars-injection.test.mjs"
+    "test": "node tools/lib/n8n-workflow-deploy-core.vars-injection.test.mjs && node tools/lib/env-writer.test.mjs && node tools/lib/n8n-workflow-deploy-orchestrator.test.mjs"
   },
   "engines": {
     "node": ">=18"

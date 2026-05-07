@@ -47,7 +47,7 @@ are downloaded first by default (then parent).
 
 Environment (from process env or repo root .env):
   N8N_BASE_URL, N8N_API_KEY
-  N8N_WORKFLOW_ID_<SHORTID> for each root workflow (optional if workflow.json has "id")
+  N8N_WORKFLOW_ID_<SHORTID> for each root workflow (run \`./tools/deploy.sh <shortId>\` first if missing)
   Plus N8N_WORKFLOW_ID_* for each subworkflow-dependencies.json entry
 `);
 }
@@ -185,16 +185,13 @@ async function downloadOneRoot(portfolioId) {
     if (!fs.existsSync(depAbs)) {
       throw new Error(`Missing dependency JSON: ${depAbs} (from ${workflowDir})`);
     }
-    const localDep = /** @type {Record<string, unknown>} */ (
-      JSON.parse(fs.readFileSync(depAbs, "utf8"))
-    );
-    const remoteId = resolveRemoteIdForDependency(dep.remoteIdEnv, localDep, {
+    const remoteId = resolveRemoteIdForDependency(dep.remoteIdEnv, {
       parent: parentLocal,
       nodeNames: dep.parentExecuteWorkflowNodeNames,
     }).trim();
     if (!remoteId) {
       throw new Error(
-        `Dependency ${dep.path}: set ${dep.remoteIdEnv} in .env, add a top-level "id" to that dependency JSON, or ensure the parent Execute Workflow node(s) in parentExecuteWorkflowNodeNames expose parameters.workflowId`,
+        `Dependency ${dep.path}: set ${dep.remoteIdEnv} in .env, or ensure the parent Execute Workflow node(s) in parentExecuteWorkflowNodeNames expose parameters.workflowId. Run \`./tools/deploy.sh ${portfolioId}\` first to bootstrap missing remote ids.`,
       );
     }
     await downloadOne(repoRoot, depAbs, remoteId, base, key, {
@@ -214,12 +211,12 @@ async function downloadOneRoot(portfolioId) {
     }
   }
 
-  const remoteId = resolveRemoteWorkflowId(
-    portfolioId,
-    envKey,
-    parentLocal,
-    path.relative(repoRoot, jsonPath),
-  );
+  const remoteId = resolveRemoteWorkflowId(envKey);
+  if (!remoteId) {
+    throw new Error(
+      `Set ${envKey} in .env to download ${portfolioId}. Run \`./tools/deploy.sh ${portfolioId}\` first to create the workflow on n8n and write the id to .env.`,
+    );
+  }
   await downloadOne(repoRoot, jsonPath, remoteId, base, key, {
     dryRun,
     skipValidate,

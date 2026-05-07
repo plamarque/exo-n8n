@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 /**
- * @deprecated Prefer `./tools/deploy.sh wf03 --create-missing-deps` (or
- * `npm run deploy:workflow -- wf03 --create-missing-deps`) so missing UTIL
- * sub-workflows are POST-created, env lines are printed, and the parent is
- * deployed with in-memory `workflowId` injection — without rewriting
+ * @deprecated Prefer `./tools/deploy.sh wf03` (or `npm run deploy:workflow -- wf03`) so
+ * missing UTIL sub-workflows are POST-created, the new ids are written back into `.env`,
+ * and the parent is deployed with in-memory `workflowId` injection — without rewriting
  * canonical `workflows/wf03-weekly-steering/workflow.json` on disk.
  *
  * This script forwards to the unified deploy entrypoint for backward compatibility.
@@ -17,10 +16,10 @@ const extra = process.argv.slice(2).filter((a) => a !== "--dry-run");
 const dryRun = process.argv.includes("--dry-run");
 
 console.warn(
-  "[deprecated] tools/import-wf03-subworkflows.mjs — use: ./tools/deploy.sh wf03 --create-missing-deps",
+  "[deprecated] tools/import-wf03-subworkflows.mjs — use: ./tools/deploy.sh wf03",
 );
 
-const forward = ["tools/push-workflow-to-n8n-api.mjs", "wf03", "--create-missing-deps", ...extra];
+const forward = ["tools/push-workflow-to-n8n-api.mjs", "wf03", ...extra];
 if (dryRun) {
   forward.push("--dry-run");
 }

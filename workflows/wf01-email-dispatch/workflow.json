@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-04-28T11:54:50.549Z",
-  "createdAt": "2026-04-22T04:35:52.578Z",
-  "id": "zeVd0scWqU5vcOUq",
+  "updatedAt": "2026-05-07T14:32:03.996Z",
+  "createdAt": "2026-05-07T14:30:32.513Z",
+  "id": "6wQ2HsRUpkWezTrM",
   "name": "WF01 - Email dispatch",
-  "description": "WF01 refactoré: création de tâches eXo sur project_id 3 et assignation via username.",
+  "description": null,
   "active": false,
   "isArchived": false,
   "nodes": [
@@ -15,12 +15,12 @@
       "typeVersion": 1,
       "position": [
         224,
-        224
+        208
       ]
     },
     {
       "parameters": {
-        "endpointUrl": "https://exo.example.com/mcp-server/mcp",
+        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -39,18 +39,18 @@
       "typeVersion": 1,
       "position": [
         448,
-        320
+        304
       ],
       "credentials": {
         "mcpOAuth2Api": {
-          "id": "1RM4eapAQJfVKz0k",
-          "name": "eXo MIPS MCP"
+          "id": "vaCQUg5NblUEOrlR",
+          "name": "EXO MIPS MCP"
         }
       }
     },
     {
       "parameters": {
-        "workflowId": "E4OAThogWRG93MUG",
+        "workflowId": "GPzd2Ot3xM56rW0u",
         "options": {}
       },
       "id": "ba2d6724-d3e5-4bc4-b07f-b4cf469449a3",
@@ -59,7 +59,7 @@
       "typeVersion": 1,
       "position": [
         672,
-        320
+        304
       ]
     },
     {
@@ -73,7 +73,7 @@
       "typeVersion": 2,
       "position": [
         896,
-        208
+        304
       ]
     },
     {
@@ -86,8 +86,8 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        896,
-        320
+        1120,
+        304
       ]
     },
     {
@@ -133,8 +133,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1120,
-        320
+        1344,
+        304
       ]
     },
     {
@@ -166,8 +166,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1344,
-        320
+        1568,
+        304
       ]
     },
     {
@@ -184,8 +184,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        1568,
-        320
+        1792,
+        304
       ]
     },
     {
@@ -205,8 +205,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        1584,
-        544
+        1800,
+        528
       ],
       "credentials": {
         "openAiApi": {
@@ -224,8 +224,8 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        1712,
-        544
+        1928,
+        528
       ]
     },
     {
@@ -283,7 +283,7 @@
             {
               "id": "taskTitleCandidate",
               "name": "taskTitleCandidate",
-              "value": "={{ (() => { const out = ($json.output || $json); const aiTitle = String(out.task_title || '').trim(); const nextAction = String(out.next_action || '').trim(); const subject = String($('Normalize Email').item.json.subject || 'No subject').trim(); const base = (aiTitle || nextAction || subject).replace(/\\s+/g, ' ').slice(0, 120); return base ? `Inbound email - Action: ${base}`.slice(0, 180) : 'Inbound email - Action required'; })() }}",
+              "value": "={{ (() => { const out = ($json.output || $json); const aiTitle = String(out.task_title || '').trim(); const nextAction = String(out.next_action || '').trim(); const subject = String($('Normalize Email').item.json.subject || 'No subject').trim(); const base = (aiTitle || nextAction || subject).replace(/\\s+/g, ' ').slice(0, 120); return base ? `[EMAIL] ${base}`.slice(0, 180) : '[EMAIL] Action required'; })() }}",
               "type": "string"
             },
             {
@@ -319,8 +319,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1920,
-        320
+        2144,
+        304
       ]
     },
     {
@@ -372,8 +372,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2144,
-        320
+        2368,
+        304
       ]
     },
     {
@@ -401,7 +401,7 @@
             {
               "id": "taskTitle",
               "name": "taskTitle",
-              "value": "={{ (() => { const ai = String($json.taskTitleCandidate || '').replace(/\\s+/g, ' ').trim(); const nextAction = String($json.nextAction || '').replace(/\\s+/g, ' ').trim(); const subject = String($json.subject || '').replace(/\\s+/g, ' ').trim(); const base = ai && !/^email to process$/i.test(ai) ? ai : (nextAction || subject || 'Clarify required action'); const clean = base.replace(/^inbound email\\s*-\\s*action\\s*:\\s*/i, '').replace(/^re:\\s*/i, '').trim(); return `Inbound email - Action: ${clean}`.slice(0, 180); })() }}",
+              "value": "={{ (() => { const ai = String($json.taskTitleCandidate || '').replace(/\\s+/g, ' ').trim(); const nextAction = String($json.nextAction || '').replace(/\\s+/g, ' ').trim(); const subject = String($json.subject || '').replace(/\\s+/g, ' ').trim(); const base = ai && !/^email to process$/i.test(ai) ? ai : (nextAction || subject || 'Clarify required action'); const clean = base.replace(/^inbound email\\s*-\\s*action\\s*:\\s*/i, '').replace(/^\\[email\\]\\s*/i, '').replace(/^re:\\s*/i, '').trim(); return `[EMAIL] ${clean}`.slice(0, 180); })() }}",
               "type": "string"
             }
           ]
@@ -414,8 +414,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2368,
-        320
+        2592,
+        304
       ]
     },
     {
@@ -428,13 +428,12 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2592,
-        320
+        2816,
+        304
       ]
     },
     {
       "parameters": {
-        "operation": "generateHtmlTemplate",
         "html": "<div><p><strong>Email from:</strong> {{$json.senderSafe}}<br/><strong>Subject:</strong> {{$json.subjectSafe}}</p><h4>Context</h4><p>{{$json.summarySafe}}</p><h4>Expected action</h4><p>{{$json.nextActionSafe}}</p><h4>AI decision</h4><ul><li><strong>Assignee:</strong> {{$json.assigneeLabelSafe}} ({{$json.resolvedAssigneeSafe}})</li><li><strong>Priority:</strong> {{$json.resolvedPrioritySafe}}</li><li><strong>Actionable confidence:</strong> {{$json.actionConfidenceSafe}}</li><li><strong>Rationale:</strong> {{$json.rationaleSafe}}</li></ul><h4>Email excerpt</h4><blockquote>{{$json.excerptSafe}}</blockquote></div>"
       },
       "id": "9f1e2f40-73a6-4ca7-93b3-cf394f0deab5",
@@ -442,8 +441,8 @@
       "type": "n8n-nodes-base.html",
       "typeVersion": 1,
       "position": [
-        2816,
-        320
+        3040,
+        304
       ]
     },
     {
@@ -459,7 +458,7 @@
             {
               "id": "createTaskInput",
               "name": "createTaskInput",
-              "value": "={{ (() => { const payload = $('Build MCP Payload').item.json; const sla = Math.max(1, Number(payload.slaHours || 72)); const due = new Date(Date.now() + sla * 60 * 60 * 1000).toISOString().slice(0, 10); const nextAction = String(payload.nextAction || '').replace(/\\s+/g, ' ').trim(); const subject = String(payload.subject || '').replace(/\\s+/g, ' ').trim(); const taskTitle = String(payload.taskTitle || '').replace(/\\s+/g, ' ').trim(); const effective = taskTitle && !/^email to process$/i.test(taskTitle) ? taskTitle : `Inbound email - Action: ${nextAction || subject || 'Clarify required action'}`; return { project_id: Number($vars.WF01_PROJECT_ID || 3), due_date: due, description: String($json.html || '').slice(0, 5000), title: effective.slice(0, 180), assignee: String(payload.resolvedAssignee || 'claire'), priority: String(payload.resolvedPriority || 'NORMAL').toUpperCase() }; })() }}",
+              "value": "={{ (() => { const payload = $('Build MCP Payload').item.json; const sla = Math.max(1, Number(payload.slaHours || 72)); const due = new Date(Date.now() + sla * 60 * 60 * 1000).toISOString().slice(0, 10); const nextAction = String(payload.nextAction || '').replace(/\\s+/g, ' ').trim(); const subject = String(payload.subject || '').replace(/\\s+/g, ' ').trim(); const taskTitle = String(payload.taskTitle || '').replace(/\\s+/g, ' ').trim(); const effective = taskTitle && !/^email to process$/i.test(taskTitle) ? taskTitle : `[EMAIL] ${nextAction || subject || 'Clarify required action'}`; return { project_id: Number($vars.WF01_PROJECT_ID || 3), due_date: due, description: String($json.html || '').slice(0, 5000), title: effective.slice(0, 180), assignee: String(payload.resolvedAssignee || 'claire'), priority: String(payload.resolvedPriority || 'NORMAL').toUpperCase() }; })() }}",
               "type": "object"
             }
           ]
@@ -472,13 +471,13 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        3040,
-        320
+        3264,
+        304
       ]
     },
     {
       "parameters": {
-        "endpointUrl": "https://exo.example.com/mcp-server/mcp",
+        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -496,19 +495,19 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        3264,
-        320
+        3488,
+        304
       ],
       "credentials": {
         "mcpOAuth2Api": {
-          "id": "1RM4eapAQJfVKz0k",
-          "name": "eXo MIPS MCP"
+          "id": "vaCQUg5NblUEOrlR",
+          "name": "EXO MIPS MCP"
         }
       }
     },
     {
       "parameters": {
-        "workflowId": "E4OAThogWRG93MUG",
+        "workflowId": "GPzd2Ot3xM56rW0u",
         "options": {}
       },
       "id": "1fa2eb88-0b11-4f2e-a0f3-bd5d9768d200",
@@ -516,8 +515,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        3488,
-        320
+        3712,
+        304
       ]
     },
     {
@@ -551,8 +550,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        3712,
-        320
+        3936,
+        304
       ]
     },
     {
@@ -584,13 +583,13 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        3936,
-        320
+        4160,
+        304
       ]
     },
     {
       "parameters": {
-        "endpointUrl": "https://exo.example.com/mcp-server/mcp",
+        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -608,13 +607,13 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        3712,
-        224
+        4384,
+        208
       ],
       "credentials": {
         "mcpOAuth2Api": {
-          "id": "1RM4eapAQJfVKz0k",
-          "name": "eXo MIPS MCP"
+          "id": "vaCQUg5NblUEOrlR",
+          "name": "EXO MIPS MCP"
         }
       }
     },
@@ -627,8 +626,8 @@
       "type": "n8n-nodes-base.stopAndError",
       "typeVersion": 1,
       "position": [
-        3712,
-        416
+        4384,
+        400
       ]
     },
     {
@@ -647,19 +646,19 @@
       "typeVersion": 1.3,
       "position": [
         224,
-        416
+        400
       ]
     },
     {
       "parameters": {
         "content": "## Check Email\n\nUse MCP tool to read user inbox",
-        "height": 512,
-        "width": 1056
+        "height": 592,
+        "width": 1296
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        416,
-        128
+        400,
+        96
       ],
       "typeVersion": 1,
       "id": "69b13858-3f16-4af7-95c1-b7b474fa4c94",
@@ -674,8 +673,8 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        1520,
-        128
+        1744,
+        80
       ],
       "typeVersion": 1,
       "id": "223ec55f-37f4-4b1b-9740-479a1b307927",
@@ -683,15 +682,15 @@
     },
     {
       "parameters": {
-        "content": "## Dispatch as Task\n**Double click** to edit me. [Guide](https://docs.n8n.io/workflows/components/sticky-notes/)",
-        "height": 496,
-        "width": 1600,
+        "content": "## Dispatch as Task\ncreate and assign task to the right person",
+        "height": 608,
+        "width": 2080,
         "color": 6
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        2336,
-        128
+        2560,
+        80
       ],
       "typeVersion": 1,
       "id": "f5cc9cfc-f528-44b6-9eeb-b180684e5f23",
@@ -940,30 +939,27 @@
   },
   "settings": {
     "executionOrder": "v1",
-    "availableInMCP": true,
     "binaryMode": "separate"
   },
   "staticData": null,
-  "meta": {
-    "aiBuilderAssisted": true
-  },
+  "meta": null,
   "pinData": {},
-  "versionId": "2a5176da-5c84-42d5-a68d-525b6853ed1e",
+  "versionId": "d2ce3173-ac77-4787-85be-7841fdf43904",
   "activeVersionId": null,
-  "versionCounter": 80,
+  "versionCounter": 9,
   "triggerCount": 0,
   "shared": [
     {
-      "updatedAt": "2026-04-22T04:35:52.598Z",
-      "createdAt": "2026-04-22T04:35:52.598Z",
+      "updatedAt": "2026-05-07T14:30:32.514Z",
+      "createdAt": "2026-05-07T14:30:32.514Z",
       "role": "workflow:owner",
-      "workflowId": "zeVd0scWqU5vcOUq",
+      "workflowId": "6wQ2HsRUpkWezTrM",
       "projectId": "rzaD0nbLwUWIJxdW",
       "project": {
-        "updatedAt": "2026-04-20T14:44:01.248Z",
+        "updatedAt": "2026-05-05T11:30:25.664Z",
         "createdAt": "2026-04-20T14:43:55.238Z",
         "id": "rzaD0nbLwUWIJxdW",
-        "name": "Patrice   <patrice@meedslab.com>",
+        "name": "Meeds Lab  <patrice@meedslab.com>",
         "type": "personal",
         "icon": null,
         "description": null,

@@ -19,6 +19,8 @@ This document is tracking-only. It does not define expected behavior.
 - [x] Refactor **WF02** toward more native n8n nodes. (2026-04-27 — details in [SPEC.technical.md](../workflows/wf02-document-validation/SPEC.technical.md) §12.4.)
 - [ ] Optional further **WF03** native-only tweaks (Split Out / Aggregate for tasks, etc.) — heavy HTML/report Code remains in portfolio-local UTILs; see [README](../workflows/wf03-weekly-steering/README.md) and [ISSUES](ISSUES.md).
 - [x] Reuse shared `unwrap-mcp-json` sub-workflow in WF02 (2026-04-27, via [subworkflow-dependencies.json](../workflows/wf02-document-validation/subworkflow-dependencies.json) — WF03/WF04 evaluation still open).
+- [x] **Deploy auto-bootstrap (`.env`-driven)** (2026-05-07 — `./tools/deploy.sh <shortId>` POST-creates workflows when `N8N_WORKFLOW_ID_<SHORTID>` is unset and writes the new id back to `.env`; same logic for declared subworkflow dependencies. Legacy `workflow.json.id` fallback removed; `--create-missing-deps` is now a no-op alias. Tests: [tools/lib/n8n-workflow-deploy-orchestrator.test.mjs](../tools/lib/n8n-workflow-deploy-orchestrator.test.mjs), [tools/lib/env-writer.test.mjs](../tools/lib/env-writer.test.mjs)).
+- [ ] **Normalize tenant-specific ids before commit** — strip `id`, `webhookId`, etc., from canonical `workflow.json` so committed graphs stay portable across tenants. Tracked in [ISSUES.md](ISSUES.md#cross-cutting-issues). Deferred slice; pairs with the new bootstrap behavior.
 
 ## Done Criteria For Documentation Governance
 

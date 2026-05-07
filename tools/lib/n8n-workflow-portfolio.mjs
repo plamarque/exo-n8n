@@ -90,20 +90,18 @@ export function remoteIdEnvKey(portfolioId) {
 }
 
 /**
- * @param {string} portfolioId
- * @param {string} envKey
- * @param {Record<string, unknown>} local
- * @param {string} jsonPathForError
+ * Resolve a root workflow remote id from `.env` only. Returns `""` when the env key is unset
+ * so callers can decide whether to create the workflow on n8n (bootstrap) or fail.
+ *
+ * The legacy fallback to a top-level `"id"` field on `workflow.json` was removed: canonical
+ * graphs in git stay portable across tenants, and the deploy script writes the resolved id
+ * back to `.env` after a POST create.
+ *
+ * @param {string} envKey for example `N8N_WORKFLOW_ID_WF01`
+ * @returns {string} trimmed id from `process.env[envKey]`, or `""` when unset/empty
  */
-export function resolveRemoteWorkflowId(portfolioId, envKey, local, jsonPathForError) {
-  const fromEnv = (process.env[envKey] || "").trim();
-  if (fromEnv) return fromEnv;
-  const raw = local?.id;
-  const fromFile = typeof raw === "string" && raw.trim() ? raw.trim() : "";
-  if (fromFile) return fromFile;
-  throw new Error(
-    `Set ${envKey} in .env, or add a top-level "id" (remote n8n workflow id) to ${jsonPathForError}.`,
-  );
+export function resolveRemoteWorkflowId(envKey) {
+  return (process.env[envKey] || "").trim();
 }
 
 /**

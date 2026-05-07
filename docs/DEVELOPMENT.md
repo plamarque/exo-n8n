@@ -44,8 +44,8 @@ Publishing workflows must follow the **deployment validation policy** in [WORKFL
 Optional **local-only** file at the repository root (git-ignored). Primary use: **n8n instance API** credentials for [push-workflow-to-n8n-api.mjs](../tools/push-workflow-to-n8n-api.mjs) and [download-workflow-from-n8n-api.mjs](../tools/download-workflow-from-n8n-api.mjs). It may also hold **`EXO_MCP_ENDPOINT`**, **`WF01_PROJECT_ID`**, **`WF02_*`**, **`WF03_*`**, **`EXO_SPACE_NAME`**, … — [push-workflow-to-n8n-api.mjs](../tools/push-workflow-to-n8n-api.mjs) applies MCP URLs and portfolio **fallback literals** in **memory** before each PUT/POST (`applyPortfolioEnvOverridesBeforePush`). Optionally run **`npm run generate:workflow-json`** to **persist** the same values into `workflow.json` on disk. The [exo-fixture-bootstrap](../.cursor/skills/exo-fixture-bootstrap/SKILL.md) skill merges bootstrap keys into the same `.env`. Per-workflow `[config.env.example](../workflows/wf02-document-validation/config.env.example)` documents the canonical key names.
 
 1. Copy `[.env.example](../.env.example)` → `.env` at the repo root.
-2. Set `N8N_BASE_URL` and `N8N_API_KEY`. For each **root** workflow under `workflows/<folder>/workflow.json`, set `N8N_WORKFLOW_ID_<SHORTID>` (shortId = folder name before the first `-`, or the full folder name if there is no hyphen; uppercase in env, e.g. `wf01` → `N8N_WORKFLOW_ID_WF01`, `unwrap` → `N8N_WORKFLOW_ID_UNWRAP`) **unless** the canonical `workflow.json` already contains a top-level `"id"` (remote n8n workflow id from that tenant’s export). Workflows without a root `id` still need the matching `N8N_WORKFLOW_ID_*` entry. See per-workflow `SPEC.technical.md` / `README.md` for reference ids.
-3. **CI / pipelines:** do not commit `.env`; inject the **same variable names** as protected secrets in your runner.
+2. Set `N8N_BASE_URL` and `N8N_API_KEY`. **Leave `N8N_WORKFLOW_ID_<SHORTID>` empty for a fresh tenant**: the first `./tools/deploy.sh <shortId>` POST-creates the workflow on n8n and writes the returned id back into `.env` (see [Deploy bootstrap (.env-driven)](#deploy-bootstrap-env-driven)). Once set, subsequent runs are regular PUT updates. ShortId = folder name before the first `-`, or the full folder name if there is no hyphen; uppercase in env (e.g. `wf01` → `N8N_WORKFLOW_ID_WF01`, `unwrap` → `N8N_WORKFLOW_ID_UNWRAP`).
+3. **CI / pipelines:** do not commit `.env`; inject the **same variable names** as protected secrets in your runner. CI typically pre-populates `N8N_WORKFLOW_ID_*` (the auto-write path is a developer convenience, not required at runtime).
 
 Per-workflow `[config.env.example](../workflows/wf02-document-validation/config.env.example)` files document **execution-time** values inside n8n (webhook URLs, space names, etc.). They are **not** a substitute for `N8N_API_KEY`.
 
@@ -107,6 +107,22 @@ Implementation: [tools/generate-workflow-json-from-env.mjs](../tools/generate-wo
 3. **Deploy to n8n**: `./tools/deploy.sh <workflowId>`
 4. **Run** on the instance and **inspect executions** in n8n for debugging.
 
+### Deploy bootstrap (`.env`-driven)
+
+`./tools/deploy.sh <shortId>` (and `npm run deploy:workflow -- <shortId>`) resolve the remote n8n workflow id **only** from `N8N_WORKFLOW_ID_<SHORTID>` in repository root `.env`:
+
+- **Set** → `PUT /api/v1/workflows/:id` (regular update). The same applies to dependencies declared in [`subworkflow-dependencies.json`](#portfolio-deploy-dependencies-manifest) (resolved via the dependency’s `remoteIdEnv`).
+- **Unset** → `POST /api/v1/workflows` to create the workflow on n8n, then write the returned id back into repository root `.env`. If a previous value was already there, it is commented with a timestamp and the new line is appended just below it. If no key existed, a `# --- deploy auto-bootstrap ---` section is appended at end of file. The next `deploy` becomes a regular PUT.
+- `--dry-run` **never** POST-creates and **never** writes `.env`. When the env id is missing under dry-run, deploy logs what it would do and exits successfully (deps fail-fast with a clear message because deps must be created before the parent injection map is built).
+
+To recreate a workflow from scratch on the same tenant:
+
+1. Delete it on n8n (UI or API).
+2. Clear the matching `N8N_WORKFLOW_ID_*` line in `.env` (or comment it out).
+3. Re-run `./tools/deploy.sh <shortId>`. The new id is written back automatically.
+
+The legacy `--create-missing-deps` flag is accepted as a no-op alias (auto-create is now the default for missing dependency ids).
+
 ### Workflow folders
 
 Root workflows live in **immediate** subfolders of `workflows/` that contain `workflows/<folder>/workflow.json`.
@@ -135,11 +151,11 @@ Some portfolio folders include `**subworkflow-dependencies.json`**/ When present
 | `parentExecuteWorkflowNodeNames` | Exact `name` values of **Execute Workflow** nodes on the **parent** graph to receive that dependency’s remote id at deploy time.                                     |
 
 
-**Resolution order for each dependency’s remote id:** value of `remoteIdEnv` in `.env`, else top-level `"id"` on the dependency JSON if present, else the first matching parent **Execute Workflow** node’s `parameters.workflowId` among `parentExecuteWorkflowNodeNames`. If still empty: use `./tools/deploy.sh wf03 --create-missing-deps` (once) to **POST**-create on n8n and print `.env` lines — **not** with `--dry-run` when ids are missing.
+**Resolution order for each dependency’s remote id:** value of `remoteIdEnv` in `.env`, else the first matching parent **Execute Workflow** node’s `parameters.workflowId` among `parentExecuteWorkflowNodeNames`. If still empty, deploy POST-creates the dependency on n8n and writes the new id back into `.env` (see [Deploy bootstrap (.env-driven)](#deploy-bootstrap-env-driven)). `--dry-run` cannot bootstrap missing dependency ids and exits with an explicit error in that case.
 
-**Flags:** `--no-deps` skips the manifest even if present; `--create-missing-deps` POST-creates missing dependencies; [tools/deploy.sh](../tools/deploy.sh) forwards all arguments to the Node script.
+**Flags:** `--no-deps` skips the manifest even if present; `--create-missing-deps` is a deprecated alias (auto-create on missing ids is now the default); [tools/deploy.sh](../tools/deploy.sh) forwards all arguments to the Node script.
 
-**WF03 first-time tenant:** Prefer `./tools/deploy.sh wf03 --create-missing-deps` over editing canonical JSON. The legacy [tools/import-wf03-subworkflows.mjs](../tools/import-wf03-subworkflows.mjs) entrypoint is deprecated and forwards to the same deploy command.
+**WF03 first-time tenant:** plain `./tools/deploy.sh wf03` is enough — UTILs and unwrap will be POST-created and persisted in `.env` on the first run. The legacy [tools/import-wf03-subworkflows.mjs](../tools/import-wf03-subworkflows.mjs) entrypoint is deprecated and forwards to the same deploy command.
 
 ## How runtime variables are passed to workflows
 
@@ -176,7 +192,7 @@ Example `config.env.example` files live **next to each workflow** (for example [
 
 - **WF01**: import [workflows/wf01-email-dispatch/workflow.json](../workflows/wf01-email-dispatch/workflow.json); ensure [unwrap UTIL](../workflows/unwrap-mcp-json/workflow.json) is available on the instance (or rely on REST deploy with `subworkflow-dependencies.json`); verify MCP eXo and OpenAI credentials; run `Manual Start`. See [wf01 README](../workflows/wf01-email-dispatch/README.md).
 - **WF02**: import [workflows/wf02-document-validation/workflow.json](../workflows/wf02-document-validation/workflow.json); set variables from [config.env.example](../workflows/wf02-document-validation/config.env.example); test webhook. See [wf02 README](../workflows/wf02-document-validation/README.md).
-- **WF03**: use [workflows/wf03-weekly-steering/README.md](../workflows/wf03-weekly-steering/README.md) and technical specs for IDs, notes, and agenda. REST-deploy with `./tools/deploy.sh wf03` (dependencies from `subworkflow-dependencies.json` run first). For a fresh tenant without UTIL ids, `./tools/deploy.sh wf03 --create-missing-deps`. Canonical JSON: [workflows/wf03-weekly-steering/workflow.json](../workflows/wf03-weekly-steering/workflow.json); raw API snapshot: [api-response.snapshot.json](../workflows/wf03-weekly-steering/fixtures/api-response.snapshot.json).
+- **WF03**: use [workflows/wf03-weekly-steering/README.md](../workflows/wf03-weekly-steering/README.md) and technical specs for IDs, notes, and agenda. REST-deploy with `./tools/deploy.sh wf03` (dependencies from `subworkflow-dependencies.json` run first; UTILs and unwrap are POST-created on a fresh tenant and the new ids written back to `.env`). Canonical JSON: [workflows/wf03-weekly-steering/workflow.json](../workflows/wf03-weekly-steering/workflow.json); raw API snapshot: [api-response.snapshot.json](../workflows/wf03-weekly-steering/fixtures/api-response.snapshot.json).
 - **WF04**: set `$vars.EXO_SPACE_NAME`; verify MCP OAuth, OpenAI, and Data Table; see [wf04 README](../workflows/wf04-metadata-enrichment/README.md).
 
 ## Operational safety

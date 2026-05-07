@@ -1,10 +1,10 @@
 {
-  "updatedAt": "2026-04-27T23:45:07.356Z",
-  "createdAt": "2026-04-25T17:01:36.224Z",
-  "id": "E4OAThogWRG93MUG",
+  "updatedAt": "2026-05-07T14:30:35.119Z",
+  "createdAt": "2026-05-07T14:26:03.024Z",
+  "id": "GPzd2Ot3xM56rW0u",
   "name": "UTIL - Unwrap MCP JSON",
-  "description": "Sous-workflow technique qui déplie les enveloppes MCP JSON en un champ payload réutilisable.",
-  "active": true,
+  "description": null,
+  "active": false,
   "isArchived": false,
   "nodes": [
     {
@@ -47,30 +47,27 @@
     }
   },
   "settings": {
-    "executionOrder": "v1",
-    "availableInMCP": true
+    "executionOrder": "v1"
   },
   "staticData": null,
-  "meta": {
-    "aiBuilderAssisted": true
-  },
+  "meta": null,
   "pinData": null,
-  "versionId": "2a359949-84d4-4df3-bd67-a33fea7b1804",
-  "activeVersionId": "2a359949-84d4-4df3-bd67-a33fea7b1804",
-  "versionCounter": 52,
+  "versionId": "3a46a4e3-3a30-4e7f-bacf-23c99f159afe",
+  "activeVersionId": null,
+  "versionCounter": 7,
   "triggerCount": 0,
   "shared": [
     {
-      "updatedAt": "2026-04-25T17:01:36.226Z",
-      "createdAt": "2026-04-25T17:01:36.226Z",
+      "updatedAt": "2026-05-07T14:26:03.026Z",
+      "createdAt": "2026-05-07T14:26:03.026Z",
       "role": "workflow:owner",
-      "workflowId": "E4OAThogWRG93MUG",
+      "workflowId": "GPzd2Ot3xM56rW0u",
       "projectId": "rzaD0nbLwUWIJxdW",
       "project": {
-        "updatedAt": "2026-04-20T14:44:01.248Z",
+        "updatedAt": "2026-05-05T11:30:25.664Z",
         "createdAt": "2026-04-20T14:43:55.238Z",
         "id": "rzaD0nbLwUWIJxdW",
-        "name": "Patrice   <patrice@meedslab.com>",
+        "name": "Meeds Lab  <patrice@meedslab.com>",
         "type": "personal",
         "icon": null,
         "description": null,
@@ -79,192 +76,5 @@
     }
   ],
   "tags": [],
-  "activeVersion": {
-    "updatedAt": "2026-04-27T16:35:13.000Z",
-    "createdAt": "2026-04-27T16:32:51.320Z",
-    "versionId": "2a359949-84d4-4df3-bd67-a33fea7b1804",
-    "workflowId": "E4OAThogWRG93MUG",
-    "nodes": [
-      {
-        "id": "f0d5a5ea-b9d9-4ea8-a083-88b2c8dd3ec1",
-        "name": "When Executed by Another Workflow",
-        "type": "n8n-nodes-base.executeWorkflowTrigger",
-        "typeVersion": 1,
-        "position": [
-          220,
-          260
-        ],
-        "parameters": {}
-      },
-      {
-        "id": "273f3214-6f2d-49a8-bf4b-74125d3f45ff",
-        "name": "Unwrap Payload",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          480,
-          260
-        ],
-        "parameters": {
-          "mode": "runOnceForEachItem",
-          "jsCode": "function looksLikeTaskRow(o) {\n  return o && typeof o === 'object' && ('task_id' in o || 'title' in o || 'name' in o || 'status' in o);\n}\n\nfunction parseJsonLenient(s) {\n  const t = String(s ?? '').trim();\n  if (!t) return null;\n  let u = t;\n  if (u.startsWith('```')) {\n    u = u.replace(/^```(?:json)?\\s*/i, '').replace(/\\s*```\\s*$/,'').trim();\n  }\n  try {\n    return JSON.parse(u);\n  } catch {\n    return null;\n  }\n}\n\nfunction drillContentArray(obj) {\n  if (!obj || typeof obj !== 'object') return obj;\n  const c = obj.content;\n  if (!Array.isArray(c) || c.length === 0) return obj;\n  for (let i = c.length - 1; i >= 0; i--) {\n    const part = c[i];\n    if (part?.type === 'text' && part.text != null && typeof part.text === 'object' && looksLikeTaskRow(part.text)) {\n      return part.text;\n    }\n    if (part?.type === 'text' && typeof part.text === 'string') {\n      const parsed = parseJsonLenient(part.text);\n      if (parsed !== null) return parsed;\n    }\n    if (typeof part?.text === 'string') {\n      const parsed = parseJsonLenient(part.text);\n      if (parsed !== null) return parsed;\n    }\n  }\n  const last = c[c.length - 1];\n  if (last?.type === 'text' && last.text != null && typeof last.text === 'object' && looksLikeTaskRow(last.text)) {\n    return last.text;\n  }\n  if (last?.type === 'text' && typeof last.text === 'string') return last.text;\n  if (typeof last?.text === 'string') return last.text;\n  return obj;\n}\n\nlet payload = $json;\n\nif (payload && typeof payload === 'object' && !Array.isArray(payload)) {\n  const keys = Object.keys(payload);\n  if (keys.length === 1 && keys[0] === 'output' && payload.output !== undefined) {\n    payload = payload.output;\n  }\n}\n\nif (payload && typeof payload === 'object' && !Array.isArray(payload) && payload.payload != null && typeof payload.payload === 'object' && !Array.isArray(payload.payload)) {\n  const inner = payload.payload;\n  if (Array.isArray(inner.content) || looksLikeTaskRow(inner)) {\n    payload = inner;\n  }\n}\n\nif (payload && typeof payload === 'object' && !Array.isArray(payload)) {\n  payload = drillContentArray(payload);\n}\n\nif (Array.isArray(payload) && payload[0]?.type === 'text' && typeof payload[0]?.text === 'string') {\n  payload = payload[0].text;\n}\n\nif (Array.isArray(payload) && payload.length === 1 && payload[0]?.type === 'text' && payload[0].text != null && typeof payload[0].text === 'object' && looksLikeTaskRow(payload[0].text)) {\n  payload = payload[0].text;\n}\n\nif (typeof payload === 'string') {\n  const parsed = parseJsonLenient(payload);\n  if (parsed !== null) payload = parsed;\n}\n\nif (Array.isArray(payload) && payload.length === 1 && payload[0]?.type === 'text' && typeof payload[0]?.text === 'string') {\n  const inner = parseJsonLenient(payload[0].text);\n  if (inner !== null) payload = inner;\n  else {\n    const t = payload[0].text;\n    const inner2 = typeof t === 'string' ? parseJsonLenient(t) : null;\n    payload = inner2 !== null ? inner2 : {};\n  }\n}\n\nif (typeof payload === 'object' && payload !== null && !Array.isArray(payload)) {\n  for (const k of ['response', 'result', 'text']) {\n    const v = payload[k];\n    if (typeof v === 'string' && v.trim()) {\n      const parsed = parseJsonLenient(v);\n      if (parsed !== null) {\n        payload = parsed;\n        break;\n      }\n    }\n  }\n}\n\nif (Array.isArray(payload) && payload.length > 0 && payload.every(looksLikeTaskRow)) {\n  payload = { tasks: payload };\n}\n\nreturn { json: { payload } };"
-        }
-      }
-    ],
-    "connections": {
-      "When Executed by Another Workflow": {
-        "main": [
-          [
-            {
-              "node": "Unwrap Payload",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      }
-    },
-    "authors": "Patrice  ",
-    "name": "Version 2a359949",
-    "description": "",
-    "autosaved": false,
-    "workflowPublishHistory": [
-      {
-        "createdAt": "2026-04-27T16:35:13.404Z",
-        "id": 7,
-        "workflowId": "E4OAThogWRG93MUG",
-        "versionId": "2a359949-84d4-4df3-bd67-a33fea7b1804",
-        "event": "activated",
-        "userId": "8de64810-3c63-4fd1-969c-9915f88c784a"
-      },
-      {
-        "createdAt": "2026-04-27T17:18:04.120Z",
-        "id": 10,
-        "workflowId": "E4OAThogWRG93MUG",
-        "versionId": "2a359949-84d4-4df3-bd67-a33fea7b1804",
-        "event": "activated",
-        "userId": "8de64810-3c63-4fd1-969c-9915f88c784a"
-      },
-      {
-        "createdAt": "2026-04-27T21:31:15.524Z",
-        "id": 14,
-        "workflowId": "E4OAThogWRG93MUG",
-        "versionId": "2a359949-84d4-4df3-bd67-a33fea7b1804",
-        "event": "activated",
-        "userId": "8de64810-3c63-4fd1-969c-9915f88c784a"
-      },
-      {
-        "createdAt": "2026-04-27T21:44:43.478Z",
-        "id": 18,
-        "workflowId": "E4OAThogWRG93MUG",
-        "versionId": "2a359949-84d4-4df3-bd67-a33fea7b1804",
-        "event": "activated",
-        "userId": "8de64810-3c63-4fd1-969c-9915f88c784a"
-      },
-      {
-        "createdAt": "2026-04-27T22:06:08.565Z",
-        "id": 22,
-        "workflowId": "E4OAThogWRG93MUG",
-        "versionId": "2a359949-84d4-4df3-bd67-a33fea7b1804",
-        "event": "activated",
-        "userId": "8de64810-3c63-4fd1-969c-9915f88c784a"
-      },
-      {
-        "createdAt": "2026-04-27T22:15:32.886Z",
-        "id": 26,
-        "workflowId": "E4OAThogWRG93MUG",
-        "versionId": "2a359949-84d4-4df3-bd67-a33fea7b1804",
-        "event": "activated",
-        "userId": "8de64810-3c63-4fd1-969c-9915f88c784a"
-      },
-      {
-        "createdAt": "2026-04-27T22:27:33.751Z",
-        "id": 30,
-        "workflowId": "E4OAThogWRG93MUG",
-        "versionId": "2a359949-84d4-4df3-bd67-a33fea7b1804",
-        "event": "activated",
-        "userId": "8de64810-3c63-4fd1-969c-9915f88c784a"
-      },
-      {
-        "createdAt": "2026-04-27T22:35:53.049Z",
-        "id": 34,
-        "workflowId": "E4OAThogWRG93MUG",
-        "versionId": "2a359949-84d4-4df3-bd67-a33fea7b1804",
-        "event": "activated",
-        "userId": "8de64810-3c63-4fd1-969c-9915f88c784a"
-      },
-      {
-        "createdAt": "2026-04-27T23:45:07.499Z",
-        "id": 38,
-        "workflowId": "E4OAThogWRG93MUG",
-        "versionId": "2a359949-84d4-4df3-bd67-a33fea7b1804",
-        "event": "activated",
-        "userId": "8de64810-3c63-4fd1-969c-9915f88c784a"
-      },
-      {
-        "createdAt": "2026-04-27T17:18:03.792Z",
-        "id": 9,
-        "workflowId": "E4OAThogWRG93MUG",
-        "versionId": "2a359949-84d4-4df3-bd67-a33fea7b1804",
-        "event": "deactivated",
-        "userId": "8de64810-3c63-4fd1-969c-9915f88c784a"
-      },
-      {
-        "createdAt": "2026-04-27T21:31:15.209Z",
-        "id": 13,
-        "workflowId": "E4OAThogWRG93MUG",
-        "versionId": "2a359949-84d4-4df3-bd67-a33fea7b1804",
-        "event": "deactivated",
-        "userId": "8de64810-3c63-4fd1-969c-9915f88c784a"
-      },
-      {
-        "createdAt": "2026-04-27T21:44:43.058Z",
-        "id": 17,
-        "workflowId": "E4OAThogWRG93MUG",
-        "versionId": "2a359949-84d4-4df3-bd67-a33fea7b1804",
-        "event": "deactivated",
-        "userId": "8de64810-3c63-4fd1-969c-9915f88c784a"
-      },
-      {
-        "createdAt": "2026-04-27T22:06:08.225Z",
-        "id": 21,
-        "workflowId": "E4OAThogWRG93MUG",
-        "versionId": "2a359949-84d4-4df3-bd67-a33fea7b1804",
-        "event": "deactivated",
-        "userId": "8de64810-3c63-4fd1-969c-9915f88c784a"
-      },
-      {
-        "createdAt": "2026-04-27T22:15:32.538Z",
-        "id": 25,
-        "workflowId": "E4OAThogWRG93MUG",
-        "versionId": "2a359949-84d4-4df3-bd67-a33fea7b1804",
-        "event": "deactivated",
-        "userId": "8de64810-3c63-4fd1-969c-9915f88c784a"
-      },
-      {
-        "createdAt": "2026-04-27T22:27:33.407Z",
-        "id": 29,
-        "workflowId": "E4OAThogWRG93MUG",
-        "versionId": "2a359949-84d4-4df3-bd67-a33fea7b1804",
-        "event": "deactivated",
-        "userId": "8de64810-3c63-4fd1-969c-9915f88c784a"
-      },
-      {
-        "createdAt": "2026-04-27T22:35:52.717Z",
-        "id": 33,
-        "workflowId": "E4OAThogWRG93MUG",
-        "versionId": "2a359949-84d4-4df3-bd67-a33fea7b1804",
-        "event": "deactivated",
-        "userId": "8de64810-3c63-4fd1-969c-9915f88c784a"
-      },
-      {
-        "createdAt": "2026-04-27T23:45:07.183Z",
-        "id": 37,
-        "workflowId": "E4OAThogWRG93MUG",
-        "versionId": "2a359949-84d4-4df3-bd67-a33fea7b1804",
-        "event": "deactivated",
-        "userId": "8de64810-3c63-4fd1-969c-9915f88c784a"
-      }
-    ]
-  }
+  "activeVersion": null
 }

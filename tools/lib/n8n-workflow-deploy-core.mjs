@@ -51,11 +51,30 @@ export function buildWorkflowPutPayload(local) {
   return out;
 }
 
+/**
+ * For bootstrap POST create, avoid sending credential references from git JSON.
+ * Those ids are often tenant/user-bound and can trigger "credentials not shared"
+ * errors on n8n create. Credential wiring is handled in the follow-up PUT path.
+ *
+ * @param {unknown[] | undefined} nodes
+ * @returns {unknown[]}
+ */
+function buildPostNodesWithoutCredentials(nodes) {
+  if (!Array.isArray(nodes)) return [];
+  return nodes.map((node) => {
+    if (!node || typeof node !== "object") return node;
+    /** @type {Record<string, unknown>} */
+    const clone = /** @type {Record<string, unknown>} */ (JSON.parse(JSON.stringify(node)));
+    delete clone.credentials;
+    return clone;
+  });
+}
+
 /** @param {Record<string, unknown>} local */
 export function buildWorkflowPostPayload(local) {
   return {
     name: local.name,
-    nodes: local.nodes,
+    nodes: buildPostNodesWithoutCredentials(/** @type {unknown[] | undefined} */ (local.nodes)),
     connections: local.connections ?? {},
     settings: sanitizeSettingsForPut(
       /** @type {Record<string, unknown> | undefined} */ (local.settings),
@@ -960,20 +979,18 @@ export async function fetchMergeAndPutWorkflow(opts) {
 }
 
 /**
- * Resolve remote n8n workflow id for a dependency: env, then optional top-level `id` on the
- * dependency JSON, then optional hint from the parent portfolio `workflow.json` (first
- * matching Execute Workflow node name in `hint.nodeNames`).
+ * Resolve remote n8n workflow id for a dependency from `.env`, falling back to a hint on
+ * the parent portfolio `workflow.json` (first matching Execute Workflow node name in
+ * `hint.nodeNames`). The legacy top-level `"id"` fallback on the dependency JSON itself
+ * was removed so canonical graphs in git stay portable; deploy writes ids back to `.env`
+ * after a POST create.
  *
  * @param {string} envKey
- * @param {Record<string, unknown>} localParsed dependency workflow root
  * @param {{ parent?: Record<string, unknown>; nodeNames?: string[] } | undefined} hint
  */
-export function resolveRemoteIdForDependency(envKey, localParsed, hint) {
+export function resolveRemoteIdForDependency(envKey, hint) {
   const fromEnv = (process.env[envKey] || "").trim();
   if (fromEnv) return fromEnv;
-  const raw = localParsed?.id;
-  const fromFile = typeof raw === "string" && raw.trim() ? raw.trim() : "";
-  if (fromFile) return fromFile;
   const nodes = /** @type {unknown[] | undefined} */ (hint?.parent?.nodes);
   const names = hint?.nodeNames;
   if (Array.isArray(nodes) && Array.isArray(names)) {

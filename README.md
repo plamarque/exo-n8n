@@ -134,6 +134,7 @@ These patterns appear across the portfolio; they are **intentional** for maintai
 ## Deployment and validation
 
 - **Environment:** copy `[.env.example](.env.example)` to `.env` and follow [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) (deploy, credentials, MCP).
+- **Bootstrap on a fresh tenant:** leave `N8N_WORKFLOW_ID_*` empty in `.env`; the first `./tools/deploy.sh <shortId>` POST-creates the workflow on n8n and writes the new id back into `.env`. Subsequent runs become regular PUT updates. See [Deploy bootstrap](docs/DEVELOPMENT.md#deploy-bootstrap-env-driven).
 - **Deploy a workflow from the repo root:** `./tools/deploy.sh wf01` (and `wf02`, `wf03`, `wf04`); use `--dry-run` to inspect targets. Sub-workflow order is driven by each folder’s `subworkflow-dependencies.json` where present.
 - **Validation policy:** before publishing, validate the canonical `workflow.json` as described in [docs/WORKFLOW.md](docs/WORKFLOW.md) and [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#rest-deploy-to-n8n).
 
