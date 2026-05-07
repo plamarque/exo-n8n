@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-07T18:35:56.651Z",
+  "updatedAt": "2026-05-07T18:59:41.113Z",
   "createdAt": "2026-05-07T14:30:33.862Z",
   "id": "vwTQX2yxbgCh3kaG",
   "name": "WF02 - Document validation (split / join)",
@@ -34,7 +34,7 @@
       "typeVersion": 1.3,
       "position": [
         224,
-        304
+        400
       ]
     },
     {
@@ -65,8 +65,8 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        1792,
-        280
+        448,
+        352
       ],
       "executeOnce": true,
       "onError": "continueRegularOutput"
@@ -123,8 +123,8 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        4928,
-        112
+        3584,
+        160
       ],
       "executeOnce": true,
       "onError": "continueRegularOutput"
@@ -182,7 +182,7 @@
       "typeVersion": 1.1,
       "position": [
         1344,
-        720
+        816
       ],
       "executeOnce": true,
       "onError": "continueRegularOutput"
@@ -196,7 +196,6 @@
           "mode": "id",
           "value": "search_documents"
         },
-        "inputMode": "manual",
         "parameters": {
           "mappingMode": "defineBelow",
           "value": {
@@ -253,7 +252,7 @@
       "typeVersion": 1,
       "position": [
         448,
-        208
+        160
       ],
       "credentials": {
         "mcpOAuth2Api": {
@@ -264,44 +263,7 @@
     },
     {
       "parameters": {
-        "workflowId": "GPzd2Ot3xM56rW0u",
-        "options": {}
-      },
-      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00003",
-      "name": "Unwrap MCP Search Folder Docs",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1,
-      "position": [
-        672,
-        208
-      ]
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "documents",
-              "name": "documents",
-              "value": "={{ (() => { const p = $json.payload; if (!p || typeof p !== 'object') return []; if (Array.isArray(p.documents)) return p.documents; if (Array.isArray(p)) return p.filter((x) => x && String(x.document_id || '').trim()); if (String(p.document_id || '').trim()) return [p]; return []; })() }}",
-              "type": "array"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00004b",
-      "name": "Coalesce Documents List",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        896,
-        208
-      ]
-    },
-    {
-      "parameters": {
-        "fieldToSplitOut": "documents",
+        "fieldToSplitOut": "content[0].text",
         "options": {}
       },
       "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00004",
@@ -309,88 +271,8 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        1120,
-        208
-      ]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 3
-          },
-          "conditions": [
-            {
-              "id": "has_doc_id",
-              "leftValue": "={{ String($json.document_id || '') }}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "notEmpty"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00005",
-      "name": "Filter - Has document_id",
-      "type": "n8n-nodes-base.filter",
-      "typeVersion": 2.3,
-      "position": [
-        1344,
-        208
-      ]
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "id",
-              "name": "id",
-              "value": "={{ String($json.document_id) }}",
-              "type": "string"
-            },
-            {
-              "id": "updatedDate",
-              "name": "updatedDate",
-              "value": "={{ String($json.updated_date || '') }}",
-              "type": "string"
-            },
-            {
-              "id": "name",
-              "name": "name",
-              "value": "={{ String($json.name || '') }}",
-              "type": "string"
-            },
-            {
-              "id": "url",
-              "name": "url",
-              "value": "={{ String($json.url || '') }}",
-              "type": "string"
-            },
-            {
-              "id": "uploader",
-              "name": "uploader",
-              "value": "={{ String($json.created_username && $json.created_username.username ? $json.created_username.username : '') }}",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00006",
-      "name": "Normalize Docs",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        1568,
-        208
+        672,
+        160
       ]
     },
     {
@@ -408,8 +290,8 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        2016,
-        280
+        672,
+        352
       ],
       "executeOnce": true,
       "alwaysOutputData": true,
@@ -417,21 +299,21 @@
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\nif (items.length > 0) return items;\nreturn [{ json: {\n  documentId: '__wf02_empty_processed_placeholder__',\n  lastProcessedDate: '',\n  cycleId: ''\n} }];\n"
+        "jsCode": "const PLACEHOLDER = '__wf02_empty_processed_placeholder__';\nconst rows = $input.all().filter((item) => {\n  const id = item.json?.documentId;\n  return id != null && String(id).trim() !== '' && String(id) !== PLACEHOLDER;\n});\nif (rows.length > 0) return rows;\nreturn [{ json: {\n  documentId: PLACEHOLDER,\n  lastProcessedDate: '',\n  cycleId: ''\n} }];\n"
       },
       "id": "f4e3d2c1-b5a6-4789-8123-000001mergefix",
       "name": "Ensure Merge Processed Input",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2240,
-        280
+        896,
+        352
       ]
     },
     {
       "parameters": {
         "mode": "combineBySql",
-        "query": "SELECT input1.id, input1.updatedDate, input1.name, input1.url, input1.uploader\nFROM input1\nLEFT JOIN input2 ON input1.id = input2.documentId\nWHERE input2.documentId IS NULL\n   OR input2.lastProcessedDate IS NULL\n   OR input2.lastProcessedDate = ''\n   OR input1.updatedDate > input2.lastProcessedDate",
+        "query": "SELECT\n  input1.document_id AS id,\n  COALESCE(input1.updated_date, input1.created_date) AS updatedDate,\n  input1.name,\n  input1.url,\n  input1.created_username.username AS uploader\nFROM input1\nLEFT JOIN input2 ON input1.document_id = input2.documentId\nWHERE (input2.documentId IS NULL\n   OR input2.lastProcessedDate IS NULL\n   OR input2.lastProcessedDate = ''\n   OR COALESCE(input1.updated_date, input1.created_date) > input2.lastProcessedDate)\n  AND input1.document_id IS NOT NULL\n  AND input1.document_id != ''",
         "options": {
           "emptyQueryResult": "empty"
         }
@@ -441,8 +323,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        2464,
-        208
+        1120,
+        256
       ]
     },
     {
@@ -465,8 +347,8 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        2688,
-        208
+        1344,
+        256
       ],
       "credentials": {
         "mcpOAuth2Api": {
@@ -485,8 +367,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        2912,
-        208
+        1568,
+        256
       ]
     },
     {
@@ -544,8 +426,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        3136,
-        208
+        1792,
+        256
       ]
     },
     {
@@ -557,8 +439,8 @@
       "type": "n8n-nodes-base.html",
       "typeVersion": 1,
       "position": [
-        3360,
-        208
+        2016,
+        256
       ]
     },
     {
@@ -698,8 +580,8 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        3584,
-        208
+        2240,
+        256
       ],
       "credentials": {
         "mcpOAuth2Api": {
@@ -718,8 +600,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        3808,
-        208
+        2464,
+        256
       ]
     },
     {
@@ -765,8 +647,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        4032,
-        208
+        2688,
+        256
       ]
     },
     {
@@ -798,8 +680,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        4256,
-        208
+        2912,
+        256
       ]
     },
     {
@@ -811,8 +693,8 @@
       "type": "n8n-nodes-base.stopAndError",
       "typeVersion": 1,
       "position": [
-        4480,
-        304
+        3136,
+        352
       ]
     },
     {
@@ -835,8 +717,8 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        4480,
-        112
+        3136,
+        160
       ],
       "credentials": {
         "mcpOAuth2Api": {
@@ -865,8 +747,8 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        4704,
-        112
+        3360,
+        160
       ],
       "credentials": {
         "mcpOAuth2Api": {
@@ -1029,8 +911,8 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        5152,
-        112
+        3808,
+        160
       ]
     },
     {
@@ -1099,8 +981,8 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        5376,
-        112
+        4032,
+        160
       ]
     },
     {
@@ -1163,7 +1045,7 @@
       "typeVersion": 2.5,
       "position": [
         224,
-        912
+        1008
       ],
       "webhookId": "ca8ca31c-e44a-4cb4-8e8f-14b7db56958a"
     },
@@ -1217,7 +1099,7 @@
       "typeVersion": 3.4,
       "position": [
         448,
-        912
+        1008
       ]
     },
     {
@@ -1287,7 +1169,7 @@
       "typeVersion": 2.3,
       "position": [
         672,
-        912
+        1008
       ]
     },
     {
@@ -1321,7 +1203,7 @@
       "typeVersion": 2.3,
       "position": [
         896,
-        816
+        912
       ]
     },
     {
@@ -1337,7 +1219,7 @@
       "typeVersion": 2.5,
       "position": [
         1120,
-        912
+        1008
       ],
       "webhookId": "442522f6-d604-469f-a62d-4256348b42c2"
     },
@@ -1354,7 +1236,7 @@
       "typeVersion": 2.5,
       "position": [
         896,
-        1008
+        1104
       ],
       "webhookId": "ad128407-b9af-4701-9e0c-f6481e175fd7"
     },
@@ -1379,7 +1261,7 @@
       "typeVersion": 1,
       "position": [
         1120,
-        720
+        816
       ],
       "credentials": {
         "mcpOAuth2Api": {
@@ -1404,7 +1286,7 @@
       "typeVersion": 1.1,
       "position": [
         1568,
-        720
+        816
       ],
       "executeOnce": true,
       "alwaysOutputData": true,
@@ -1420,7 +1302,7 @@
       "typeVersion": 2,
       "position": [
         1792,
-        720
+        816
       ]
     },
     {
@@ -1578,7 +1460,7 @@
       "typeVersion": 1.1,
       "position": [
         2016,
-        720
+        816
       ]
     },
     {
@@ -1631,7 +1513,7 @@
       "typeVersion": 3.4,
       "position": [
         2240,
-        720
+        816
       ]
     },
     {
@@ -1665,7 +1547,7 @@
       "typeVersion": 2.3,
       "position": [
         2464,
-        720
+        816
       ]
     },
     {
@@ -1699,7 +1581,7 @@
       "typeVersion": 2.3,
       "position": [
         2688,
-        624
+        720
       ]
     },
     {
@@ -1723,7 +1605,7 @@
       "typeVersion": 1,
       "position": [
         2912,
-        528
+        624
       ],
       "credentials": {
         "mcpOAuth2Api": {
@@ -1753,7 +1635,7 @@
       "typeVersion": 1,
       "position": [
         3136,
-        528
+        624
       ],
       "credentials": {
         "mcpOAuth2Api": {
@@ -1775,7 +1657,7 @@
       "typeVersion": 2.5,
       "position": [
         3360,
-        528
+        624
       ],
       "webhookId": "0dcb0616-266e-44f7-8d5f-8b6bd922d3d8"
     },
@@ -1800,7 +1682,7 @@
       "typeVersion": 1,
       "position": [
         2912,
-        720
+        816
       ],
       "credentials": {
         "mcpOAuth2Api": {
@@ -1830,7 +1712,7 @@
       "typeVersion": 1,
       "position": [
         3136,
-        720
+        816
       ],
       "credentials": {
         "mcpOAuth2Api": {
@@ -1852,7 +1734,7 @@
       "typeVersion": 2.5,
       "position": [
         3360,
-        720
+        816
       ],
       "webhookId": "76b51de0-a619-4786-8102-975f49a7cd47"
     },
@@ -1869,7 +1751,7 @@
       "typeVersion": 2.5,
       "position": [
         2688,
-        816
+        912
       ],
       "webhookId": "ee90b6bb-d515-46ee-9012-b20161b9b4b3"
     }
@@ -1882,6 +1764,11 @@
             "node": "MCP Search Folder Docs",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Ensure Tracking Table",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -1891,6 +1778,11 @@
         [
           {
             "node": "MCP Search Folder Docs",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Ensure Tracking Table",
             "type": "main",
             "index": 0
           }
@@ -1912,28 +1804,6 @@
       "main": [
         [
           {
-            "node": "Unwrap MCP Search Folder Docs",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Unwrap MCP Search Folder Docs": {
-      "main": [
-        [
-          {
-            "node": "Coalesce Documents List",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Coalesce Documents List": {
-      "main": [
-        [
-          {
             "node": "Split Out Documents",
             "type": "main",
             "index": 0
@@ -1945,34 +1815,7 @@
       "main": [
         [
           {
-            "node": "Filter - Has document_id",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Filter - Has document_id": {
-      "main": [
-        [
-          {
-            "node": "Normalize Docs",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Normalize Docs": {
-      "main": [
-        [
-          {
             "node": "Merge Docs to Process",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Ensure Tracking Table",
             "type": "main",
             "index": 0
           }
@@ -2363,9 +2206,9 @@
   "staticData": null,
   "meta": null,
   "pinData": {},
-  "versionId": "99becab7-04e4-4e8c-85c2-00e6ae2977de",
+  "versionId": "7d79c5a1-fb59-400a-8001-a3f0cc61315b",
   "activeVersionId": null,
-  "versionCounter": 11,
+  "versionCounter": 17,
   "triggerCount": 0,
   "shared": [
     {

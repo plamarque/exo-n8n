@@ -16,7 +16,7 @@ Normative checklist: [ADR 0004 — Didactic workflow simplification](ADR/0004-di
 
 | Slice | Workflow | Intent |
 | ----- | -------- | ------ |
-| [x] | **WF02** — Document validation | Apply ADR 0004 (2026-05-07): Option B — keep UTIL unwrap ×3; shorten Coalesce after unwrap; HTML node for task body; `create_task` Manual + `removed` schema; shorter Build/Extract expressions; trade-offs in [SPEC.technical.md](../workflows/wf02-document-validation/SPEC.technical.md) §7. |
+| [x] | **WF02** — Document validation | Apply ADR 0004 (2026-05-07): UTIL for get/create; **`search_documents`** → Split Out on **`content[0].text`** (no search unwrap/coalesce); HTML node for task body; `create_task` Manual + `removed` schema; trade-offs in [SPEC.technical.md](../workflows/wf02-document-validation/SPEC.technical.md) §7. |
 | [ ] | **WF03** — Weekly steering | Apply ADR 0004: reduce Code-only branches where native Split/Aggregate/IF suffice for teaching path; simplify expressions; align any AI output schema with downstream MCP/UI; document unwrap/split assumptions. |
 | [ ] | **WF04** — Metadata enrichment | Apply ADR 0004: trim non-essential nodes for the demo path, simplify MCP Client parameter mapping (schema/`removed` or minimal JSON), align parser enums with tools, keep Data Table story readable on the canvas. |
 

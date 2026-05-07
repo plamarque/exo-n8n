@@ -69,8 +69,8 @@ Use `config.env.example` as a naming/meaning template. Copy values into **n8n Va
 
 ## High-level flow (conceptual)
 
-1. **Intake** — manual start or scheduled poll of the folder.
-2. **List & normalize** — `search_documents` → **Unwrap** → coalesce hit list → **split** to one item per document; **ensure tracking table** then **join** with processed rows to only process **new or changed** files.
+1. **Intake** — manual start or scheduled run.
+2. **Parallel reads** — branch A: `search_documents` → **Split Out** on **`content[0].text`**; branch B (same trigger): **Ensure Tracking Table** → **Get Processed Docs**. **Merge** (SQL) computes the differential so only **new or changed** files continue.
 3. **Approvals persistence** — **`wf02_approvals`** is ensured **just before** the first seed (intake) or **just before** reading rows (form branch); same idempotent `createIfNotExists` pattern.
 4. **Load document** — `get_document_by_id` for context; build **title, author, links, cycle id** for this processing round.
 5. **Create task** — `create_task_in_project`, then move to **In progress**; add the first **comment** with instructions and approval URLs for **nadia** / **etienne** (demo actors).
@@ -82,11 +82,11 @@ Use `config.env.example` as a naming/meaning template. Copy values into **n8n Va
 
 | Area          | Choice                                                 | Why                                                                                                                                                       |
 | ------------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Intake        | **Schedule + manual**                                  | Realistic “folder sweep” without requiring a push event from the DMS. **Data Table** `createIfNotExists` runs **just before** first use (tracking before the processed-doc read; approvals before seed / before form read), not on the trigger.                                                                                     |
+| Intake        | **Schedule + manual**                                  | Triggers start **two branches**: MCP folder search + **Ensure Tracking Table** → processed-doc read in parallel; **Merge** joins them. Approvals table is still ensured **just before** seed / form read.                                                                                     |
 | Parallelism   | **Split + wait for webhooks + merge**                  | Models two **independent** human decisions; **join** encodes the business rule.                                                                           |
 | Idempotency   | **Data Table + Merge (SQL-style combine)**             | Same pattern as WF04: **skip** unchanged docs; avoid accidental duplicate tasks when rerunning intake.                                                    |
-| MCP envelopes | **Execute Workflow → Unwrap MCP JSON**                 | Consistent parsing of `list` / `get` / `create` responses.                                                                                                |
-| Code surface  | **Small Code** (merge input guard, approval row merge) + **HTML node** for task body | Per [SPEC.technical.md](SPEC.technical.md) §7, intake control flow is mostly **native** nodes (unwrap via UTIL, Split Out, Merge SQL). |
+| MCP envelopes | **UTIL** for get/create; **Split Out** for search | **`get_document_by_id`** / **`create_task_in_project`** use **`Unwrap MCP JSON`**; **`search_documents`** splits **`content[0].text`** like WF04 ([SPEC.technical.md](SPEC.technical.md) §3.3). |
+| Code surface  | **Small Code** (merge input guard, approval row merge) + **HTML node** for task body | Intake search path avoids Code; **Merge** uses **`combineBySql`** on split rows. |
 
 
 ## MCP eXo interaction model

@@ -57,11 +57,15 @@ The workflow handles heterogeneous MCP outputs. Typical wrapped shape:
 [{ "type": "text", "text": "{...json...}" }]
 ```
 
-Observed variants include plain objects and short status strings (for example `"Done"` after status updates). The shared unwrap utility plus local normalization nodes handle this.
+Observed variants include plain objects and short status strings (for example `"Done"` after status updates). **`Unwrap MCP Get Document`** and **`Unwrap MCP Create Task`** call the shared UTIL sub-workflow. **`search_documents`** stays on the **raw MCP Client** item shape: **`content[0].text`** is an **array of document rows** (same pattern as WF01/WF04 Split Out).
 
-### 3.3 Coalesce after unwrap (tutorial assumption)
+### 3.3 `search_documents` → Split Out → merge (SQL field mapping)
 
-**[ASSUMPTION]** After **`Unwrap MCP Search Folder Docs`**, each item is shaped like the UTIL sub-workflow output: `{ payload: <object> }`, where `payload` is either `{ documents: [...] }`, a bare array of document rows, or a single document object with `document_id`. The **`Coalesce Documents List`** Set node expands that into a `documents` array for **Split Out** only — it no longer re-parses raw MCP `content[]` or markdown-fenced JSON. Tenants where `search_documents` still reaches Coalesce without going through UTIL unwrap, or with a different top-level shape, need the older defensive coalesce restored or an extra normalization step.
+**[ASSUMPTION]** Each item from **`MCP Search Folder Docs`** includes **`content`**: an array whose first element has **`type`: `text`** and **`text`**: an **array** of eXo document objects (`document_id`, `updated_date`, `created_date`, `name`, `url`, `created_username`, …). **`Split Out Documents`** uses **`fieldToSplitOut`: `content[0].text`** (one output item per document). If a tenant returns **`text`** as a JSON string, a different nesting, or an empty **`content`**, restore **UTIL + Set** or widen the path; see §7.
+
+**`Merge Docs to Process`** uses n8n **Merge → SQL Query**, which runs on **AlaSQL** (not SQLite). Do **not** use SQLite-only functions such as **`json_extract`** — they fail at runtime (`alasql.fn.json_extract is not a function`). Prefer plain column paths on structured inputs, e.g. **`input1.created_username.username AS uploader`**.
+
+**`Merge Docs to Process`** (`combineBySql`): **input1** is each split row (API shape: **`document_id`**, **`updated_date`**, **`created_date`**, **`name`**, **`url`**, **`created_username`** object). **`updatedDate`** uses **`COALESCE(updated_date, created_date)`** only. **input2** is each row from **`Get Processed Docs`** after **`Ensure Merge Processed Input`**. The **`WHERE`** clause keeps unseen docs or rows whose coalesced timestamp is **greater than** **`lastProcessedDate`**. Trust consistent ISO date strings for lexical comparison; if a tenant stores **`lastProcessedDate`** in another format, normalize or widen the expression.
 
 ### 3.4 Reference payloads
 
@@ -97,19 +101,17 @@ The **`MCP Create Task`** node uses **Manual** input (resource mapper). Mapped f
 
 ### 4.1 Intake branch (manual start / schedule)
 
-1. **`MCP Search Folder Docs`** — `search_documents` in **Manual** input mode (`query`, `parent_folder_id` literal injected from `.env` at deploy/generate, `limit` **100**, `offset` **0**). Triggers connect **directly** to this MCP step (no Data Table nodes at workflow entry).
-2. Unwrap + coalesce into `documents[]`, then split one item per document.
-3. Filter + normalize document fields (`id`, `updatedDate`, `name`, uploader, links).
-4. **`Ensure Tracking Table`** (`createIfNotExists`, **`executeOnce`**) immediately before **`Get Processed Docs`** — the tracking table is introduced only when the graph first needs to read it for the merge.
-5. LEFT JOIN with processed-table snapshot (`Merge Docs to Process`) to keep only unseen or updated documents.
-6. `get_document_by_id` for each selected item.
-7. Build task fields (`cycle_id`, title, author fallback, links) from unwrap payload with Merge fallbacks.
-8. Render description with the **HTML** node (fixed template; WF01-style).
-9. `create_task_in_project` (**Manual** MCP mapping) → unwrap → extract `task_id` (flattened `payload` from UTIL).
-10. Guard `task_id`; stop with explicit error when missing.
-11. Move task to `WF02_INPROGRESS_STATUS_ID`.
-12. Add initial comment containing approval form links.
-13. **`Ensure Approvals Table (intake)`** (`createIfNotExists`, **`executeOnce`**) immediately before **`Seed Approval Row`**, then update `wf02_processed_documents`.
+1. **Triggers** (**`Manual Start`** / **`Schedule Intake (5m)`**) fan out to **two parallel branches**: (A) **`MCP Search Folder Docs`** and (B) **`Ensure Tracking Table`** → **`Get Processed Docs`** → **`Ensure Merge Processed Input`**.
+2. **Branch A:** **`MCP Search Folder Docs`** → **`Split Out Documents`** on **`content[0].text`** (one item per search hit; see §3.3).
+3. **`Merge Docs to Process`** — SQL **`combineBySql`** joins when both branches have supplied data: **input1** = split rows from branch A, **input2** = processed-doc rows from branch B (`documentId`, `lastProcessedDate`, …); see §3.3 for column names and aliases.
+4. `get_document_by_id` for each selected item.
+5. Build task fields (`cycle_id`, title, author fallback, links) from unwrap payload with Merge fallbacks.
+6. Render description with the **HTML** node (fixed template; WF01-style).
+7. `create_task_in_project` (**Manual** MCP mapping) → unwrap → extract `task_id` (flattened `payload` from UTIL).
+8. Guard `task_id`; stop with explicit error when missing.
+9. Move task to `WF02_INPROGRESS_STATUS_ID`.
+10. Add initial comment containing approval form links.
+11. **`Ensure Approvals Table (intake)`** (`createIfNotExists`, **`executeOnce`**) immediately before **`Seed Approval Row`**, then update `wf02_processed_documents`.
 
 ### 4.2 Approval form branch (`/form/.../approve`)
 
@@ -170,7 +172,8 @@ Operational notes:
 
 - The workflow is MCP-first; no REST fallback path is documented here.
 - `WF02_APPROVAL_BASE_URL` must remain a Form URL, never a raw webhook URL.
-- Table schemas are bootstrapped through **`createIfNotExists`** on **`Ensure …`** nodes placed **just before** first read or write (not at the trigger).
+- Table schemas are bootstrapped through **`createIfNotExists`** on **`Ensure …`** nodes: intake uses **`Ensure Tracking Table`** at the **same time as** the MCP search (parallel from the trigger), still **before** **`Get Processed Docs`** on that branch; approvals ensures stay **just before** first seed or read on the form branch.
+- **`Merge Docs to Process` returns no rows** (green node, “No output data”) when the SQL **`WHERE`** filters out **every** **`input1`** row — usually **expected idempotency**: **`input2`** already has a **`documentId`** match with **`lastProcessedDate`** **≥** (lexically for ISO strings) **`COALESCE(updated_date, created_date)`** from search, so unchanged docs are skipped. Inspect **Merge → Input 2** (`Ensure Merge Processed Input`): if you see real **`documentId`** rows with timestamps, **`wf02_processed_documents`** was **not** empty for that execution (clear it and re-run to force re-processing). **`Ensure Merge Processed Input`** drops Data Table rows missing **`documentId`** so an empty / malformed read still falls back to the placeholder row for the LEFT JOIN.
 
 Suggested follow-ups:
 
@@ -182,12 +185,12 @@ Suggested follow-ups:
 
 This graph is **tutorial-oriented**: explainability on the canvas takes priority over maximal envelope tolerance.
 
-- **Unwrap scope (Option B):** All three **`Unwrap MCP …`** Execute Workflow calls are **kept** so heterogeneous MCP envelopes still normalize before business logic. **`Coalesce Documents List`** was shortened to assume UTIL output (see §3.3) instead of duplicating full envelope parsing.
+- **Unwrap scope (Option B):** **`Unwrap MCP Get Document`** and **`Unwrap MCP Create Task`** use **`Execute Workflow`** (UTIL). **`search_documents`** uses **native Split Out** on **`content[0].text`** only — no UTIL and no **`documents`** / coalesce layer (see §3.3).
 - **Native HTML:** Task body uses the **HTML** node, not a Code node with manual escaping.
 - **MCP hygiene:** **`MCP Create Task`** uses **Manual** parameter rows and `removed: true` on unused optional fields (§3.5).
 - **Shorter expressions:** **`Build Task Fields`** and **`Extract Task ID`** assume UTIL has already flattened `payload` for `get_document_by_id` / `create_task_in_project`; a narrow fallback for `task.task_id` remains in **`Extract Task ID`**.
-- **Deferred table bootstrap:** **`Ensure Tracking Table`** runs immediately before **`Get Processed Docs`**. **`Ensure Approvals Table (intake)`** runs immediately before **`Seed Approval Row`**; **`Ensure Approvals Table (form branch)`** runs immediately before **`Get Approval Rows`** (same schema, idempotent `createIfNotExists`; **`executeOnce`** limits redundant work per execution branch).
+- **Deferred table bootstrap:** **`Ensure Tracking Table`** still sits immediately before **`Get Processed Docs`**, but both are on a **second branch** started from the **same trigger** as **`MCP Search Folder Docs`** (parallel folder read vs table read). **`Ensure Approvals Table (intake)`** runs immediately before **`Seed Approval Row`**; **`Ensure Approvals Table (form branch)`** runs immediately before **`Get Approval Rows`** (same schema, idempotent `createIfNotExists`; **`executeOnce`** limits redundant work per execution branch).
 - **MCP search clarity:** **`MCP Search Folder Docs`** uses **Manual** parameters so all `search_documents` fields are visible on the canvas; **`parent_folder_id`** is a deploy-time literal (not `$vars`).
 
-**Deferred hardening** (reintroduce if you need multi-tenant robustness without assumptions): restore the long Coalesce expression; widen **`Extract Task ID`** for nested `content[0].text` shapes; keep documenting gaps in [ISSUES.md](../../docs/ISSUES.md).
+**Deferred hardening** (reintroduce if you need multi-tenant robustness without assumptions): add **`Unwrap MCP Search Folder Docs`** + **Set** if **`search_documents`** responses stop matching **`content[0].text`** as an array; widen **`Extract Task ID`** for nested MCP shapes; keep documenting gaps in [ISSUES.md](../../docs/ISSUES.md).
 
