@@ -19,12 +19,11 @@ It keeps the core business idea: **not every email should become a task**.
 3. `Split Out Emails`
 4. `IF Has Required Email Fields`
 5. `AI Router` (+ model + output parser)
-6. `Normalize AI Output`
-7. `IF Actionable`
-8. `Build Create Task Input`
-9. `MCP Create Task`
-10. `IF Has Task ID`
-11. `MCP Assign Task` or `Stop - Missing task_id`
+6. `IF Actionable`
+7. `Build Create Task Input`
+8. `MCP Create Task`
+9. `IF Has Task ID`
+10. `MCP Assign Task` or `Stop - Missing task_id`
 
 ## What was simplified
 

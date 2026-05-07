@@ -32,7 +32,7 @@ The workflow reads incoming emails through eXo MCP, normalizes MCP responses, cl
 Observable rules:
 
 - Emails without an `emailId` are filtered out.
-- Task creation requires `actionRequired=true`, `responseExpected=true`, and `actionConfidence >= 0.7`.
+- Task creation requires `actionRequired=true` and `actionConfidence >= 0.7`.
 - Tasks are created through `create_task_in_project`.
 - Tasks are explicitly assigned through `assign_task`.
 - The current final workflow has no REST fallback and no SLA sweep.

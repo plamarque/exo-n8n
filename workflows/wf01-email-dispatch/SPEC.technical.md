@@ -24,7 +24,6 @@ Default behavior: if `WF01_PROJECT_ID` is missing, the workflow falls back to pr
 - `list_emails`
 - `create_task_in_project`
 - `assign_task`
-- Shared utility `UTIL - Unwrap MCP JSON` called after `create_task_in_project` in this tutorial version.
 
 ### 3.2 Response envelope
 
@@ -43,12 +42,11 @@ In this tutorial version, `create_task_in_project` and `assign_task` use direct 
 3. `Split Out Emails` (split `content[0].text` into one item per email).
 4. `IF Has Required Email Fields` (drop entries missing any required field for routing: `email_id`, `subject`, `content.body`, `sender.address`).
 5. `AI Router` + parser.
-6. `Normalize AI Output`.
-7. `IF Actionable` guardrail.
-8. `Build Create Task Input` (project id, title, HTML description, assignee, priority).
-9. `MCP Create Task`.
-10. `IF Has Task ID` (checks `content[0].text.task_id` / `content[0].text.id`).
-11. Success branch: `MCP Assign Task`; failure branch: `Stop - Missing task_id`.
+6. `IF Actionable` guardrail (reads structured output fields directly from `AI Router`).
+7. `Build Create Task Input` (project id, title, HTML description, assignee, priority).
+8. `MCP Create Task`.
+9. `IF Has Task ID` (checks `content[0].text.task_id` / `content[0].text.id`).
+10. Success branch: `MCP Assign Task`; failure branch: `Stop - Missing task_id`.
 
 ## 5) Data and mappings
 
@@ -57,7 +55,6 @@ In this tutorial version, `create_task_in_project` and `assign_task` use direct 
 ```json
 {
   "action_required": true,
-  "response_expected": true,
   "action_confidence": 0.92,
   "assignee_username": "louis",
   "priority": "HIGH",
@@ -68,16 +65,17 @@ In this tutorial version, `create_task_in_project` and `assign_task` use direct 
 
 ### 5.2 Mapping rules
 
-Assignee mapping:
+Assignee routing:
 
-- Allowed: `louis`, `claire`, `lucie`.
-- Fallback: `claire`.
+- `assignee_username` comes directly from structured AI output.
+- Responsibility scope used by AI routing:
+  - `louis`: technical/IT operations (VPN, network, security/access, password, incident/bug, DMS access issues).
+  - `claire`: administration and city coordination (permits, official documents, circulation plan, planning, coordination, dossiers).
+  - `lucie`: partners and communication topics (partners, campaigns, newsletter, media, festival communication, ticketing communication).
 
-Priority mapping:
+Priority routing:
 
-- Allowed by MCP create: `LOW`, `NORMAL`, `HIGH`.
-- `URGENT` is normalized to `HIGH`.
-- Unknown values fall back to `NORMAL`.
+- `priority` comes directly from structured AI output.
 
 ## 6) Validation and operations
 

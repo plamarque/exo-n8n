@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-07T15:41:03.241Z",
+  "updatedAt": "2026-05-07T16:04:43.044Z",
   "createdAt": "2026-05-07T14:30:32.513Z",
   "id": "6wQ2HsRUpkWezTrM",
   "name": "WF01 - Email dispatch",
@@ -128,7 +128,7 @@
         "text": "=Analyze this email and decide if it is clearly actionable.\nSubject: {{ $json.subject }}\nSender: {{ $json.sender.address }}\nBody: {{ $json.content.body }}\n\nReturn only the structured fields requested.",
         "hasOutputParser": true,
         "options": {
-          "systemMessage": "You are the triage agent for Art2Rue festival emails. Create a task only if the email is clearly actionable. If it is unclear or informational, set action_required=false and response_expected=false. Expected fields: action_required (boolean), response_expected (boolean), action_confidence (0..1), assignee_username (louis|claire|lucie), priority (LOW|NORMAL|HIGH|URGENT), task_title, summary."
+          "systemMessage": "You are the triage agent for Art2Rue festival emails. Create a task only if the email is clearly actionable. If it is unclear or informational, set action_required=false. Assign based on responsibility scope: louis for technical/IT operations (vpn, network, security, access, password, incident, bug, DMS access issues); claire for administration and city coordination (permits, official documents, circulation plans, planning, coordination, dossiers); lucie for partners and communication topics (partners, campaigns, newsletter, media, festival communication, ticketing communication). Choose the assignee whose scope best matches the requested action. Expected fields: action_required (boolean), action_confidence (0..1), assignee_username (louis|claire|lucie), priority (LOW|NORMAL|HIGH|URGENT), task_title, summary."
         }
       },
       "id": "a389fdbd-c823-44fc-bf41-20b82cc2abf9",
@@ -169,7 +169,7 @@
     },
     {
       "parameters": {
-        "jsonSchemaExample": "{\"action_required\":true,\"response_expected\":true,\"action_confidence\":0.92,\"assignee_username\":\"louis\",\"priority\":\"HIGH\",\"task_title\":\"Ticketing VPN incident\",\"summary\":\"VPN outage that blocks sales.\"}"
+        "jsonSchemaExample": "{\"action_required\":true,\"action_confidence\":0.92,\"assignee_username\":\"louis\",\"priority\":\"HIGH\",\"task_title\":\"Ticketing VPN incident\",\"summary\":\"VPN outage that blocks sales.\"}"
       },
       "id": "71544077-ebbe-4cbc-9ed5-babb4e61bcc3",
       "name": "Routing Output Parser",
@@ -178,89 +178,6 @@
       "position": [
         1256,
         544
-      ]
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "actionRequired",
-              "name": "actionRequired",
-              "value": "={{ Boolean(($json.output || $json).action_required) }}",
-              "type": "boolean"
-            },
-            {
-              "id": "responseExpected",
-              "name": "responseExpected",
-              "value": "={{ Boolean(($json.output || $json).response_expected) }}",
-              "type": "boolean"
-            },
-            {
-              "id": "actionConfidence",
-              "name": "actionConfidence",
-              "value": "={{ Number(($json.output || $json).action_confidence || 0) }}",
-              "type": "number"
-            },
-            {
-              "id": "assigneeCandidate",
-              "name": "assigneeCandidate",
-              "value": "={{ String((($json.output || $json).assignee_username || 'claire')).toLowerCase() }}",
-              "type": "string"
-            },
-            {
-              "id": "priorityCandidate",
-              "name": "priorityCandidate",
-              "value": "={{ String((($json.output || $json).priority || 'NORMAL')).toUpperCase() }}",
-              "type": "string"
-            },
-            {
-              "id": "taskTitle",
-              "name": "taskTitle",
-              "value": "={{ String((($json.output || $json).task_title || $('Split Out Emails').item.json.subject || 'Email to process')).slice(0,180) }}",
-              "type": "string"
-            },
-            {
-              "id": "summary",
-              "name": "summary",
-              "value": "={{ String((($json.output || $json).summary || 'Summary not provided')).slice(0,800) }}",
-              "type": "string"
-            },
-            {
-              "id": "subject",
-              "name": "subject",
-              "value": "={{ $('Split Out Emails').item.json.subject }}",
-              "type": "string"
-            },
-            {
-              "id": "sender",
-              "name": "sender",
-              "value": "={{ $('Split Out Emails').item.json.sender.address }}",
-              "type": "string"
-            },
-            {
-              "id": "body",
-              "name": "body",
-              "value": "={{ $('Split Out Emails').item.json.content.body }}",
-              "type": "string"
-            },
-            {
-              "id": "emailId",
-              "name": "emailId",
-              "value": "={{ String($('Split Out Emails').item.json.email_id) }}",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "5d964a18-7f78-4d48-8c8b-21d645483306",
-      "name": "Normalize AI Output",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        1472,
-        320
       ]
     },
     {
@@ -275,17 +192,7 @@
           "conditions": [
             {
               "id": "action",
-              "leftValue": "={{$json.actionRequired}}",
-              "rightValue": true,
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
-            },
-            {
-              "id": "response",
-              "leftValue": "={{$json.responseExpected}}",
+              "leftValue": "={{$json.output.action_required}}",
               "rightValue": true,
               "operator": {
                 "type": "boolean",
@@ -295,7 +202,7 @@
             },
             {
               "id": "confidence",
-              "leftValue": "={{$json.actionConfidence}}",
+              "leftValue": "={{$json.output.action_confidence}}",
               "rightValue": 0.7,
               "operator": {
                 "type": "number",
@@ -312,7 +219,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1696,
+        1472,
         320
       ]
     },
@@ -323,19 +230,19 @@
             {
               "id": "resolvedAssignee",
               "name": "resolvedAssignee",
-              "value": "={{ ['louis','claire','lucie'].includes($json.assigneeCandidate) ? $json.assigneeCandidate : 'claire' }}",
+              "value": "={{ String($json.output.assignee_username).toLowerCase() }}",
               "type": "string"
             },
             {
               "id": "resolvedPriority",
               "name": "resolvedPriority",
-              "value": "={{ $json.priorityCandidate === 'URGENT' ? 'HIGH' : (['LOW','NORMAL','HIGH'].includes($json.priorityCandidate) ? $json.priorityCandidate : 'NORMAL') }}",
+              "value": "={{ String($json.output.priority).toUpperCase() }}",
               "type": "string"
             },
             {
               "id": "createTaskInput",
               "name": "createTaskInput",
-              "value": "={{ ({ project_id: Number($vars.WF01_PROJECT_ID || 3), title: String($json.taskTitle || 'Email to process').slice(0,180), description: `<div><p><strong>Email from:</strong> ${$json.sender}</p><p><strong>Subject:</strong> ${$json.subject}</p><p><strong>Summary:</strong> ${$json.summary}</p></div>`, assignee: ['louis','claire','lucie'].includes($json.assigneeCandidate) ? $json.assigneeCandidate : 'claire', priority: $json.priorityCandidate === 'URGENT' ? 'HIGH' : (['LOW','NORMAL','HIGH'].includes($json.priorityCandidate) ? $json.priorityCandidate : 'NORMAL') }) }}",
+              "value": "={{ ({ project_id: Number($vars.WF01_PROJECT_ID || 3), title: String($json.output.task_title).slice(0,180), description: `<div><p><strong>Email from:</strong> ${$('Split Out Emails').item.json.sender.address}</p><p><strong>Subject:</strong> ${$('Split Out Emails').item.json.subject}</p><p><strong>Summary:</strong> ${$json.output.summary}</p></div>`, assignee: String($json.output.assignee_username).toLowerCase(), priority: String($json.output.priority).toUpperCase() }) }}",
               "type": "object"
             }
           ]
@@ -348,7 +255,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1920,
+        1696,
         320
       ]
     },
@@ -372,7 +279,7 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        2144,
+        1920,
         320
       ],
       "credentials": {
@@ -411,7 +318,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2368,
+        2144,
         320
       ]
     },
@@ -435,7 +342,7 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        2592,
+        2368,
         224
       ],
       "credentials": {
@@ -454,7 +361,7 @@
       "type": "n8n-nodes-base.stopAndError",
       "typeVersion": 1,
       "position": [
-        2592,
+        2368,
         416
       ]
     }
@@ -530,17 +437,6 @@
       "main": [
         [
           {
-            "node": "Normalize AI Output",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Normalize AI Output": {
-      "main": [
-        [
-          {
             "node": "IF Actionable",
             "type": "main",
             "index": 0
@@ -607,9 +503,9 @@
   "staticData": null,
   "meta": null,
   "pinData": {},
-  "versionId": "efa35eb0-0039-4ca6-a126-2637038290c1",
+  "versionId": "cb8f7178-e56a-451e-9062-f5f4f21d5a52",
   "activeVersionId": null,
-  "versionCounter": 23,
+  "versionCounter": 28,
   "triggerCount": 0,
   "shared": [
     {

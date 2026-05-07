@@ -28,7 +28,7 @@ The point is to show that an n8n + eXo MCP flow can turn actionable email into a
 3. Normalize email fields: `emailId`, `subject`, `body`, `sender`, `receivedAt`.
 4. Filter emails without an identifier.
 5. Structured LLM analysis per email.
-6. Create a task only when all three are true: `actionRequired=true`, `responseExpected=true`, `actionConfidence >= 0.7`.
+6. Create a task only when `actionRequired=true` and `actionConfidence >= 0.7`.
 7. Native resolution of assignee and priority from LLM output.
 8. Create an eXo task in the target project.
 9. Native extraction of `task_id` from the MCP response.
