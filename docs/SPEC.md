@@ -25,6 +25,10 @@ The observable portfolio covers four workflow families:
 
 ## Main Capabilities
 
+### Portfolio posture — didactic simplification
+
+Some workflows are maintained in a **tutorial-oriented** form: fewer nodes, simpler expressions, and explicit **trade-offs** on defensive depth so the graph is easy to explain. Normative checklist and consequences: **[ADR 0004 — Didactic workflow simplification](ADR/0004-didactic-workflow-simplification-slices.md)**. Planned rollouts to WF02–WF04: [PLAN.md](PLAN.md) (*Didactic simplification slices*).
+
 ### WF01 - Email dispatch
 
 The workflow reads incoming emails through eXo MCP, normalizes MCP responses, classifies emails with AI, and creates eXo tasks only for clearly actionable emails.

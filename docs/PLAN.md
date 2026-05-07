@@ -10,6 +10,18 @@ This document is tracking-only. It does not define expected behavior.
 - **WF03**: canonical `workflow.json` + API snapshot in `fixtures/`; **Code-node reduction** still pending (contrast: WF01/WF04 more advanced).
 - **WF04**: canonical `workflow.json` + `fixtures/workflow.export.snapshot.json`; one Code node may remain for category mapping; optional API push via `tools/push-workflow-to-n8n-api.mjs` / `npm run deploy:workflow`.
 
+## Didactic simplification slices (WF01 principles → WF02–WF04)
+
+Normative checklist: [ADR 0004 — Didactic workflow simplification](ADR/0004-didactic-workflow-simplification-slices.md). WF01 is the reference slice (minimal expressions, Split Out for lists, IF for noise only, HTML node for description, MCP parameter hygiene, parser enums aligned with tools, no redundant `assign_task` when create carries assignee, optional omission of unwrap when payload allows).
+
+| Slice | Workflow | Intent |
+| ----- | -------- | ------ |
+| [ ] | **WF02** — Document validation | Apply ADR 0004: audit unwrap vs direct MCP access, collapse gratuitous IF/validation, shorten expressions where safe, prefer native HTML/template for fixed layouts, drop redundant MCP steps after tenant check, document trade-offs in `SPEC.technical.md`. |
+| [ ] | **WF03** — Weekly steering | Apply ADR 0004: reduce Code-only branches where native Split/Aggregate/IF suffice for teaching path; simplify expressions; align any AI output schema with downstream MCP/UI; document unwrap/split assumptions. |
+| [ ] | **WF04** — Metadata enrichment | Apply ADR 0004: trim non-essential nodes for the demo path, simplify MCP Client parameter mapping (schema/`removed` or minimal JSON), align parser enums with tools, keep Data Table story readable on the canvas. |
+
+Each completed slice updates canonical `workflow.json`, per-workflow `SPEC.*.md` / `README.md`, and cross-project docs when observable rules change.
+
 ## Near-Term Tasks
 
 - [x] Authoritative artifact per workflow: `workflows/.../workflow.json` (see [ADR 0002](ADR/0002-repository-layout-workflows.md)); secondary snapshots in `fixtures/` only.

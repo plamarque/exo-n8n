@@ -12,7 +12,7 @@ There is no observed application package manifest at the repository root. The ex
 - `workflows/*/` layout: `workflow.json` (canonical), `README.md`, `SPEC.functional.md`, `SPEC.technical.md` (or split technical docs for WF03), `config.env.example`, optional `fixtures/`.
 - `tools/`: minimal maintenance scripts (validation of canonical `workflow.json`, optional REST push to n8n via [push-workflow-to-n8n-api.mjs](../tools/push-workflow-to-n8n-api.mjs)). See [DEVELOPMENT.md](DEVELOPMENT.md).
 - `docs/`: normative and tracking documentation (for example [SPEC.md](SPEC.md), [WORKFLOW.md](WORKFLOW.md), [ISSUES.md](ISSUES.md)).
-- `docs/ADR/`: architecture decision records, including [0002](ADR/0002-repository-layout-workflows.md) (layout and canonical JSON policy) and [0003](ADR/0003-prefer-native-n8n-nodes.md) (prefer native nodes over Code for low-code maintainability).
+- `docs/ADR/`: architecture decision records, including [0002](ADR/0002-repository-layout-workflows.md) (layout and canonical JSON policy), [0003](ADR/0003-prefer-native-n8n-nodes.md) (prefer native nodes over Code for low-code maintainability), and [0004](ADR/0004-didactic-workflow-simplification-slices.md) (tutorial-oriented simplification slices and explicit robustness trade-offs).
 
 ## External Systems
 
@@ -64,7 +64,7 @@ The recurring architecture is:
 
 1. Trigger a workflow manually, on schedule, or through webhook.
 2. Call eXo MCP tools.
-3. Normalize MCP responses, often from text-wrapped JSON envelopes.
+3. Normalize MCP responses, often from text-wrapped JSON envelopes. **Didactic slices** may use **direct split / field access** when the tenant payload is already structured and unwrap UTILs are omitted—see [ADR 0004](ADR/0004-didactic-workflow-simplification-slices.md).
 4. Apply workflow-specific business rules.
 5. Optionally invoke AI with structured output.
 6. Write back to eXo through MCP tools.
@@ -72,8 +72,8 @@ The recurring architecture is:
 
 ## Architectural Constraints
 
-- MCP response normalization is a cross-cutting concern because several eXo MCP responses may arrive as arrays containing serialized JSON in `text`.
-- Native n8n nodes are preferred for visible business logic when they remain maintainable; narrow exceptions for Code nodes are recorded in [ADR 0003](ADR/0003-prefer-native-n8n-nodes.md).
+- MCP response normalization is a cross-cutting concern because several eXo MCP responses may arrive as arrays containing serialized JSON in `text`. Tutorial-oriented graphs may document a **narrower** normalization path when acceptable for the target tenant ([ADR 0004](ADR/0004-didactic-workflow-simplification-slices.md)).
+- Native n8n nodes are preferred for visible business logic when they remain maintainable; narrow exceptions for Code nodes are recorded in [ADR 0003](ADR/0003-prefer-native-n8n-nodes.md). **Didactic simplification** priorities are recorded in [ADR 0004](ADR/0004-didactic-workflow-simplification-slices.md).
 - Code nodes are acceptable for complex HTML composition, state merging, or response normalization when native nodes would obscure the behavior.
 - Environment-specific IDs and URLs should be configurable where workflows need to move between eXo/n8n environments.
 

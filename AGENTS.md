@@ -7,6 +7,7 @@ This repository is governed by documentation-first rules for AI-assisted work.
 - Treat `docs/SPEC.md`, `docs/DOMAIN.md`, `docs/ARCH.md`, `docs/WORKFLOW.md`, and `docs/ADR/` as normative documentation.
 - Treat `docs/PLAN.md` and `docs/ISSUES.md` as tracking documents, not as sources of functional truth.
 - Treat per-workflow documentation under `workflows/*/` (for example `SPEC.functional.md`, `SPEC.technical.md`, `README.md`) as reference material that may be more detailed than the cross-project governance docs in `docs/`.
+- Optional **didactic simplification** of workflows (fewer nodes, simpler expressions, explicit robustness trade-offs for teaching) is governed by **[ADR 0004](docs/ADR/0004-didactic-workflow-simplification-slices.md)** and the *Didactic simplification slices* section in [docs/WORKFLOW.md](docs/WORKFLOW.md); delivery tracking lives in [docs/PLAN.md](docs/PLAN.md).
 
 ## Language (committed artifacts)
 

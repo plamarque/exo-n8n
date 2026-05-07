@@ -33,4 +33,5 @@ This ADR does **not** mandate zero Code nodes; it mandates **intentional** Code 
 
 ## Related
 
+- [0004-didactic-workflow-simplification-slices.md](0004-didactic-workflow-simplification-slices.md) — optional tutorial-oriented simplification and robustness trade-offs (complements native-first defaults).
 - [0002-repository-layout-workflows.md](0002-repository-layout-workflows.md) — canonical JSON per workflow and layout.

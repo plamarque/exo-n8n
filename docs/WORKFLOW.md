@@ -45,6 +45,12 @@ Normative for contributors and AI agents whenever portfolio workflows are change
 6. Defects, open risks, and inconsistencies belong in `docs/ISSUES.md`.
 7. Changes to **deployment validation policy** (this document’s *Deployment validation policy* section) require an update here; changes to **commands or scripts** that implement validation require a matching update to `docs/DEVELOPMENT.md`. Changes to the **agent runbook** (the project skill under `.cursor/skills/n8n-workflow-deploy-gate/`) or to the **MCP example** (`.cursor/mcp.json.example`) and related Cursor setup in `docs/DEVELOPMENT.md` should stay aligned with the policy in this file.
 
+## Didactic simplification slices
+
+Optional refactors that **reduce nodes and expression complexity** for **teaching and demos** (at an explicit **robustness trade-off**) are governed by **[ADR 0004 — Didactic workflow simplification](ADR/0004-didactic-workflow-simplification-slices.md)**. WF01 is the reference application; planned applications to WF02–WF04 are tracked in [PLAN.md](PLAN.md).
+
+Simplification does **not** change the **mandatory** local validation policy in *Deployment validation policy* above.
+
 ## Evidence Rules
 
 - Descriptive documentation must be grounded in observed files, exports, scripts, or existing project notes.
