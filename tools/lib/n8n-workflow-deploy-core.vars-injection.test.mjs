@@ -8,6 +8,7 @@ import {
   applyN8nPortfolioVarsFallbackOverrides,
   applyPortfolioHardcodeFromEnv,
   escapeSingleQuotedJsStringLiteral,
+  WF02_CANONICAL_PARENT_FOLDER_ID,
 } from "./n8n-workflow-deploy-core.mjs";
 
 const KEYS = [
@@ -122,6 +123,27 @@ function testWf02ParentFolder() {
   assert.ok(nodes[0].parameters.j.includes("aaaabbbbccccddddeeeeffff00001111"));
 }
 
+function testWf02ParentFolderManualMcpValue() {
+  const nodes = [
+    {
+      parameters: {
+        value: { parent_folder_id: WF02_CANONICAL_PARENT_FOLDER_ID },
+      },
+    },
+  ];
+  process.env.WF02_PARENT_FOLDER_ID = "aaaabbbbccccddddeeeeffff00001111";
+  applyN8nPortfolioVarsFallbackOverrides(nodes);
+  assert.equal(
+    nodes[0].parameters.value.parent_folder_id,
+    "aaaabbbbccccddddeeeeffff00001111",
+  );
+  applyPortfolioHardcodeFromEnv(nodes);
+  assert.equal(
+    nodes[0].parameters.value.parent_folder_id,
+    "aaaabbbbccccddddeeeeffff00001111",
+  );
+}
+
 function testExoMcpEndpointLiteral() {
   const prev = process.env.EXO_MCP_ENDPOINT;
   const tenantUrl = "https://tenant.example.com/mcp-server/mcp";
@@ -202,6 +224,7 @@ try {
   testWf03MeetingOwner();
   testWf02ApprovalUrl();
   testWf02ParentFolder();
+  testWf02ParentFolderManualMcpValue();
   testExoMcpEndpointLiteral();
   testExoMcpEndpointInvalidSkips();
   testPortfolioHardcodeRemovesVars();

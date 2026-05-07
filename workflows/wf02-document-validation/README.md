@@ -59,7 +59,7 @@ Set these in **n8n Variables** (or equivalent instance env mapping), because WF0
 | Variable | Meaning | Where to set |
 |----------|---------|--------------|
 | `EXO_MCP_ENDPOINT` | MCP endpoint for document/task/comment/status operations. | Root `.env` → **`npm run generate:workflow-json`**. |
-| `WF02_PARENT_FOLDER_ID` | Watched eXo folder id for document intake. | n8n Variables. |
+| `WF02_PARENT_FOLDER_ID` | Watched eXo folder id for document intake (baked into **`MCP Search Folder Docs`** Manual `parent_folder_id` via root **`.env`** at `generate:workflow-json` / deploy). | Root `.env` → generate or deploy injection; not an n8n `$vars` expression in the canonical graph. |
 | `WF02_PROJECT_ID` | Target eXo project id where validation tasks are created. | n8n Variables. |
 | `WF02_INPROGRESS_STATUS_ID` | Project status id used after create and on non-final outcomes. | n8n Variables. |
 | `WF02_DONE_STATUS_ID` | Project status id used when both approvals are `APPROVED`. | n8n Variables. |
@@ -101,7 +101,7 @@ Webhook payloads drive approval branches; MCP carries **authoritative task updat
 
 ## Operational considerations
 
-- **Folder & project defaults** are pinned for the **reference tenant** demo; override **`WF02_PARENT_FOLDER_ID`**, **`WF02_PROJECT_ID`**, and **status id** variables per your **list_project_statuses** output (see [SPEC.technical.md](SPEC.technical.md) §2 and §5.3).
+- **Folder & project defaults** are pinned for the **reference tenant** demo; set **`WF02_PARENT_FOLDER_ID`** (and **`WF02_PROJECT_ID`**, status ids) in root **`.env`** and run **`npm run generate:workflow-json`** or REST deploy so literals match your tenant (see [SPEC.technical.md](SPEC.technical.md) §2 and §5.3).
 - **Empty folder** — `search_documents` returns no rows; the run **stops without error** after the split (expected).
 - **Sample files** for manual tests live in [fixtures/](fixtures/) — upload into the watched folder per [SPEC.functional.md](SPEC.functional.md) §9.
 
@@ -124,7 +124,7 @@ The [`fixtures/`](fixtures/) directory holds **three example `.docx` files** wit
 
 To exercise the intake branch end-to-end:
 
-1. In eXo (**reference tenant**), open the programming folder **`00_Programmation`** (full path in [`SPEC.functional.md`](SPEC.functional.md) §9.1). This folder is the one whose **`parent_folder_id`** the workflow uses by default (`ced6e9c539805e114bd65696b26bd073`), unless you set n8n variable `WF02_PARENT_FOLDER_ID` to another id.
+1. In eXo (**reference tenant**), open the programming folder **`00_Programmation`** (full path in [`SPEC.functional.md`](SPEC.functional.md) §9.1). The default **`parent_folder_id`** in git is `ced6e9c539805e114bd65696b26bd073`; override via root **`.env`** `WF02_PARENT_FOLDER_ID` and **`npm run generate:workflow-json`** (or rely on deploy-time injection from the same key).
 2. Upload the three files from `fixtures/` into that eXo folder (same filenames as in the repo).
 3. Run the workflow in n8n (**Manual Start** or wait for **Schedule Intake (5m)**).
 

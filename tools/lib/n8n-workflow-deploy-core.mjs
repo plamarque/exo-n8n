@@ -351,6 +351,14 @@ export function applyExoMcpEndpointDeployOverride(nodes, opts = {}) {
   return count;
 }
 
+/**
+ * Default WF02 `search_documents` `parent_folder_id` stored as a plain string in git
+ * (`MCP Search Folder Docs` Manual mode). Overridden by `WF02_PARENT_FOLDER_ID` in root `.env`
+ * during {@link applyPortfolioHardcodeFromEnv} and in-memory deploy
+ * {@link applyN8nPortfolioVarsFallbackOverrides} when set.
+ */
+export const WF02_CANONICAL_PARENT_FOLDER_ID = "ced6e9c539805e114bd65696b26bd073";
+
 /** Portfolio workflow keys mirrored as n8n `$vars.*` in canonical expressions (hardcode via {@link applyPortfolioHardcodeFromEnv}). */
 export const PORTFOLIO_INTEGER_VAR_KEYS = [
   "WF01_PROJECT_ID",
@@ -441,6 +449,7 @@ export function applyN8nPortfolioVarsFallbackOverrides(nodes) {
           /(\(\(\$vars\.WF02_PARENT_FOLDER_ID && String\(\$vars\.WF02_PARENT_FOLDER_ID\)\.trim\(\)\)\s*\|\|\s*")([a-f0-9]+)(")/gi,
           `$1${folderRaw}$3`,
         );
+        if (out === WF02_CANONICAL_PARENT_FOLDER_ID) out = folderRaw;
       }
     }
 
@@ -553,6 +562,7 @@ export function applyPortfolioHardcodeFromEnv(nodes, opts = {}) {
         /\(\(\$vars\.WF02_PARENT_FOLDER_ID && String\(\$vars\.WF02_PARENT_FOLDER_ID\)\.trim\(\)\)\s*\|\|\s*"([a-f0-9]+)"\)/gi,
         `"${folderRaw}"`,
       );
+      if (out === WF02_CANONICAL_PARENT_FOLDER_ID) out = folderRaw;
     }
 
     const approvalRaw = (process.env.WF02_APPROVAL_BASE_URL || "").trim();

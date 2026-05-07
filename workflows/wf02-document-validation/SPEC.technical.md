@@ -14,7 +14,7 @@
 Required runtime variables:
 
 - `EXO_MCP_ENDPOINT` in root `.env` — **`npm run generate:workflow-json`** writes the MCP Client `parameters.endpointUrl` literals; canonical graph may use a demo URL until then.
-- `WF02_PARENT_FOLDER_ID` - watched folder id for document intake.
+- `WF02_PARENT_FOLDER_ID` (root **`.env`**) — watched folder id for document intake. Canonical **`MCP Search Folder Docs`** uses **Manual** tool parameters with a literal `parent_folder_id` (reference tenant default in git). **`npm run generate:workflow-json`** and REST deploy rewrite that literal from `WF02_PARENT_FOLDER_ID` when set (see `WF02_CANONICAL_PARENT_FOLDER_ID` in deploy tooling). The graph does **not** read `$vars.WF02_PARENT_FOLDER_ID` at runtime.
 - `WF02_PROJECT_ID` - target project id for created validation tasks.
 - `WF02_INPROGRESS_STATUS_ID` - status id used after task creation and on rejection branch.
 - `WF02_DONE_STATUS_ID` - status id used when both approvals are `APPROVED`.
@@ -65,10 +65,10 @@ Observed variants include plain objects and short status strings (for example `"
 
 ### 3.4 Reference payloads
 
-Search in watched folder:
+Search in watched folder (canonical **Manual** mapping on **`MCP Search Folder Docs`**; **`limit` 100** / **`offset` 0** pulls a broad candidate set; **`Merge Docs to Process`** then filters to new or updated documents against **`wf02_processed_documents`**):
 
 ```json
-{ "query": "", "parent_folder_id": "<folder-id>", "limit": 200, "offset": 0 }
+{ "query": "", "parent_folder_id": "<folder-id>", "limit": 100, "offset": 0 }
 ```
 
 Create task (minimal validated shape):
@@ -97,7 +97,7 @@ The **`MCP Create Task`** node uses **Manual** input (resource mapper). Mapped f
 
 ### 4.1 Intake branch (manual start / schedule)
 
-1. `search_documents` on `WF02_PARENT_FOLDER_ID` (triggers connect **directly** to this MCP step — no Data Table nodes at workflow entry).
+1. **`MCP Search Folder Docs`** — `search_documents` in **Manual** input mode (`query`, `parent_folder_id` literal injected from `.env` at deploy/generate, `limit` **100**, `offset` **0**). Triggers connect **directly** to this MCP step (no Data Table nodes at workflow entry).
 2. Unwrap + coalesce into `documents[]`, then split one item per document.
 3. Filter + normalize document fields (`id`, `updatedDate`, `name`, uploader, links).
 4. **`Ensure Tracking Table`** (`createIfNotExists`, **`executeOnce`**) immediately before **`Get Processed Docs`** — the tracking table is introduced only when the graph first needs to read it for the merge.
@@ -187,6 +187,7 @@ This graph is **tutorial-oriented**: explainability on the canvas takes priority
 - **MCP hygiene:** **`MCP Create Task`** uses **Manual** parameter rows and `removed: true` on unused optional fields (§3.5).
 - **Shorter expressions:** **`Build Task Fields`** and **`Extract Task ID`** assume UTIL has already flattened `payload` for `get_document_by_id` / `create_task_in_project`; a narrow fallback for `task.task_id` remains in **`Extract Task ID`**.
 - **Deferred table bootstrap:** **`Ensure Tracking Table`** runs immediately before **`Get Processed Docs`**. **`Ensure Approvals Table (intake)`** runs immediately before **`Seed Approval Row`**; **`Ensure Approvals Table (form branch)`** runs immediately before **`Get Approval Rows`** (same schema, idempotent `createIfNotExists`; **`executeOnce`** limits redundant work per execution branch).
+- **MCP search clarity:** **`MCP Search Folder Docs`** uses **Manual** parameters so all `search_documents` fields are visible on the canvas; **`parent_folder_id`** is a deploy-time literal (not `$vars`).
 
 **Deferred hardening** (reintroduce if you need multi-tenant robustness without assumptions): restore the long Coalesce expression; widen **`Extract Task ID`** for nested `content[0].text` shapes; keep documenting gaps in [ISSUES.md](../../docs/ISSUES.md).
 

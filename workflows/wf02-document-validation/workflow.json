@@ -196,8 +196,53 @@
           "mode": "id",
           "value": "search_documents"
         },
-        "inputMode": "json",
-        "jsonInput": "={{ { query: \"\", parent_folder_id: (($vars.WF02_PARENT_FOLDER_ID && String($vars.WF02_PARENT_FOLDER_ID).trim()) || \"ced6e9c539805e114bd65696b26bd073\"), limit: 100, offset: 0 } }}",
+        "inputMode": "manual",
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "query": "",
+            "parent_folder_id": "ced6e9c539805e114bd65696b26bd073",
+            "limit": 100,
+            "offset": 0
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "query",
+              "displayName": "query",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "string"
+            },
+            {
+              "id": "parent_folder_id",
+              "displayName": "parent_folder_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "string"
+            },
+            {
+              "id": "limit",
+              "displayName": "limit",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "number"
+            },
+            {
+              "id": "offset",
+              "displayName": "offset",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "number"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
         "options": {
           "timeout": 60000
         }

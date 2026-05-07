@@ -34,7 +34,7 @@ Document scope (reference):
 
 - Space: `Festival Art de Rue`
 - Watched folder: `/Documents/Festivak_Art2Rue_2026/00_Programmation`
-- `parent_folder_id` on **reference tenant**: `ced6e9c539805e114bd65696b26bd073` (legacy tenant id was `b468cb5639805e11480baa56164da90c`; override with n8n variable `WF02_PARENT_FOLDER_ID` if your tree differs)
+- `parent_folder_id` on **reference tenant**: `ced6e9c539805e114bd65696b26bd073` (legacy tenant id was `b468cb5639805e11480baa56164da90c`; override via root **`.env`** `WF02_PARENT_FOLDER_ID` and **`npm run generate:workflow-json`** / deploy injection if your tree differs)
 
 Expected content on the task:
 
@@ -101,7 +101,7 @@ On rejection:
 - eXo project on **reference tenant**: `**project_id=2*`* for tasks (eXo `project_name` may show as `Programation`); set `WF02_PROJECT_ID` in n8n if you use another board.
 - Document space: `Festival Art de Rue`
 - Path: `/Documents/Festivak_Art2Rue_2026/00_Programmation`
-- `parent_folder_id` on **reference tenant**: `ced6e9c539805e114bd65696b26bd073` (legacy tenant id was `b468cb5639805e11480baa56164da90c`; override with n8n variable `WF02_PARENT_FOLDER_ID` if your tree differs)
+- `parent_folder_id` on **reference tenant**: `ced6e9c539805e114bd65696b26bd073` (legacy tenant id was `b468cb5639805e11480baa56164da90c`; override via root **`.env`** `WF02_PARENT_FOLDER_ID` and **`npm run generate:workflow-json`** / deploy injection if your tree differs)
 
 ### 9.2 Actors (demo)
 
@@ -117,7 +117,7 @@ Three sample Word documents are kept under [fixtures/](fixtures/) for **manual i
 2. `Deambulation_Jeune_Public_Quartier_Nord.docx`
 3. `Performance_Feu_et_Lumiere_Esplanade.docx`
 
-**How to use them:** upload (or copy) these files into the eXo folder `**00_Programmation`** — the path `/Documents/Festivak_Art2Rue_2026/00_Programmation` on **reference tenant**, whose `parent_folder_id` is the default in the n8n workflow (`ced6e9c539805e114bd65696b26bd073`, overridable via `WF02_PARENT_FOLDER_ID`). Then run WF02 intake (manual trigger or schedule). The workflow’s `search_documents` call targets that folder id; an empty folder yields no downstream items (no error).
+**How to use them:** upload (or copy) these files into the eXo folder `**00_Programmation`** — the path `/Documents/Festivak_Art2Rue_2026/00_Programmation` on **reference tenant**, whose `parent_folder_id` is the default in the committed workflow (`ced6e9c539805e114bd65696b26bd073`, overridable via root **`.env`** `WF02_PARENT_FOLDER_ID` at generate/deploy). Then run WF02 intake (manual trigger or schedule). The workflow’s `search_documents` call targets that folder id (**`limit` 100** per run in the canonical graph; narrowing to work items happens in **`Merge Docs to Process`** against the processed-doc table); an empty folder yields no downstream items (no error).
 
 See [README.md](README.md) (*Testing with sample documents*) for the same pointer in operational form.
 
