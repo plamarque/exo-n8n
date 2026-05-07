@@ -57,7 +57,7 @@ The workflow handles heterogeneous MCP outputs. Typical wrapped shape:
 [{ "type": "text", "text": "{...json...}" }]
 ```
 
-Observed variants include plain objects and short status strings (for example `"Done"` after status updates). **`Unwrap MCP Get Document`** and **`Unwrap MCP Create Task`** call the shared UTIL sub-workflow. **`search_documents`** stays on the **raw MCP Client** item shape: **`content[0].text`** is an **array of document rows** (same pattern as WF01/WF04 Split Out).
+Observed variants include plain objects and short status strings (for example `"Done"` after status updates). **`Unwrap MCP Create Task`** calls the shared UTIL sub-workflow. **`search_documents`** and **`get_document_by_id`** stay on the **raw MCP Client** envelope where applicable: **`content[0].text`** is an **array** of rows after **`search_documents`**, and a **single document object** (or one-element array) after **`get_document_by_id`** in the canonical tenant (see §3.3–§4.1). If **`text`** is a JSON string or nested differently, restore UTIL + Set or widen expressions (§7).
 
 ### 3.3 `search_documents` → Split Out → merge (SQL field mapping)
 
@@ -104,14 +104,13 @@ The **`MCP Create Task`** node uses **Manual** input (resource mapper). Mapped f
 1. **Triggers** (**`Manual Start`** / **`Schedule Intake (5m)`**) fan out to **two parallel branches**: (A) **`MCP Search Folder Docs`** and (B) **`Ensure Tracking Table`** → **`Get Processed Docs`** → **`Merge Docs to Process`** (**input 2**).
 2. **Branch A:** **`MCP Search Folder Docs`** → **`Split Out Documents`** on **`content[0].text`** (one item per search hit; see §3.3).
 3. **`Merge Docs to Process`** — SQL **`combineBySql`** joins when both branches have supplied data: **input1** = split rows from branch A, **input2** = processed-doc rows from branch B (`documentId`, `lastProcessedDate`, …); see §3.3 for column names and aliases.
-4. `get_document_by_id` for each selected item.
-5. Build task fields (`cycle_id`, title, author fallback, links) from unwrap payload with Merge fallbacks.
-6. Render description with the **HTML** node (fixed template; WF01-style).
-7. `create_task_in_project` (**Manual** MCP mapping) → unwrap → extract `task_id` (flattened `payload` from UTIL).
-8. Guard `task_id`; stop with explicit error when missing.
-9. Move task to `WF02_INPROGRESS_STATUS_ID`.
-10. Add initial comment containing approval form links.
-11. **`Ensure Approvals Table (intake)`** (`createIfNotExists`, **`executeOnce`**) immediately before **`Seed Approval Row`**, then update `wf02_processed_documents`.
+4. **`MCP Get Document By ID`** — raw MCP item shape (**`content[0].text`** document object or array with one row); **`Render Task Description HTML`**, **`MCP Create Task`**, and **`Extract Task ID`** use **`$('MCP Get Document By ID')`** with **`$('Merge Docs to Process')`** fallbacks — **no UTIL** on this hop (WF01-style didactic simplification).
+5. Render description with the **HTML** node (expression-built HTML from MCP + Merge fields).
+6. `create_task_in_project` (**Manual** MCP mapping) → **`Unwrap MCP Create Task`** → extract **`task_id`** (**`Extract Task ID`**; **`payload`** from UTIL).
+7. Guard `task_id`; stop with explicit error when missing.
+8. Move task to `WF02_INPROGRESS_STATUS_ID`.
+9. Add initial comment containing approval form links.
+10. **`Ensure Approvals Table (intake)`** (`createIfNotExists`, **`executeOnce`**) immediately before **`Seed Approval Row`**, then update `wf02_processed_documents`.
 
 ### 4.2 Approval form branch (`/form/.../approve`)
 
@@ -185,12 +184,12 @@ Suggested follow-ups:
 
 This graph is **tutorial-oriented**: explainability on the canvas takes priority over maximal envelope tolerance.
 
-- **Unwrap scope (Option B):** **`Unwrap MCP Get Document`** and **`Unwrap MCP Create Task`** use **`Execute Workflow`** (UTIL). **`search_documents`** uses **native Split Out** on **`content[0].text`** only — no UTIL and no **`documents`** / coalesce layer (see §3.3).
-- **Native HTML:** Task body uses the **HTML** node, not a Code node with manual escaping.
+- **Unwrap scope (Option B):** **`Unwrap MCP Create Task`** only — **`Execute Workflow`** (UTIL) for **`create_task_in_project`** responses. **`search_documents`** and **`get_document_by_id`** use **native MCP item** paths (**`content[0].text`**) without UTIL on those hops (see §3.2, §4.1).
+- **Native HTML:** Task body uses the **HTML** node; template is **expression-backed** from **`MCP Get Document By ID`** + **`Merge Docs to Process`** (no **`Build Task Fields`** Set node).
 - **MCP hygiene:** **`MCP Create Task`** uses **Manual** parameter rows and `removed: true` on unused optional fields (§3.5).
-- **Shorter expressions:** **`Build Task Fields`** and **`Extract Task ID`** assume UTIL has already flattened `payload` for `get_document_by_id` / `create_task_in_project`; a narrow fallback for `task.task_id` remains in **`Extract Task ID`**.
+- **Shorter expressions:** **`MCP Create Task`** (**`title`**, **`assignee`**) and **`Extract Task ID`** (**`cycle_id`**, **`document_id`**, **`author_username`**) read **`content[0].text`** from **`get_document_by_id`** with Merge fallbacks; **`Extract Task ID`** **`task_id`** still unwraps UTIL **`payload`** for **`create_task_in_project`**; narrow **`task.task_id`** fallback remains.
 - **Deferred table bootstrap:** **`Ensure Tracking Table`** still sits immediately before **`Get Processed Docs`**, but both are on a **second branch** started from the **same trigger** as **`MCP Search Folder Docs`** (parallel folder read vs table read). **`Ensure Approvals Table (intake)`** runs immediately before **`Seed Approval Row`**; **`Ensure Approvals Table (form branch)`** runs immediately before **`Get Approval Rows`** (same schema, idempotent `createIfNotExists`; **`executeOnce`** limits redundant work per execution branch).
 - **MCP search clarity:** **`MCP Search Folder Docs`** uses **Manual** parameters so all `search_documents` fields are visible on the canvas; **`parent_folder_id`** is a deploy-time literal (not `$vars`).
 
-**Deferred hardening** (reintroduce if you need multi-tenant robustness without assumptions): add **`Unwrap MCP Search Folder Docs`** + **Set** if **`search_documents`** responses stop matching **`content[0].text`** as an array; add a small **Code** step before the Merge to synthesize a placeholder **`input2`** row when **Get Processed** returns zero items, if an n8n upgrade regresses empty **`input2`** handling; widen **`Extract Task ID`** for nested MCP shapes; keep documenting gaps in [ISSUES.md](../../docs/ISSUES.md).
+**Deferred hardening** (reintroduce if you need multi-tenant robustness without assumptions): add **`Unwrap MCP Search Folder Docs`** + **Set** if **`search_documents`** responses stop matching **`content[0].text`** as an array; add **`Unwrap MCP Get Document`** + **Set** if **`get_document_by_id`** stops exposing a structured **`content[0].text`** document (string envelope or nested shape); add a small **Code** step before the Merge to synthesize a placeholder **`input2`** row when **Get Processed** returns zero items, if an n8n upgrade regresses empty **`input2`** handling; widen **`Extract Task ID`** for nested MCP shapes; keep documenting gaps in [ISSUES.md](../../docs/ISSUES.md).
 

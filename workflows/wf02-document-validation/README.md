@@ -72,8 +72,8 @@ Use `config.env.example` as a naming/meaning template. Copy values into **n8n Va
 1. **Intake** — manual start or scheduled run.
 2. **Parallel reads** — branch A: `search_documents` → **Split Out** on **`content[0].text`**; branch B (same trigger): **Ensure Tracking Table** → **Get Processed Docs**. **Merge** (SQL) computes the differential so only **new or changed** files continue.
 3. **Approvals persistence** — **`wf02_approvals`** is ensured **just before** the first seed (intake) or **just before** reading rows (form branch); same idempotent `createIfNotExists` pattern.
-4. **Load document** — `get_document_by_id` for context; build **title, author, links, cycle id** for this processing round.
-5. **Create task** — `create_task_in_project`, then move to **In progress**; add the first **comment** with instructions and approval URLs for **nadia** / **etienne** (demo actors).
+4. **Load document** — `get_document_by_id` on the raw MCP envelope (**`content[0].text`**); **HTML** description plus **`create_task_in_project`** fields pull from that node with **`Merge Docs to Process`** fallbacks (no intermediate unwrap/build Set nodes).
+5. **Create task** — `create_task_in_project` (**UTIL unwrap** on the response), then move to **In progress**; add the first **comment** with instructions and approval URLs for **nadia** / **etienne** (demo actors).
 6. **Split** — two branches await HTTP callbacks carrying approve/reject payloads until **both** complete (**merge**).
 7. **Join & finalize** — if **both APPROVED**, transition to **Done** and final comment; otherwise stay in progress / rework path with rejection notes.
 
@@ -85,7 +85,7 @@ Use `config.env.example` as a naming/meaning template. Copy values into **n8n Va
 | Intake        | **Schedule + manual**                                  | Triggers start **two branches**: MCP folder search + **Ensure Tracking Table** → processed-doc read in parallel; **Merge** joins them. Approvals table is still ensured **just before** seed / form read.                                                                                     |
 | Parallelism   | **Split + wait for webhooks + merge**                  | Models two **independent** human decisions; **join** encodes the business rule.                                                                           |
 | Idempotency   | **Data Table + Merge (SQL-style combine)**             | Same pattern as WF04: **skip** unchanged docs; avoid accidental duplicate tasks when rerunning intake.                                                    |
-| MCP envelopes | **UTIL** for get/create; **Split Out** for search | **`get_document_by_id`** / **`create_task_in_project`** use **`Unwrap MCP JSON`**; **`search_documents`** splits **`content[0].text`** like WF04 ([SPEC.technical.md](SPEC.technical.md) §3.3). |
+| MCP envelopes | **UTIL** for **create** only; **Split Out** for search; raw **`get_document`** | **`create_task_in_project`** uses **`Unwrap MCP JSON`**; **`search_documents`** splits **`content[0].text`** like WF04; **`get_document_by_id`** reads **`content[0].text`** directly ([SPEC.technical.md](SPEC.technical.md) §3.2–§3.3). |
 | Code surface  | **Small Code** (approval row merge / **`Merge Decision`**) + **HTML node** for task body | Intake **`combineBySql`** Merge reads **`Get Processed Docs`** directly (**input 2**); **`alwaysOutputData`** on that Data Table node supports empty-table runs. |
 
 

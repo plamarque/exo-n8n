@@ -346,80 +346,7 @@
     },
     {
       "parameters": {
-        "workflowId": "GPzd2Ot3xM56rW0u",
-        "options": {}
-      },
-      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00009",
-      "name": "Unwrap MCP Get Document",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1,
-      "position": [
-        1568,
-        256
-      ]
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "document_id",
-              "name": "document_id",
-              "value": "={{ String(($json.payload && $json.payload.document_id) || $('Merge Docs to Process').item.json.id || '') }}",
-              "type": "string"
-            },
-            {
-              "id": "updatedDate",
-              "name": "updatedDate",
-              "value": "={{ String(($json.payload && $json.payload.updated_date) || $('Merge Docs to Process').item.json.updatedDate || $now.toISO()) }}",
-              "type": "string"
-            },
-            {
-              "id": "cycle_id",
-              "name": "cycle_id",
-              "value": "={{ String(($json.payload && $json.payload.document_id) || $('Merge Docs to Process').item.json.id) + ':' + String(($json.payload && $json.payload.updated_date) || $('Merge Docs to Process').item.json.updatedDate || $now.toISO()) }}",
-              "type": "string"
-            },
-            {
-              "id": "docName",
-              "name": "docName",
-              "value": "={{ String(($json.payload && $json.payload.name) || $('Merge Docs to Process').item.json.name || 'Untitled document') }}",
-              "type": "string"
-            },
-            {
-              "id": "title",
-              "name": "title",
-              "value": "={{ ('Validation - ' + String(($json.payload && $json.payload.name) || $('Merge Docs to Process').item.json.name || 'Untitled document').replace(/\\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim()).slice(0, 140) }}",
-              "type": "string"
-            },
-            {
-              "id": "author_username",
-              "name": "author_username",
-              "value": "={{ String((($json.payload && $json.payload.created_username && $json.payload.created_username.username) || $('Merge Docs to Process').item.json.uploader || 'claire')).trim() || 'claire' }}",
-              "type": "string"
-            },
-            {
-              "id": "docUrl",
-              "name": "docUrl",
-              "value": "={{ (() => { const u = String(($json.payload && $json.payload.url) || $('Merge Docs to Process').item.json.url || ''); return u.startsWith('http') ? u : ('https://exo.example.com' + u); })() }}",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b0000a",
-      "name": "Build Task Fields",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        1792,
-        256
-      ]
-    },
-    {
-      "parameters": {
-        "html": "<div><p><strong>Source document:</strong> <a href=\"{{ $json.docUrl }}\" target=\"_blank\" rel=\"noopener noreferrer\">{{ $json.docName }}</a></p><p><strong>Cycle:</strong> {{ $json.cycle_id }}</p><p><strong>Validation:</strong> use the approval links in the first task comment.</p><p>Rule: move to Done only when both stamps are APPROVED.</p></div>"
+        "html": "={{ (() => { const m = $('MCP Get Document By ID').item.json; const merge = $('Merge Docs to Process').item.json; let t = m.content?.[0]?.text; if (Array.isArray(t)) t = t[0]; const d = t && typeof t === 'object' ? t : {}; const docId = String(d.document_id || merge.id || ''); const upd = String(d.updated_date || merge.updatedDate || $now.toISO()); const name = String(d.name || merge.name || 'Untitled document'); const rawUrl = String(d.url || merge.url || ''); const docUrl = rawUrl.startsWith('http') ? rawUrl : ('https://exo.example.com' + rawUrl); const cycleId = docId + ':' + upd; const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/\"/g, '&quot;'); return '<div><p><strong>Source document:</strong> <a href=\"' + esc(docUrl) + '\" target=\"_blank\" rel=\"noopener noreferrer\">' + esc(name) + '</a></p><p><strong>Cycle:</strong> ' + esc(cycleId) + '</p><p><strong>Validation:</strong> use the approval links in the first task comment.</p><p>Rule: move to Done only when both stamps are APPROVED.</p></div>'; })() }}"
       },
       "id": "aa5b4f7c-41dd-4cce-85f1-9fa7756b7c1e",
       "name": "Render Task Description HTML",
@@ -443,9 +370,9 @@
           "mappingMode": "defineBelow",
           "value": {
             "project_id": "={{ Number(($vars.WF02_PROJECT_ID && String($vars.WF02_PROJECT_ID).trim()) || 2) }}",
-            "title": "={{ $('Build Task Fields').item.json.title }}",
+            "title": "={{ (() => { const m = $('MCP Get Document By ID').item.json; const merge = $('Merge Docs to Process').item.json; let t = m.content?.[0]?.text; if (Array.isArray(t)) t = t[0]; const d = t && typeof t === 'object' ? t : {}; const name = String(d.name || merge.name || 'Untitled document'); return ('Validation - ' + name.replace(/\\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim()).slice(0, 140); })() }}",
             "description": "={{ $json.html }}",
-            "assignee": "={{ $('Build Task Fields').item.json.author_username }}",
+            "assignee": "={{ (() => { const m = $('MCP Get Document By ID').item.json; const merge = $('Merge Docs to Process').item.json; let t = m.content?.[0]?.text; if (Array.isArray(t)) t = t[0]; const d = t && typeof t === 'object' ? t : {}; return String(d.created_username?.username || merge.uploader || 'claire').trim() || 'claire'; })() }}",
             "priority": "NORMAL"
           },
           "matchingColumns": [],
@@ -604,19 +531,19 @@
             {
               "id": "cycle_id",
               "name": "cycle_id",
-              "value": "={{ $('Build Task Fields').item.json.cycle_id }}",
+              "value": "={{ (() => { const m = $('MCP Get Document By ID').item.json; const merge = $('Merge Docs to Process').item.json; let t = m.content?.[0]?.text; if (Array.isArray(t)) t = t[0]; const d = t && typeof t === 'object' ? t : {}; const id = String(d.document_id || merge.id || ''); return id + ':' + String(d.updated_date || merge.updatedDate || $now.toISO()); })() }}",
               "type": "string"
             },
             {
               "id": "document_id",
               "name": "document_id",
-              "value": "={{ $('Build Task Fields').item.json.document_id }}",
+              "value": "={{ (() => { const m = $('MCP Get Document By ID').item.json; const merge = $('Merge Docs to Process').item.json; let t = m.content?.[0]?.text; if (Array.isArray(t)) t = t[0]; const d = t && typeof t === 'object' ? t : {}; return String(d.document_id || merge.id || ''); })() }}",
               "type": "string"
             },
             {
               "id": "author_username",
               "name": "author_username",
-              "value": "={{ $('Build Task Fields').item.json.author_username }}",
+              "value": "={{ (() => { const m = $('MCP Get Document By ID').item.json; const merge = $('Merge Docs to Process').item.json; let t = m.content?.[0]?.text; if (Array.isArray(t)) t = t[0]; const d = t && typeof t === 'object' ? t : {}; return String(d.created_username?.username || merge.uploader || 'claire').trim() || 'claire'; })() }}",
               "type": "string"
             },
             {
@@ -1832,28 +1759,6 @@
       ]
     },
     "MCP Get Document By ID": {
-      "main": [
-        [
-          {
-            "node": "Unwrap MCP Get Document",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Unwrap MCP Get Document": {
-      "main": [
-        [
-          {
-            "node": "Build Task Fields",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Build Task Fields": {
       "main": [
         [
           {
