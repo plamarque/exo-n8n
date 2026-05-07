@@ -86,7 +86,7 @@ Use `config.env.example` as a naming/meaning template. Copy values into **n8n Va
 | Parallelism   | **Split + wait for webhooks + merge**                  | Models two **independent** human decisions; **join** encodes the business rule.                                                                           |
 | Idempotency   | **Data Table + Merge (SQL-style combine)**             | Same pattern as WF04: **skip** unchanged docs; avoid accidental duplicate tasks when rerunning intake.                                                    |
 | MCP envelopes | **UTIL** for get/create; **Split Out** for search | **`get_document_by_id`** / **`create_task_in_project`** use **`Unwrap MCP JSON`**; **`search_documents`** splits **`content[0].text`** like WF04 ([SPEC.technical.md](SPEC.technical.md) §3.3). |
-| Code surface  | **Small Code** (merge input guard, approval row merge) + **HTML node** for task body | Intake search path avoids Code; **Merge** uses **`combineBySql`** on split rows. |
+| Code surface  | **Small Code** (approval row merge / **`Merge Decision`**) + **HTML node** for task body | Intake **`combineBySql`** Merge reads **`Get Processed Docs`** directly (**input 2**); **`alwaysOutputData`** on that Data Table node supports empty-table runs. |
 
 
 ## MCP eXo interaction model

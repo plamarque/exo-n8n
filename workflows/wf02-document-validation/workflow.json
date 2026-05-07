@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-07T18:59:41.113Z",
+  "updatedAt": "2026-05-07T19:59:12.111Z",
   "createdAt": "2026-05-07T14:30:33.862Z",
   "id": "vwTQX2yxbgCh3kaG",
   "name": "WF02 - Document validation (split / join)",
@@ -296,19 +296,6 @@
       "executeOnce": true,
       "alwaysOutputData": true,
       "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
-        "jsCode": "const PLACEHOLDER = '__wf02_empty_processed_placeholder__';\nconst rows = $input.all().filter((item) => {\n  const id = item.json?.documentId;\n  return id != null && String(id).trim() !== '' && String(id) !== PLACEHOLDER;\n});\nif (rows.length > 0) return rows;\nreturn [{ json: {\n  documentId: PLACEHOLDER,\n  lastProcessedDate: '',\n  cycleId: ''\n} }];\n"
-      },
-      "id": "f4e3d2c1-b5a6-4789-8123-000001mergefix",
-      "name": "Ensure Merge Processed Input",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        896,
-        352
-      ]
     },
     {
       "parameters": {
@@ -1826,17 +1813,6 @@
       "main": [
         [
           {
-            "node": "Ensure Merge Processed Input",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Ensure Merge Processed Input": {
-      "main": [
-        [
-          {
             "node": "Merge Docs to Process",
             "type": "main",
             "index": 1
@@ -2206,9 +2182,9 @@
   "staticData": null,
   "meta": null,
   "pinData": {},
-  "versionId": "7d79c5a1-fb59-400a-8001-a3f0cc61315b",
+  "versionId": "f2c165c3-35e9-40ef-96d1-11f38b2d9874",
   "activeVersionId": null,
-  "versionCounter": 17,
+  "versionCounter": 26,
   "triggerCount": 0,
   "shared": [
     {
