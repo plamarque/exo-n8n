@@ -51,6 +51,6 @@ These may be future improvements; they are not part of the current final workflo
 - Clearly actionable email → eXo task.
 - Non-actionable or ambiguous email → no task.
 - Created tasks have a title, HTML description, priority, and assignee.
-- `create_task_in_project` receives a valid `project_id` (`WF01_PROJECT_ID` or default `3`).
+- `create_task_in_project` receives a valid `project_id` (tutorial graph uses literal `3` in `workflow.json`; edit for other tenants).
 - A create response with no `task_id` stops the workflow explicitly.
 - `assign_task` uses the expected MCP `username` field.

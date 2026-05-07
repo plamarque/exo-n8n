@@ -20,7 +20,7 @@ It keeps the core business idea: **not every email should become a task**.
 4. `IF Has Required Email Fields`
 5. `AI Router` (+ model + output parser)
 6. `IF Actionable`
-7. `Build Create Task Input`
+7. `Render Task Description HTML`
 8. `MCP Create Task`
 9. `IF Has Task ID`
 10. `MCP Assign Task` or `Stop - Missing task_id`
@@ -28,14 +28,14 @@ It keeps the core business idea: **not every email should become a task**.
 ## What was simplified
 
 - Kept only no-code n8n primitives for pre-processing: `Split Out Emails` + `IF Has Required Email Fields`.
-- Removed extra HTML preparation nodes and built a compact description directly in `Build Create Task Input`.
+- Task description is built in `Render Task Description HTML`; `MCP Create Task` uses **Manual** MCP input with a persisted resource-mapper `schema` (unused tool fields marked `removed`) and literal demo `project_id`.
 - Reduced AI output contract to the minimum needed for the demo flow.
 - Removed the scheduled trigger from the tutorial path (manual trigger only).
 
 ## Configuration essentials
 
 - MCP endpoint and credentials must be valid for the target tenant.
-- `WF01_PROJECT_ID` is optional; if missing, workflow uses fallback project id `3`.
+- Target task `project_id` is the literal `3` in `MCP Create Task` unless you edit `workflow.json` for your tenant.
 - OpenAI credential is required for routing nodes.
 
 See:

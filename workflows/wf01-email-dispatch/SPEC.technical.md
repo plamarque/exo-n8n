@@ -11,11 +11,9 @@
 ## 2) Configuration
 
 - `EXO_MCP_ENDPOINT` in root `.env` — consumed by **`npm run generate:workflow-json`** to set each MCP Client `parameters.endpointUrl`; canonical git JSON may hold a demo literal until you generate.
-- `WF01_PROJECT_ID` - optional target project id for `create_task_in_project`.
+- **`project_id` for `create_task_in_project`** is a **literal `3`** in the `MCP Create Task` node **Parameters** (manual input mode) in `workflow.json`. Change it there for a non-demo tenant (this tutorial graph does not read `WF01_PROJECT_ID` from n8n Variables).
 - MCP OAuth credential (n8n `mcpOAuth2Api`) must be valid for the target tenant.
 - LLM credential must be configured for routing/model nodes.
-
-Default behavior: if `WF01_PROJECT_ID` is missing, the workflow falls back to project id `3` in the demo export.
 
 ## 3) MCP contract
 
@@ -35,6 +33,29 @@ MCP tools may return text-wrapped JSON:
 
 In this tutorial version, `create_task_in_project` and `assign_task` use direct field access from MCP output.
 
+### 3.3 `create_task_in_project` — tool parameters
+
+Parameter names accepted by the MCP tool (align with your tenant’s published schema):
+
+| Parameter     | Required | Notes |
+| ------------- | -------- | ----- |
+| `project_id`  | **yes**  | Numeric project / board id. |
+| `title`       | **yes**  | Task title. |
+| `description` | no       | e.g. HTML body. |
+| `assignee`    | no       | Username to assign (WF01 also calls `assign_task`). |
+| `coworkers`   | no       | Optional collaborator field per server contract. |
+| `start_date`  | no       | Per server format. |
+| `end_dtte`    | no       | [UNCERTAIN] Name as provided for this server; confirm whether the tool uses `end_dtte` vs `end_date`. |
+| `due_date`    | no       | Per server format. |
+| `priority`    | no       | Enum: **`NONE`**, **`LOW`**, **`NORMAL`**, **`HIGH`** only (MCP / n8n resource mapper). The AI Router system prompt must use this set only — not `URGENT` or other labels. |
+| `status_id`   | no       | Optional initial status; resolve via `list_project_statuses` when needed. |
+
+Only **`project_id`** and **`title`** are mandatory; all other fields are optional for the tool call.
+
+The tutorial graph sends only: `project_id`, `title`, `description`, `assignee`, `priority`. It does **not** include `coworkers`, `start_date`, `end_date` / `end_dtte`, `due_date`, or `status_id` (omitted so the tool is not called with empty optional fields that can fail on some servers).
+
+**Canonical `workflow.json` shape:** `MCP Create Task` uses **Manual** input with n8n’s **resource mapper**. Besides `parameters.value`, the export keeps a full `parameters.schema` for the tool (types, required flags, `priority` options). Unused tool parameters are present in `schema` with **`removed: true`** so re-import into n8n does not re-open “empty” mapped rows that break the MCP call. After editing in the UI, re-export and align this block if your tenant’s tool schema changes.
+
 ## 4) Technical sequence (simplified)
 
 1. Trigger (`Manual Start`).
@@ -43,14 +64,18 @@ In this tutorial version, `create_task_in_project` and `assign_task` use direct 
 4. `IF Has Required Email Fields` (drop entries missing any required field for routing: `email_id`, `subject`, `content.body`, `sender.address`).
 5. `AI Router` + parser.
 6. `IF Actionable` guardrail (reads structured output fields directly from `AI Router`).
-7. `Build Create Task Input` (project id, title, HTML description, assignee, priority).
-8. `MCP Create Task`.
+7. `Render Task Description HTML` (task body from email + AI `summary`).
+8. `MCP Create Task` (**Input mode: Manual** — one row per tool argument: `project_id`, `title`, `description`, `assignee`, `priority`).
 9. `IF Has Task ID` (checks `content[0].text.task_id` / `content[0].text.id`).
 10. Success branch: `MCP Assign Task`; failure branch: `Stop - Missing task_id`.
 
 ## 5) Data and mappings
 
 ### 5.1 Structured LLM output contract (tutorial)
+
+The **Routing Output Parser** uses **Schema type: Define using JSON Schema** (`schemaType: manual`) with `additionalProperties: false`, **`priority`** enum `NONE|LOW|NORMAL|HIGH`, and **`assignee_username`** enum `louis|claire|lucie`. `action_confidence` is constrained to `0..1`.
+
+Example payload:
 
 ```json
 {
@@ -75,7 +100,7 @@ Assignee routing:
 
 Priority routing:
 
-- `priority` comes directly from structured AI output.
+- `priority` is passed through unchanged from structured AI output into `create_task_in_project` (no enum remapping in the graph). Values must already be one of **`NONE`**, **`LOW`**, **`NORMAL`**, **`HIGH`** so the MCP call matches the tool schema.
 
 ## 6) Validation and operations
 
