@@ -1,11 +1,10 @@
-# Workflow 01 - Email dispatch (technical specification)
+# Workflow 01 - Email dispatch (technical specification, tutorial version)
 
-> Product rules: [SPEC.functional.md](SPEC.functional.md). Canonical graph: [workflow.json](workflow.json). Shared parser utility: [../unwrap-mcp-json/](../unwrap-mcp-json/).
+> Product rules: [SPEC.functional.md](SPEC.functional.md). Canonical graph: [workflow.json](workflow.json).
 
 ## 1) Scope and artifacts
 
 - Canonical export in git: `workflows/wf01-email-dispatch/workflow.json`.
-- Shared dependency: `workflows/unwrap-mcp-json/workflow.json`.
 - Deploy manifest: `workflows/wf01-email-dispatch/subworkflow-dependencies.json`.
 - Remote id is tenant-bound and configured through root `.env` (`N8N_WORKFLOW_ID_WF01`, optional when the export already carries a root `id`).
 
@@ -16,7 +15,7 @@
 - MCP OAuth credential (n8n `mcpOAuth2Api`) must be valid for the target tenant.
 - LLM credential must be configured for routing/model nodes.
 
-Default behavior: if `WF01_PROJECT_ID` is missing, the workflow falls back to project id `3` in the demo export. Override this on any other tenant.
+Default behavior: if `WF01_PROJECT_ID` is missing, the workflow falls back to project id `3` in the demo export.
 
 ## 3) MCP contract
 
@@ -25,58 +24,35 @@ Default behavior: if `WF01_PROJECT_ID` is missing, the workflow falls back to pr
 - `list_emails`
 - `create_task_in_project`
 - `assign_task`
-- Shared utility `UTIL - Unwrap MCP JSON` called after list/create MCP nodes.
+- Shared utility `UTIL - Unwrap MCP JSON` called after `create_task_in_project` in this tutorial version.
 
 ### 3.2 Response envelope
 
-Most MCP tools return text-wrapped JSON:
+MCP tools may return text-wrapped JSON:
 
 ```json
 [ { "type": "text", "text": "{...json...}" } ]
 ```
 
-The workflow unwraps this envelope before extraction (`Unwrap MCP Emails`, `Unwrap MCP Create Task`).
+In this tutorial version, `create_task_in_project` and `assign_task` use direct field access from MCP output.
 
-### 3.3 Reference payloads
+## 4) Technical sequence (simplified)
 
-Create task (`create_task_in_project`, built in `createTaskInput`):
-
-```json
-{
-  "project_id": 3,
-  "title": "Access issue to ticketing",
-  "description": "<div>...</div>",
-  "assignee": "louis",
-  "priority": "HIGH"
-}
-```
-
-Assign task (`assign_task`):
-
-```json
-{
-  "task_id": 14,
-  "username": "louis"
-}
-```
-
-## 4) Technical sequence
-
-1. Trigger (`Manual Start` or `Intake Every 5m`).
-2. `MCP List Emails` (`list_emails`, empty JSON object `{}` — the tenant MCP tool does not accept pagination fields such as `limit` / `offset`).
-3. `Unwrap MCP Emails`.
-4. `Split Out Emails` (one item per message).
-5. `Normalize Email` and `Filter - Has Email ID`.
-6. `AI Router` + parser, then `Normalize AI Output`.
-7. `IF Clearly Actionable` guardrail.
-8. Build payload and HTML (`Build MCP Payload`, `Render Task Description HTML`).
-9. `MCP Create Task` then `Unwrap MCP Create Task`.
-10. Extract assignment fields (`task_id`, `username`) and validate (`IF Has Task ID`).
+1. Trigger (`Manual Start`).
+2. `MCP List Emails` (`list_emails`, empty JSON object `{}`).
+3. `Split Out Emails` (split `content[0].text` into one item per email).
+4. `IF Has Required Email Fields` (drop entries missing any required field for routing: `email_id`, `subject`, `content.body`, `sender.address`).
+5. `AI Router` + parser.
+6. `Normalize AI Output`.
+7. `IF Actionable` guardrail.
+8. `Build Create Task Input` (project id, title, HTML description, assignee, priority).
+9. `MCP Create Task`.
+10. `IF Has Task ID` (checks `content[0].text.task_id` / `content[0].text.id`).
 11. Success branch: `MCP Assign Task`; failure branch: `Stop - Missing task_id`.
 
 ## 5) Data and mappings
 
-### 5.1 Structured LLM output contract
+### 5.1 Structured LLM output contract (tutorial)
 
 ```json
 {
@@ -85,15 +61,10 @@ Assign task (`assign_task`):
   "action_confidence": 0.92,
   "assignee_username": "louis",
   "priority": "HIGH",
-  "slaHours": 4,
   "task_title": "Ticketing VPN incident",
-  "summary": "VPN outage.",
-  "next_action": "Diagnose.",
-  "rationale": "Technical issue."
+  "summary": "VPN outage that blocks sales."
 }
 ```
-
-`slaHours` is kept for future use; current WF01 does not compute due dates.
 
 ### 5.2 Mapping rules
 
@@ -110,12 +81,9 @@ Priority mapping:
 
 ## 6) Validation and operations
 
-
-1. Keep `N8N_WORKFLOW_ID_UNWRAP` aligned for REST deploy.
-2. Re-run behavior can create duplicates because email idempotency is not yet persisted.
+1. Re-run behavior can create duplicates because email idempotency is not yet persisted.
 
 Suggested follow-ups:
 
-1. Persist idempotency by `emailId`.
-2. Move SLA sweep/proof comments to dedicated follow-up flows if needed.
-3. Externalize assignee/priority mapping into a config source.
+1. Add persisted idempotency by `emailId`.
+2. Re-introduce richer payload hardening if needed for production stability.

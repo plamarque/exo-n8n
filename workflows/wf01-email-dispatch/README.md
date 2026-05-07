@@ -1,135 +1,62 @@
-# WF01 — Email dispatch (external signal → eXo tasks)
+# WF01 — Email dispatch (tutorial version)
 
-**TL;DR** — Ingest mail through eXo MCP, **unwrap** responses, let a **structured LLM** decide if a message is truly actionable, then **create and assign** a project task when confidence and policy allow. The point of the demo: not every email should create work.
+**TL;DR** — This tutorial workflow shows a simple end-to-end path: call eXo MCP to read emails, apply a small AI decision, then create and assign a task in eXo.
 
-## Video walkthrough
+## Goal
 
-Prefer a short screencast before the long read? Replace the placeholder with your published URL (or embed) when ready.
+This version is intentionally simplified for demos and onboarding:
 
-**Short video:** *TBD*
+- fewer nodes,
+- less defensive parsing,
+- easier node-by-node explanation for non-experts.
 
-## n8n canvas (overview)
+It keeps the core business idea: **not every email should become a task**.
 
-![WF01 — Email dispatch workflow in the n8n editor](wf01.png)
+## Workflow overview
 
-Email intake → unwrap → per-item AI triage → task create/assign. For the exact sequence and node names, open [`workflow.json`](workflow.json) in n8n or read [SPEC.technical.md](SPEC.technical.md) (section 4).
+1. `Manual Start`
+2. `MCP List Emails`
+3. `Split Out Emails`
+4. `IF Has Required Email Fields`
+5. `AI Router` (+ model + output parser)
+6. `Normalize AI Output`
+7. `IF Actionable`
+8. `Build Create Task Input`
+9. `MCP Create Task`
+10. `IF Has Task ID`
+11. `MCP Assign Task` or `Stop - Missing task_id`
 
----
+## What was simplified
 
-## Problem context
+- Kept only no-code n8n primitives for pre-processing: `Split Out Emails` + `IF Has Required Email Fields`.
+- Removed extra HTML preparation nodes and built a compact description directly in `Build Create Task Input`.
+- Reduced AI output contract to the minimum needed for the demo flow.
+- Removed the scheduled trigger from the tutorial path (manual trigger only).
 
-Project teams still receive **actionable** and **informational** email in the same channel. Manually triaging mail and re-typing requests into eXo is slow; auto-creating a task for every message creates **noise** and undermines trust in automation.
+## Configuration essentials
 
-## Automation objective
+- MCP endpoint and credentials must be valid for the target tenant.
+- `WF01_PROJECT_ID` is optional; if missing, workflow uses fallback project id `3`.
+- OpenAI credential is required for routing nodes.
 
-- **Ingest** a batch of recent messages.
-- **Normalize** fields and drop invalid items.
-- **Classify** with a small, contract-based LLM output (action required, response expected, confidence, assignee, priority, title, summary).
-- **Create** a task in a **known eXo project** and **assign** it to a resolved user when—and only when—guardrails pass.
-- **Stop with a clear error** if create returns no `task_id` (defect or contract mismatch).
+See:
 
-## Prerequisites (eXo tenant and n8n)
+- [SPEC.technical.md](SPEC.technical.md)
+- [config.env.example](config.env.example)
+- [../../docs/DEVELOPMENT.md](../../docs/DEVELOPMENT.md)
 
-Create or locate the following **on eXo**, then copy identifiers into n8n **variables / workflow parameters** as needed (see [SPEC.technical.md](SPEC.technical.md) §3 and [config.env.example](config.env.example) for naming).
+## Tutorial caveats
 
-**eXo**
+This version favors readability over robustness:
 
-
-| Prerequisite                                                                                 | Why                                                                                                                                                                                                                      |
-| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **MCP endpoint** reachable with tools `list_emails`, `create_task_in_project`, `assign_task` | Core automation path ([SPEC.technical.md](SPEC.technical.md) §2).                                                                                                                                                        |
-| **Task project** — numeric **`project_id`** where tasks are created | Mapped from **`WF01_PROJECT_ID`** when set; otherwise the demo default is **`3`** (project name shown in your tenant). Confirm the id in UI or with MCP `list_projects`. |
-| **Assignee usernames** (`louis`, `claire`, `lucie`)                                          | LLM output is constrained and mapped with fallback ([SPEC.technical.md](SPEC.technical.md) §6). Users **must exist** under those **login names** on your tenant **or** adjust the workflow mapping to match your roster. |
-| **Mailbox visibility** for `list_emails`                                                     | The identity used by the n8n **MCP OAuth** credential must be able to list the **Art2Rue**-style demo mail; no mail → nothing to process.                                                                                |
-
-
-**n8n**
-
-
-| Prerequisite                                                                                                                                                                                                                                 | Why                                                                                                                    |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| **MCP Client** credential + tenant MCP URL (`npm run generate:workflow-json` from root `.env`, or edit nodes) | All eXo steps go through MCP. |
-| **LLM / OpenAI** credentials for the routing + parser chain                                                                                                                                                                                  | Structured triage node(s) require a configured model (see `workflow.json` and [SPEC.technical.md](SPEC.technical.md)). |
-| **Sub-workflow** **Unwrap MCP JSON** deployed and **`N8N_WORKFLOW_ID_UNWRAP`** in root `.env` when using **REST deploy** ([subworkflow-dependencies.json](subworkflow-dependencies.json), [docs/DEVELOPMENT.md](../../docs/DEVELOPMENT.md)). | Required for dependency id injection during REST deployment. |
-
-
-**Out of scope for a first run (per [SPEC.functional.md](SPEC.functional.md))** — persisted idempotency by `emailId`, dynamic project discovery, REST fallback: not required to **start** the demo.
-
-## Runtime variables (what they mean, and where to set them)
-
-Either run **`npm run generate:workflow-json`** so **`WF01_PROJECT_ID`** and MCP **`endpointUrl`** are hardcoded in `workflow.json`, or keep **`$vars.WF01_PROJECT_ID`** and set n8n Variables at runtime.
-
-
-| Variable           | Meaning                                                                                    | Where to set                            |
-| ------------------ | ------------------------------------------------------------------------------------------ | --------------------------------------- |
-| `EXO_MCP_ENDPOINT` | Tenant MCP base URL for WF01 MCP nodes.                                                  | Root `.env` → **`npm run generate:workflow-json`** ([docs/DEVELOPMENT.md](../../../docs/DEVELOPMENT.md)). |
-| `WF01_PROJECT_ID`  | Target eXo project id for created tasks (optional; workflow default applies when missing). | Root `.env` → generate, or n8n Variables. |
-
-
-Repository root `.env` supplies **`N8N_*`** for REST deploy and optional keys for **`generate:workflow-json`** ([docs/DEVELOPMENT.md](../../../docs/DEVELOPMENT.md)).
-
-## High-level flow (conceptual)
-
-1. **Trigger** — manual or scheduled intake.
-2. **List emails** — MCP `list_emails`, then **Unwrap MCP JSON** (shared sub-workflow) so the graph works on plain data.
-3. **One item per message** — split and **normalize** `emailId`, subject, body, sender, received time.
-4. **Filter** — require a stable `emailId`.
-5. **LLM triage** — structured output + **IF** branch: only “clearly actionable” mail continues.
-6. **Build task payload** — map allowed assignees and priorities, render a small **HTML** task body.
-7. **Create task** — `create_task_in_project` + unwrap; **extract** `task_id` and assignee username.
-8. **Assign** — `assign_task` on success; **error stop** if `task_id` is missing.
-
-## n8n design choices (not a node-by-node list)
-
-
-| Area         | Choice                                 | Why                                                                                              |
-| ------------ | -------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| MCP decoding | **Execute Workflow → Unwrap MCP JSON** | MCP tools often return envelopes; one shared UTIL keeps the parent readable.                     |
-| Volume       | **Split Out** after unwrap             | Natural “one execution thread per email” for downstream AI and MCP.                              |
-| Policy       | **Structured LLM + IF**                | Keeps business rules **explicit** (thresholds, booleans) instead of hiding them in prompts only. |
-| Side effects | **Create before assign**               | Matches MCP contracts and surfaces creation failures early.                                      |
-| HTML         | **Minimal Code** for description       | Keeps HTML generation localized; see functional spec for rationale.                              |
-
-
-## MCP eXo interaction model
-
-Tools used in this workflow (see [SPEC.technical.md](SPEC.technical.md)):
-
-- `list_emails` — intake.
-- `create_task_in_project` — task creation in a configured **project**.
-- `assign_task` — explicit assignment using MCP `username`.
-
-After MCP nodes that return wrapped JSON, the graph calls the shared **[Unwrap MCP JSON](../unwrap-mcp-json/)** sub-workflow again so downstream nodes extract `task_id` and payloads reliably.
-
-## Operational considerations
-
-- **MCP URL / project id:** **`npm run generate:workflow-json`** from root `.env`, or n8n Variables / manual edits. Defaults: [SPEC.technical.md](SPEC.technical.md).
-- **Limits (product):** no persisted email idempotency yet—re-runs may duplicate tasks if messages are still listed; see [SPEC.functional.md](SPEC.functional.md) out-of-scope section.
-- **Assignees:** LLM output is mapped to an **allow-list** of demo users with fallback (see technical spec §6).
+- Input shape handling is intentionally narrow.
+- There is no persisted idempotency yet (re-runs can create duplicates).
+- For production hardening, restore richer parsing and guards.
 
 ## References
 
-
-| Artifact                                                                           | Role                                             |
-| ---------------------------------------------------------------------------------- | ------------------------------------------------ |
-| [workflow.json](workflow.json)                                                     | Canonical n8n export.                            |
-| [SPEC.functional.md](SPEC.functional.md)                                           | Goals, acceptance criteria, business rules.      |
-| [SPEC.technical.md](SPEC.technical.md)                                             | MCP sequence, variables, LLM contract, payloads. |
-| [subworkflow-dependencies.json](subworkflow-dependencies.json)                     | Deploy order for Unwrap dependency.              |
-| [../unwrap-mcp-json/](../unwrap-mcp-json/) | Shared MCP unwrap UTIL.                          |
-
-
----
-
-## REST deploy
-
-From the repository root, after configuring root `.env` (`[.env.example](../../.env.example)`):
-
-```bash
-./tools/deploy.sh wf01
-./tools/deploy.sh wf01 --dry-run
-```
-
-WF01 declares **[subworkflow-dependencies.json](subworkflow-dependencies.json)** so shared **Unwrap MCP JSON** is **PUT** before the parent; remote **Execute Workflow** ids are injected in memory from `.env` (`N8N_WORKFLOW_ID_UNWRAP`) or from matching node names on the parent graph. Use `./tools/deploy.sh wf01 --no-deps` to skip the manifest.
-
-See [docs/DEVELOPMENT.md](../../docs/DEVELOPMENT.md#portfolio-deploy-dependencies-manifest) for the manifest schema and flags.
+- [workflow.json](workflow.json)
+- [SPEC.functional.md](SPEC.functional.md)
+- [SPEC.technical.md](SPEC.technical.md)
+- [subworkflow-dependencies.json](subworkflow-dependencies.json)
+- [../unwrap-mcp-json/](../unwrap-mcp-json/)
