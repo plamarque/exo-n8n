@@ -30,10 +30,7 @@ The point is to show that an n8n + eXo MCP flow can turn actionable email into a
 5. Structured LLM analysis per email.
 6. Create a task only when `actionRequired=true` and `actionConfidence >= 0.7`.
 7. Native resolution of assignee and priority from LLM output.
-8. Create an eXo task in the target project.
-9. Native extraction of `task_id` from the MCP response.
-10. Hard failure if creation returns no `task_id`.
-11. Assign the task with `assign_task`.
+8. Create an eXo task in the target project with `assignee` (and other fields) in the same `create_task_in_project` call — no separate `assign_task` step.
 
 ## 4) Out of scope (current)
 
@@ -51,6 +48,5 @@ These may be future improvements; they are not part of the current final workflo
 - Clearly actionable email → eXo task.
 - Non-actionable or ambiguous email → no task.
 - Created tasks have a title, HTML description, priority, and assignee.
-- `create_task_in_project` receives a valid `project_id` (tutorial graph uses literal `3` in `workflow.json`; edit for other tenants).
-- A create response with no `task_id` stops the workflow explicitly.
-- `assign_task` uses the expected MCP `username` field.
+- `create_task_in_project` receives a valid `project_id` (tutorial graph uses literal `3` in `workflow.json`; edit for other tenants), plus `assignee` aligned with AI output.
+- MCP or n8n surfaces errors if task creation fails; there is no extra guard node after create in the tutorial graph.

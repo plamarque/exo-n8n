@@ -18,7 +18,7 @@ The project domain is workflow automation between n8n and eXo for festival proje
 ## Actors
 
 - Email requester: sender of an incoming email that may become an eXo task.
-- Task assignee: eXo user assigned to a created task. WF01 currently maps AI output to `louis`, `claire`, or `lucie`, with fallback to `claire`.
+- Task assignee: eXo user assigned to a created task. WF01 maps AI output to `louis`, `claire`, or `lucie` via the `assignee` field on `create_task_in_project` (no separate `assign_task` in the tutorial graph).
 - Document author/uploader: user who submits or updates a document for validation.
 - Direction Artistique: WF02 approval authority represented by `nadia`.
 - Direction Technique: WF02 approval authority represented by `etienne`.
@@ -28,7 +28,7 @@ The project domain is workflow automation between n8n and eXo for festival proje
 ## Main Entities
 
 - Email: incoming message read by WF01 through `list_emails`.
-- Task: eXo task created or updated through MCP tools such as `create_task_in_project`, `assign_task`, `add_task_comment`, and `update_task_status`.
+- Task: eXo task created or updated through MCP tools such as `create_task_in_project`, `assign_task` (used in other workflows), `add_task_comment`, and `update_task_status`.
 - Document: eXo document read, validated, enriched, or categorized by workflows.
 - DMS: document management system; English equivalent of the French acronym GED (electronic document management).
 - Approval: WF02 decision with role, actor, decision, optional reason, task, and validation cycle.

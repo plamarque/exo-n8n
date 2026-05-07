@@ -384,82 +384,6 @@
           "name": "EXO MIPS MCP"
         }
       }
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "has_task_id",
-              "leftValue": "={{ Number($json.content?.[0]?.text?.task_id ?? $json.content?.[0]?.text?.id ?? 0) }}",
-              "rightValue": 0,
-              "operator": {
-                "type": "number",
-                "operation": "gt"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "373adb2b-af0b-46da-92f5-14e26e5e088c",
-      "name": "IF Has Task ID",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        2144,
-        320
-      ]
-    },
-    {
-      "parameters": {
-        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
-        "authentication": "mcpOAuth2Api",
-        "tool": {
-          "__rl": true,
-          "mode": "id",
-          "value": "assign_task"
-        },
-        "inputMode": "json",
-        "jsonInput": "={{ { task_id: $json.content[0].text.task_id ?? $json.content[0].text.id, username: $('AI Router').item.json.output.assignee_username } }}",
-        "options": {
-          "timeout": 60000
-        }
-      },
-      "id": "56e13fb4-cfaa-4e6b-9cc2-cff6d079bd9a",
-      "name": "MCP Assign Task",
-      "type": "@n8n/n8n-nodes-langchain.mcpClient",
-      "typeVersion": 1,
-      "position": [
-        2368,
-        224
-      ],
-      "credentials": {
-        "mcpOAuth2Api": {
-          "id": "vaCQUg5NblUEOrlR",
-          "name": "EXO MIPS MCP"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "errorMessage": "=create_task_in_project failed or returned no task_id. payload={{ JSON.stringify($json).slice(0, 800) }}"
-      },
-      "id": "0c16a2b5-331c-48ce-b6c8-fdc5526973aa",
-      "name": "Stop - Missing task_id",
-      "type": "n8n-nodes-base.stopAndError",
-      "typeVersion": 1,
-      "position": [
-        2368,
-        416
-      ]
     }
   ],
   "connections": {
@@ -564,31 +488,7 @@
     },
     "MCP Create Task": {
       "main": [
-        [
-          {
-            "node": "IF Has Task ID",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "IF Has Task ID": {
-      "main": [
-        [
-          {
-            "node": "MCP Assign Task",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Stop - Missing task_id",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     }
   },

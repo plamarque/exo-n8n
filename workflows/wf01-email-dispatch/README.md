@@ -21,9 +21,7 @@ It keeps the core business idea: **not every email should become a task**.
 5. `AI Router` (+ model + output parser)
 6. `IF Actionable`
 7. `Render Task Description HTML`
-8. `MCP Create Task`
-9. `IF Has Task ID`
-10. `MCP Assign Task` or `Stop - Missing task_id`
+8. `MCP Create Task` (assignee set here; end of flow)
 
 ## What was simplified
 

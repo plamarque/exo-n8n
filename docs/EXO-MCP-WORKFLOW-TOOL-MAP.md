@@ -10,7 +10,7 @@ Derived from **per-workflow technical specs** ([WF01](../workflows/wf01-email-di
 |---------------------|:----:|:----:|:----:|:----:|
 | `list_emails` | ✓ | | | |
 | `create_task_in_project` | ✓ | ✓ | | |
-| `assign_task` | ✓ | ✓ | | |
+| `assign_task` | | ✓ | | |
 | `search_documents` | | ✓ | | ✓ |
 | `get_document_by_id` | | ✓ | | ✓ |
 | `add_task_comment` | | ✓ | | |
