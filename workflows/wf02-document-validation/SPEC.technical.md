@@ -59,7 +59,11 @@ The workflow handles heterogeneous MCP outputs. Typical wrapped shape:
 
 Observed variants include plain objects and short status strings (for example `"Done"` after status updates). The shared unwrap utility plus local normalization nodes handle this.
 
-### 3.3 Reference payloads
+### 3.3 Coalesce after unwrap (tutorial assumption)
+
+**[ASSUMPTION]** After **`Unwrap MCP Search Folder Docs`**, each item is shaped like the UTIL sub-workflow output: `{ payload: <object> }`, where `payload` is either `{ documents: [...] }`, a bare array of document rows, or a single document object with `document_id`. The **`Coalesce Documents List`** Set node expands that into a `documents` array for **Split Out** only — it no longer re-parses raw MCP `content[]` or markdown-fenced JSON. Tenants where `search_documents` still reaches Coalesce without going through UTIL unwrap, or with a different top-level shape, need the older defensive coalesce restored or an extra normalization step.
+
+### 3.4 Reference payloads
 
 Search in watched folder:
 
@@ -85,23 +89,27 @@ Status update:
 { "task_id": 398, "status_id": 8 }
 ```
 
+### 3.5 `create_task_in_project` in canonical `workflow.json`
+
+The **`MCP Create Task`** node uses **Manual** input (resource mapper). Mapped fields: `project_id` (from `WF02_PROJECT_ID` with demo fallback), `title`, `description` (from the **HTML** node output), `assignee`, `priority` (`NORMAL`). Unused optional tool parameters remain in `schema` with **`removed: true`** so UI re-import does not send empty ghosts (same pattern as WF01).
+
 ## 4) Technical sequence
 
 ### 4.1 Intake branch (manual start / schedule)
 
-1. Ensure Data Tables exist (`wf02_processed_documents`, `wf02_approvals`).
-2. `search_documents` on `WF02_PARENT_FOLDER_ID`.
-3. Unwrap + coalesce into `documents[]`, then split one item per document.
-4. Normalize document fields (`id`, `updatedDate`, `name`, uploader, links).
-5. LEFT JOIN with processed-table snapshot to keep only unseen or updated documents.
+1. `search_documents` on `WF02_PARENT_FOLDER_ID` (triggers connect **directly** to this MCP step — no Data Table nodes at workflow entry).
+2. Unwrap + coalesce into `documents[]`, then split one item per document.
+3. Filter + normalize document fields (`id`, `updatedDate`, `name`, uploader, links).
+4. **`Ensure Tracking Table`** (`createIfNotExists`, **`executeOnce`**) immediately before **`Get Processed Docs`** — the tracking table is introduced only when the graph first needs to read it for the merge.
+5. LEFT JOIN with processed-table snapshot (`Merge Docs to Process`) to keep only unseen or updated documents.
 6. `get_document_by_id` for each selected item.
-7. Build task fields (`cycle_id`, title, author fallback, links).
-8. Render description HTML and create task payload.
-9. `create_task_in_project` -> unwrap -> extract `task_id`.
+7. Build task fields (`cycle_id`, title, author fallback, links) from unwrap payload with Merge fallbacks.
+8. Render description with the **HTML** node (fixed template; WF01-style).
+9. `create_task_in_project` (**Manual** MCP mapping) → unwrap → extract `task_id` (flattened `payload` from UTIL).
 10. Guard `task_id`; stop with explicit error when missing.
 11. Move task to `WF02_INPROGRESS_STATUS_ID`.
 12. Add initial comment containing approval form links.
-13. Seed approval row in `wf02_approvals` and update `wf02_processed_documents`.
+13. **`Ensure Approvals Table (intake)`** (`createIfNotExists`, **`executeOnce`**) immediately before **`Seed Approval Row`**, then update `wf02_processed_documents`.
 
 ### 4.2 Approval form branch (`/form/.../approve`)
 
@@ -109,12 +117,13 @@ Status update:
 2. Parse and normalize (`role` lowercased, decision enum normalization).
 3. Validate payload and required reject reason.
 4. Add decision comment to task.
-5. Read current approval row and merge the new stamp.
-6. Upsert merged row into `wf02_approvals`.
-7. Compute `joinReady` and `bothApproved`.
-8. If not join-ready: return pending form completion.
-9. If both approved: set `WF02_DONE_STATUS_ID` + final approved comment.
-10. Else: keep `WF02_INPROGRESS_STATUS_ID` + final rejected comment.
+5. **`Ensure Approvals Table (form branch)`** (`createIfNotExists`, **`executeOnce`**) immediately before **`Get Approval Rows`** (covers cold-start form submissions if the approvals table was never created on intake).
+6. Read current approval row and merge the new stamp.
+7. Upsert merged row into `wf02_approvals`.
+8. Compute `joinReady` and `bothApproved`.
+9. If not join-ready: return pending form completion.
+10. If both approved: set `WF02_DONE_STATUS_ID` + final approved comment.
+11. Else: keep `WF02_INPROGRESS_STATUS_ID` + final rejected comment.
 
 ## 5) Data and mappings
 
@@ -161,11 +170,23 @@ Operational notes:
 
 - The workflow is MCP-first; no REST fallback path is documented here.
 - `WF02_APPROVAL_BASE_URL` must remain a Form URL, never a raw webhook URL.
-- First run self-bootstraps table schemas through `createIfNotExists` nodes.
+- Table schemas are bootstrapped through **`createIfNotExists`** on **`Ensure …`** nodes placed **just before** first read or write (not at the trigger).
 
 Suggested follow-ups:
 
 1. Add signed approval tokens and stronger role checks.
 2. Add explicit duplicate-submit protection (`last write wins` is current behavior).
 3. Optionally resolve status ids dynamically at runtime.
+
+## 7) Didactic simplification slice (ADR 0004)
+
+This graph is **tutorial-oriented**: explainability on the canvas takes priority over maximal envelope tolerance.
+
+- **Unwrap scope (Option B):** All three **`Unwrap MCP …`** Execute Workflow calls are **kept** so heterogeneous MCP envelopes still normalize before business logic. **`Coalesce Documents List`** was shortened to assume UTIL output (see §3.3) instead of duplicating full envelope parsing.
+- **Native HTML:** Task body uses the **HTML** node, not a Code node with manual escaping.
+- **MCP hygiene:** **`MCP Create Task`** uses **Manual** parameter rows and `removed: true` on unused optional fields (§3.5).
+- **Shorter expressions:** **`Build Task Fields`** and **`Extract Task ID`** assume UTIL has already flattened `payload` for `get_document_by_id` / `create_task_in_project`; a narrow fallback for `task.task_id` remains in **`Extract Task ID`**.
+- **Deferred table bootstrap:** **`Ensure Tracking Table`** runs immediately before **`Get Processed Docs`**. **`Ensure Approvals Table (intake)`** runs immediately before **`Seed Approval Row`**; **`Ensure Approvals Table (form branch)`** runs immediately before **`Get Approval Rows`** (same schema, idempotent `createIfNotExists`; **`executeOnce`** limits redundant work per execution branch).
+
+**Deferred hardening** (reintroduce if you need multi-tenant robustness without assumptions): restore the long Coalesce expression; widen **`Extract Task ID`** for nested `content[0].text` shapes; keep documenting gaps in [ISSUES.md](../../docs/ISSUES.md).
 

@@ -70,8 +70,8 @@ Use `config.env.example` as a naming/meaning template. Copy values into **n8n Va
 ## High-level flow (conceptual)
 
 1. **Intake** — manual start or scheduled poll of the folder.
-2. **Bootstrap tracking** — ensure Data Tables exist for processed docs and approval rounds (safe reruns).
-3. **List & normalize** — `search_documents` → **Unwrap** → coalesce hit list → **split** to one item per document; **join** with tracking to only process **new or changed** files.
+2. **List & normalize** — `search_documents` → **Unwrap** → coalesce hit list → **split** to one item per document; **ensure tracking table** then **join** with processed rows to only process **new or changed** files.
+3. **Approvals persistence** — **`wf02_approvals`** is ensured **just before** the first seed (intake) or **just before** reading rows (form branch); same idempotent `createIfNotExists` pattern.
 4. **Load document** — `get_document_by_id` for context; build **title, author, links, cycle id** for this processing round.
 5. **Create task** — `create_task_in_project`, then move to **In progress**; add the first **comment** with instructions and approval URLs for **nadia** / **etienne** (demo actors).
 6. **Split** — two branches await HTTP callbacks carrying approve/reject payloads until **both** complete (**merge**).
@@ -82,16 +82,16 @@ Use `config.env.example` as a naming/meaning template. Copy values into **n8n Va
 
 | Area          | Choice                                                 | Why                                                                                                                                                       |
 | ------------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Intake        | **Schedule + manual**                                  | Realistic “folder sweep” without requiring a push event from the DMS.                                                                                     |
+| Intake        | **Schedule + manual**                                  | Realistic “folder sweep” without requiring a push event from the DMS. **Data Table** `createIfNotExists` runs **just before** first use (tracking before the processed-doc read; approvals before seed / before form read), not on the trigger.                                                                                     |
 | Parallelism   | **Split + wait for webhooks + merge**                  | Models two **independent** human decisions; **join** encodes the business rule.                                                                           |
 | Idempotency   | **Data Table + Merge (SQL-style combine)**             | Same pattern as WF04: **skip** unchanged docs; avoid accidental duplicate tasks when rerunning intake.                                                    |
 | MCP envelopes | **Execute Workflow → Unwrap MCP JSON**                 | Consistent parsing of `list` / `get` / `create` responses.                                                                                                |
-| Code surface  | **Small Code** (e.g. HTML body, merge input edge case) | Per [SPEC.technical.md](SPEC.technical.md) §12.4, most control flow is **native** nodes. |
+| Code surface  | **Small Code** (merge input guard, approval row merge) + **HTML node** for task body | Per [SPEC.technical.md](SPEC.technical.md) §7, intake control flow is mostly **native** nodes (unwrap via UTIL, Split Out, Merge SQL). |
 
 
 ## MCP eXo interaction model
 
-Typical tools in this graph (see [SPEC.technical.md](SPEC.technical.md) §12):
+Typical tools in this graph (see [SPEC.technical.md](SPEC.technical.md) §3):
 
 - **Read / find** — `search_documents`, `get_document_by_id`
 - **Context** — optional `list_projects`, `**list_project_statuses`** (resolve status ids per tenant), `list_users_of_space_by_role`
@@ -101,7 +101,7 @@ Webhook payloads drive approval branches; MCP carries **authoritative task updat
 
 ## Operational considerations
 
-- **Folder & project defaults** are pinned for the **reference tenant** demo; override **`WF02_PARENT_FOLDER_ID`**, **`WF02_PROJECT_ID`**, and **status id** variables per your **list_project_statuses** output (see [SPEC.technical.md](SPEC.technical.md) §11).
+- **Folder & project defaults** are pinned for the **reference tenant** demo; override **`WF02_PARENT_FOLDER_ID`**, **`WF02_PROJECT_ID`**, and **status id** variables per your **list_project_statuses** output (see [SPEC.technical.md](SPEC.technical.md) §2 and §5.3).
 - **Empty folder** — `search_documents` returns no rows; the run **stops without error** after the split (expected).
 - **Sample files** for manual tests live in [fixtures/](fixtures/) — upload into the watched folder per [SPEC.functional.md](SPEC.functional.md) §9.
 

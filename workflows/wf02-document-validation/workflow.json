@@ -1,50 +1,43 @@
 {
+  "updatedAt": "2026-05-07T18:35:56.651Z",
+  "createdAt": "2026-05-07T14:30:33.862Z",
+  "id": "vwTQX2yxbgCh3kaG",
   "name": "WF02 - Document validation (split / join)",
-  "settings": {
-    "executionOrder": "v1",
-    "availableInMCP": true
-  },
+  "description": null,
+  "active": false,
+  "isArchived": false,
   "nodes": [
     {
+      "parameters": {},
       "id": "df141cbe-a4d7-4e77-8e44-1ab7f06a9630",
       "name": "Manual Start",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        220,
-        120
-      ],
-      "parameters": {}
+        224,
+        112
+      ]
     },
     {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
       "id": "72df2575-2650-47df-8452-29735347fd3b",
       "name": "Schedule Intake (5m)",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.3,
       "position": [
-        220,
-        280
-      ],
-      "parameters": {
-        "rule": {
-          "interval": [
-            {
-              "field": "minutes",
-              "minutesInterval": 5
-            }
-          ]
-        }
-      }
+        224,
+        304
+      ]
     },
     {
-      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00001",
-      "name": "Ensure Tracking Table",
-      "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1.1,
-      "position": [
-        400,
-        200
-      ],
       "parameters": {
         "resource": "table",
         "operation": "create",
@@ -67,17 +60,18 @@
           "createIfNotExists": true
         }
       },
-      "onError": "continueRegularOutput"
-    },
-    {
-      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00002",
-      "name": "Ensure Approvals Table",
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00001",
+      "name": "Ensure Tracking Table",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        580,
-        200
+        1792,
+        280
       ],
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
       "parameters": {
         "resource": "table",
         "operation": "create",
@@ -124,19 +118,78 @@
           "createIfNotExists": true
         }
       },
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00002",
+      "name": "Ensure Approvals Table (intake)",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        4928,
+        112
+      ],
+      "executeOnce": true,
       "onError": "continueRegularOutput"
     },
     {
-      "id": "9d6d0ca6-a0de-46f3-bbfa-3565e44f10d0",
-      "name": "MCP Search Folder Docs",
-      "type": "@n8n/n8n-nodes-langchain.mcpClient",
-      "typeVersion": 1,
-      "position": [
-        760,
-        200
-      ],
       "parameters": {
-        "endpointUrl": "https://exo.example.com/mcp-server/mcp",
+        "resource": "table",
+        "operation": "create",
+        "tableName": "wf02_approvals",
+        "columns": {
+          "column": [
+            {
+              "name": "cycleKey"
+            },
+            {
+              "name": "task_id",
+              "type": "number"
+            },
+            {
+              "name": "cycle_id"
+            },
+            {
+              "name": "document_id"
+            },
+            {
+              "name": "author_username"
+            },
+            {
+              "name": "artistic_decision"
+            },
+            {
+              "name": "artistic_reason"
+            },
+            {
+              "name": "artistic_at"
+            },
+            {
+              "name": "technical_decision"
+            },
+            {
+              "name": "technical_reason"
+            },
+            {
+              "name": "technical_at"
+            }
+          ]
+        },
+        "options": {
+          "createIfNotExists": true
+        }
+      },
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00002c",
+      "name": "Ensure Approvals Table (form branch)",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1344,
+        720
+      ],
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -148,70 +201,74 @@
         "options": {
           "timeout": 60000
         }
+      },
+      "id": "9d6d0ca6-a0de-46f3-bbfa-3565e44f10d0",
+      "name": "MCP Search Folder Docs",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        448,
+        208
+      ],
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "vaCQUg5NblUEOrlR",
+          "name": "EXO MIPS MCP"
+        }
       }
     },
     {
+      "parameters": {
+        "workflowId": "GPzd2Ot3xM56rW0u",
+        "options": {}
+      },
       "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00003",
       "name": "Unwrap MCP Search Folder Docs",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        940,
-        200
-      ],
-      "parameters": {
-        "workflowId": "E4OAThogWRG93MUG",
-        "options": {}
-      }
+        672,
+        208
+      ]
     },
     {
-      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00004b",
-      "name": "Coalesce Documents List",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        1040,
-        200
-      ],
       "parameters": {
-        "mode": "manual",
         "assignments": {
           "assignments": [
             {
               "id": "documents",
               "name": "documents",
-              "value": "={{ (() => { const rawRoot = $json; const root = Array.isArray(rawRoot) && rawRoot.length && typeof rawRoot[0] === 'object' ? rawRoot[0] : (rawRoot || {}); const p = root.payload && typeof root.payload === 'object' ? root.payload : root; if (Array.isArray(p.documents) && p.documents.length) return p.documents; const asDocRows = (arr) => (Array.isArray(arr) ? arr : []).filter((x) => x && typeof x === 'object' && String(x.document_id || '').trim()); const rawContent = p.content; const c = Array.isArray(rawContent) ? rawContent : (rawContent && typeof rawContent === 'object' ? [rawContent] : []); const out = []; for (const part of c) { if (!part || typeof part !== 'object') continue; if (Array.isArray(part.documents)) { out.push(...part.documents); continue; } if (part.type === 'text' && part.text != null) { if (Array.isArray(part.text)) { out.push(...part.text); continue; } if (part.text && typeof part.text === 'object' && !Array.isArray(part.text)) { out.push(part.text); continue; } if (typeof part.text === 'string') { let t = part.text.trim(); if (t.startsWith('```')) t = t.replace(/^```(?:json)?\\s*/i, '').replace(/\\s*```\\s*$/, '').trim(); try { const parsed = JSON.parse(t); if (Array.isArray(parsed)) out.push(...parsed); else if (parsed && Array.isArray(parsed.documents)) out.push(...parsed.documents); else if (parsed && typeof parsed === 'object' && String(parsed.document_id || '').trim()) out.push(parsed); } catch (_) { /* ignore */ } } continue; } if (String(part.document_id || '').trim()) out.push(part); } const rows = asDocRows(out); if (rows.length) return rows; return asDocRows(c); })() }}",
+              "value": "={{ (() => { const p = $json.payload; if (!p || typeof p !== 'object') return []; if (Array.isArray(p.documents)) return p.documents; if (Array.isArray(p)) return p.filter((x) => x && String(x.document_id || '').trim()); if (String(p.document_id || '').trim()) return [p]; return []; })() }}",
               "type": "array"
             }
           ]
         },
-        "includeOtherFields": false,
         "options": {}
-      }
+      },
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00004b",
+      "name": "Coalesce Documents List",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        208
+      ]
     },
     {
+      "parameters": {
+        "fieldToSplitOut": "documents",
+        "options": {}
+      },
       "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00004",
       "name": "Split Out Documents",
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        1200,
-        200
-      ],
-      "parameters": {
-        "fieldToSplitOut": "documents",
-        "options": {}
-      }
+        1120,
+        208
+      ]
     },
     {
-      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00005",
-      "name": "Filter - Has document_id",
-      "type": "n8n-nodes-base.filter",
-      "typeVersion": 2.3,
-      "position": [
-        1380,
-        200
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -234,19 +291,18 @@
           "combinator": "and"
         },
         "options": {}
-      }
+      },
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00005",
+      "name": "Filter - Has document_id",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        1344,
+        208
+      ]
     },
     {
-      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00006",
-      "name": "Normalize Docs",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        1480,
-        200
-      ],
       "parameters": {
-        "mode": "manual",
         "assignments": {
           "assignments": [
             {
@@ -281,19 +337,18 @@
             }
           ]
         },
-        "includeOtherFields": false,
         "options": {}
-      }
+      },
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00006",
+      "name": "Normalize Docs",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1568,
+        208
+      ]
     },
     {
-      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00007",
-      "name": "Get Processed Docs",
-      "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1.1,
-      "position": [
-        1480,
-        360
-      ],
       "parameters": {
         "operation": "get",
         "dataTableId": {
@@ -303,52 +358,51 @@
         },
         "returnAll": true
       },
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00007",
+      "name": "Get Processed Docs",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2016,
+        280
+      ],
       "executeOnce": true,
       "alwaysOutputData": true,
       "onError": "continueRegularOutput"
     },
     {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nif (items.length > 0) return items;\nreturn [{ json: {\n  documentId: '__wf02_empty_processed_placeholder__',\n  lastProcessedDate: '',\n  cycleId: ''\n} }];\n"
+      },
       "id": "f4e3d2c1-b5a6-4789-8123-000001mergefix",
       "name": "Ensure Merge Processed Input",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1590,
-        360
-      ],
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const items = $input.all();\nif (items.length > 0) return items;\nreturn [{ json: {\n  documentId: '__wf02_empty_processed_placeholder__',\n  lastProcessedDate: '',\n  cycleId: ''\n} }];\n"
-      }
+        2240,
+        280
+      ]
     },
     {
-      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00008",
-      "name": "Merge Docs to Process",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        1700,
-        200
-      ],
       "parameters": {
         "mode": "combineBySql",
         "query": "SELECT input1.id, input1.updatedDate, input1.name, input1.url, input1.uploader\nFROM input1\nLEFT JOIN input2 ON input1.id = input2.documentId\nWHERE input2.documentId IS NULL\n   OR input2.lastProcessedDate IS NULL\n   OR input2.lastProcessedDate = ''\n   OR input1.updatedDate > input2.lastProcessedDate",
         "options": {
           "emptyQueryResult": "empty"
         }
-      }
+      },
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00008",
+      "name": "Merge Docs to Process",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2464,
+        208
+      ]
     },
     {
-      "id": "d06c3f8f-61ff-47f8-84ee-2481db4c5fe7",
-      "name": "MCP Get Document By ID",
-      "type": "@n8n/n8n-nodes-langchain.mcpClient",
-      "typeVersion": 1,
-      "position": [
-        1880,
-        200
-      ],
       "parameters": {
-        "endpointUrl": "https://exo.example.com/mcp-server/mcp",
+        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -360,51 +414,56 @@
         "options": {
           "timeout": 60000
         }
+      },
+      "id": "d06c3f8f-61ff-47f8-84ee-2481db4c5fe7",
+      "name": "MCP Get Document By ID",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        2688,
+        208
+      ],
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "vaCQUg5NblUEOrlR",
+          "name": "EXO MIPS MCP"
+        }
       }
     },
     {
+      "parameters": {
+        "workflowId": "GPzd2Ot3xM56rW0u",
+        "options": {}
+      },
       "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00009",
       "name": "Unwrap MCP Get Document",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        2060,
-        200
-      ],
-      "parameters": {
-        "workflowId": "E4OAThogWRG93MUG",
-        "options": {}
-      }
+        2912,
+        208
+      ]
     },
     {
-      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b0000a",
-      "name": "Build Task Fields",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        2240,
-        200
-      ],
       "parameters": {
-        "mode": "manual",
         "assignments": {
           "assignments": [
             {
               "id": "document_id",
               "name": "document_id",
-              "value": "={{ String($json.payload && $json.payload.document_id ? $json.payload.document_id : ($('Merge Docs to Process').item.json.id || '')) }}",
+              "value": "={{ String(($json.payload && $json.payload.document_id) || $('Merge Docs to Process').item.json.id || '') }}",
               "type": "string"
             },
             {
               "id": "updatedDate",
               "name": "updatedDate",
-              "value": "={{ String($json.payload && $json.payload.updated_date ? $json.payload.updated_date : ($('Merge Docs to Process').item.json.updatedDate || $now.toISO())) }}",
+              "value": "={{ String(($json.payload && $json.payload.updated_date) || $('Merge Docs to Process').item.json.updatedDate || $now.toISO()) }}",
               "type": "string"
             },
             {
               "id": "cycle_id",
               "name": "cycle_id",
-              "value": "={{ String($json.payload && $json.payload.document_id ? $json.payload.document_id : $('Merge Docs to Process').item.json.id) + ':' + String($json.payload && $json.payload.updated_date ? $json.payload.updated_date : ($('Merge Docs to Process').item.json.updatedDate || $now.toISO())) }}",
+              "value": "={{ String(($json.payload && $json.payload.document_id) || $('Merge Docs to Process').item.json.id) + ':' + String(($json.payload && $json.payload.updated_date) || $('Merge Docs to Process').item.json.updatedDate || $now.toISO()) }}",
               "type": "string"
             },
             {
@@ -433,79 +492,199 @@
             }
           ]
         },
-        "includeOtherFields": false,
         "options": {}
-      }
+      },
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b0000a",
+      "name": "Build Task Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3136,
+        208
+      ]
     },
     {
+      "parameters": {
+        "html": "<div><p><strong>Source document:</strong> <a href=\"{{ $json.docUrl }}\" target=\"_blank\" rel=\"noopener noreferrer\">{{ $json.docName }}</a></p><p><strong>Cycle:</strong> {{ $json.cycle_id }}</p><p><strong>Validation:</strong> use the approval links in the first task comment.</p><p>Rule: move to Done only when both stamps are APPROVED.</p></div>"
+      },
       "id": "aa5b4f7c-41dd-4cce-85f1-9fa7756b7c1e",
       "name": "Render Task Description HTML",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        2420,
-        200
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;');\nconst description = '<p><strong>Source document:</strong> <a href=\"' + esc($json.docUrl) + '\" target=\"_blank\" rel=\"noopener noreferrer\">' + esc($json.docName) + '</a></p>' + '<p><strong>Cycle:</strong> ' + esc($json.cycle_id) + '</p>' + '<p><strong>Validation:</strong> use the approval links in the first task comment.</p>' + '<p>Rule: move to Done only when both stamps are APPROVED.</p>';\n// create_task_in_project: numeric project_id, plain strings (see SPEC.technical.md §12.3 — reference tenant project 2).\nreturn { ...$json, createTaskInput: { project_id: Number($vars.WF02_PROJECT_ID || 2), title: $json.title, description, assignee: $json.author_username, priority: 'NORMAL' } };\n"
-      }
-    },
-    {
-      "id": "aeff4690-23b9-461d-8b64-ec0ed8271dff",
-      "name": "MCP Create Task",
-      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "type": "n8n-nodes-base.html",
       "typeVersion": 1,
       "position": [
-        2600,
-        200
-      ],
+        3360,
+        208
+      ]
+    },
+    {
       "parameters": {
-        "endpointUrl": "https://exo.example.com/mcp-server/mcp",
+        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
           "mode": "id",
           "value": "create_task_in_project"
         },
-        "inputMode": "json",
-        "jsonInput": "={{$json.createTaskInput}}",
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "project_id": "={{ Number(($vars.WF02_PROJECT_ID && String($vars.WF02_PROJECT_ID).trim()) || 2) }}",
+            "title": "={{ $('Build Task Fields').item.json.title }}",
+            "description": "={{ $json.html }}",
+            "assignee": "={{ $('Build Task Fields').item.json.author_username }}",
+            "priority": "NORMAL"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "project_id",
+              "displayName": "project_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "number"
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "string"
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "string"
+            },
+            {
+              "id": "assignee",
+              "displayName": "assignee",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "string"
+            },
+            {
+              "id": "coworkers",
+              "displayName": "coworkers",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "array",
+              "defaultValue": "[\n  \"string\"\n]",
+              "removed": true
+            },
+            {
+              "id": "start_date",
+              "displayName": "start_date",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "end_date",
+              "displayName": "end_date",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "due_date",
+              "displayName": "due_date",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "priority",
+              "displayName": "priority",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "NONE",
+                  "value": "NONE"
+                },
+                {
+                  "name": "LOW",
+                  "value": "LOW"
+                },
+                {
+                  "name": "NORMAL",
+                  "value": "NORMAL"
+                },
+                {
+                  "name": "HIGH",
+                  "value": "HIGH"
+                }
+              ]
+            },
+            {
+              "id": "status_id",
+              "displayName": "status_id",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "number",
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
         "options": {
           "timeout": 60000
+        }
+      },
+      "id": "aeff4690-23b9-461d-8b64-ec0ed8271dff",
+      "name": "MCP Create Task",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        3584,
+        208
+      ],
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "vaCQUg5NblUEOrlR",
+          "name": "EXO MIPS MCP"
         }
       }
     },
     {
+      "parameters": {
+        "workflowId": "GPzd2Ot3xM56rW0u",
+        "options": {}
+      },
       "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b0000b",
       "name": "Unwrap MCP Create Task",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        2780,
-        200
-      ],
-      "parameters": {
-        "workflowId": "E4OAThogWRG93MUG",
-        "options": {}
-      }
+        3808,
+        208
+      ]
     },
     {
-      "id": "5420c9d5-210d-4d01-9417-d860286d14e2",
-      "name": "Extract Task ID",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        2960,
-        200
-      ],
       "parameters": {
-        "mode": "manual",
         "assignments": {
           "assignments": [
             {
               "id": "task_id",
               "name": "task_id",
-              "value": "={{ Number((() => { const p = $json.payload; if (!p) return 0; const fromPart = p.content && p.content[0] && p.content[0].text && typeof p.content[0].text === 'object' ? p.content[0].text.task_id : null; return p.task_id || p.id || (p.task && p.task.task_id) || fromPart || 0; })()) }}",
+              "value": "={{ Number(($json.payload && ($json.payload.task_id || $json.payload.id || ($json.payload.task && $json.payload.task.task_id))) || 0) }}",
               "type": "number"
             },
             {
@@ -534,25 +713,25 @@
             }
           ]
         },
-        "includeOtherFields": false,
         "options": {}
-      }
+      },
+      "id": "5420c9d5-210d-4d01-9417-d860286d14e2",
+      "name": "Extract Task ID",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4032,
+        208
+      ]
     },
     {
-      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b0000c",
-      "name": "IF Has Task ID",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        3140,
-        200
-      ],
       "parameters": {
         "conditions": {
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "strict",
+            "version": 1
           },
           "conditions": [
             {
@@ -566,33 +745,34 @@
             }
           ],
           "combinator": "and"
-        }
-      }
+        },
+        "options": {}
+      },
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b0000c",
+      "name": "IF Has Task ID",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4256,
+        208
+      ]
     },
     {
+      "parameters": {
+        "errorMessage": "=create_task_in_project failed or returned no task_id. payload={{$json.raw_create_payload}}"
+      },
       "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b0000d",
       "name": "Stop - Missing task_id",
       "type": "n8n-nodes-base.stopAndError",
       "typeVersion": 1,
       "position": [
-        3320,
-        320
-      ],
-      "parameters": {
-        "errorMessage": "=create_task_in_project failed or returned no task_id. payload={{$json.raw_create_payload}}"
-      }
+        4480,
+        304
+      ]
     },
     {
-      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b0000e",
-      "name": "MCP Set Task In Progress",
-      "type": "@n8n/n8n-nodes-langchain.mcpClient",
-      "typeVersion": 1,
-      "position": [
-        3230,
-        100
-      ],
       "parameters": {
-        "endpointUrl": "https://exo.example.com/mcp-server/mcp",
+        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -604,19 +784,25 @@
         "options": {
           "timeout": 60000
         }
-      }
-    },
-    {
-      "id": "9d988422-9a5d-41e8-8848-e898e206025a",
-      "name": "MCP Add Initial Comment",
+      },
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b0000e",
+      "name": "MCP Set Task In Progress",
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        3410,
-        100
+        4480,
+        112
       ],
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "vaCQUg5NblUEOrlR",
+          "name": "EXO MIPS MCP"
+        }
+      }
+    },
+    {
       "parameters": {
-        "endpointUrl": "https://exo.example.com/mcp-server/mcp",
+        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -628,17 +814,23 @@
         "options": {
           "timeout": 60000
         }
+      },
+      "id": "9d988422-9a5d-41e8-8848-e898e206025a",
+      "name": "MCP Add Initial Comment",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        4704,
+        112
+      ],
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "vaCQUg5NblUEOrlR",
+          "name": "EXO MIPS MCP"
+        }
       }
     },
     {
-      "id": "56693cbc-0d87-42de-952f-c74efef6f95e",
-      "name": "Seed Approval Row",
-      "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1.1,
-      "position": [
-        3500,
-        100
-      ],
       "parameters": {
         "operation": "upsert",
         "dataTableId": {
@@ -786,17 +978,17 @@
           "convertFieldsToString": false
         },
         "options": {}
-      }
-    },
-    {
-      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00014",
-      "name": "Update Tracking Doc",
+      },
+      "id": "56693cbc-0d87-42de-952f-c74efef6f95e",
+      "name": "Seed Approval Row",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        3680,
-        100
-      ],
+        5152,
+        112
+      ]
+    },
+    {
       "parameters": {
         "operation": "upsert",
         "dataTableId": {
@@ -856,49 +1048,42 @@
           "convertFieldsToString": false
         },
         "options": {}
-      }
+      },
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00014",
+      "name": "Update Tracking Doc",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        5376,
+        112
+      ]
     },
     {
-      "id": "e08bc8c4-3ef3-468b-9f43-1314eb143cc6",
-      "name": "Approval Form Trigger",
-      "type": "n8n-nodes-base.formTrigger",
-      "typeVersion": 2.5,
-      "position": [
-        220,
-        620
-      ],
       "parameters": {
-        "authentication": "none",
         "formTitle": "WF02 — Validation stamp",
         "formDescription": "<p>Context is pre-filled from your task link. Choose <strong>Approved</strong> or <strong>Rejected</strong>. If you reject, add a <strong>reason</strong> (it is copied to the task).</p><p>The task stays <em>In progress</em> until both stamps are <strong>Approved</strong>.</p>",
-        "responseMode": "lastNode",
         "formFields": {
           "values": [
             {
-              "fieldName": "task_id",
               "fieldType": "hiddenField",
-              "fieldValue": ""
+              "fieldName": "task_id"
             },
             {
-              "fieldName": "cycle_id",
               "fieldType": "hiddenField",
-              "fieldValue": ""
+              "fieldName": "cycle_id"
             },
             {
-              "fieldName": "role",
               "fieldType": "hiddenField",
-              "fieldValue": ""
+              "fieldName": "role"
             },
             {
-              "fieldName": "actor",
               "fieldType": "hiddenField",
-              "fieldValue": ""
+              "fieldName": "actor"
             },
             {
-              "fieldName": "decision",
               "fieldLabel": "Decision",
               "fieldType": "radio",
-              "requiredField": true,
+              "fieldName": "decision",
               "defaultValue": "Approved",
               "fieldOptions": {
                 "values": [
@@ -909,36 +1094,36 @@
                     "option": "Rejected"
                   }
                 ]
-              }
+              },
+              "requiredField": true
             },
             {
-              "fieldName": "reason",
               "fieldLabel": "Reason",
               "fieldType": "textarea",
-              "placeholder": "Required when rejecting; optional when approving",
-              "requiredField": false
+              "fieldName": "reason",
+              "placeholder": "Required when rejecting; optional when approving"
             }
           ]
         },
+        "responseMode": "lastNode",
         "options": {
-          "path": "wf02-doc-validation/approve",
+          "appendAttribution": false,
           "buttonLabel": "Submit decision",
-          "appendAttribution": false
+          "path": "wf02-doc-validation/approve"
         }
       },
+      "id": "e08bc8c4-3ef3-468b-9f43-1314eb143cc6",
+      "name": "Approval Form Trigger",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        224,
+        912
+      ],
       "webhookId": "ca8ca31c-e44a-4cb4-8e8f-14b7db56958a"
     },
     {
-      "id": "349ac036-e76f-43fb-9df4-2d126eaabc50",
-      "name": "Parse Approval",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        400,
-        620
-      ],
       "parameters": {
-        "mode": "manual",
         "assignments": {
           "assignments": [
             {
@@ -979,25 +1164,25 @@
             }
           ]
         },
-        "includeOtherFields": false,
         "options": {}
-      }
+      },
+      "id": "349ac036-e76f-43fb-9df4-2d126eaabc50",
+      "name": "Parse Approval",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        912
+      ]
     },
     {
-      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b0000f",
-      "name": "IF Valid Approval",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        580,
-        620
-      ],
       "parameters": {
         "conditions": {
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "strict",
+            "version": 1
           },
           "conditions": [
             {
@@ -1048,24 +1233,26 @@
             }
           ],
           "combinator": "and"
-        }
-      }
-    },
-    {
-      "id": "b8f4a2c1-9e6d-4b7a-8c2f-1d3e5f7098ab",
-      "name": "IF Missing Reject Reason",
+        },
+        "options": {}
+      },
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b0000f",
+      "name": "IF Valid Approval",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        670,
-        620
-      ],
+        672,
+        912
+      ]
+    },
+    {
       "parameters": {
         "conditions": {
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "strict",
+            "version": 1
           },
           "conditions": [
             {
@@ -1080,52 +1267,55 @@
             }
           ],
           "combinator": "and"
-        }
-      }
+        },
+        "options": {}
+      },
+      "id": "b8f4a2c1-9e6d-4b7a-8c2f-1d3e5f7098ab",
+      "name": "IF Missing Reject Reason",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        896,
+        816
+      ]
     },
     {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "Reason required",
+        "completionMessage": "You chose Rejected. Please go back, enter a short reason in the Reason field, and submit again.",
+        "options": {}
+      },
       "id": "c9e5b3d2-af7e-5c8b-9d3a-2e4f60891bcd",
       "name": "Form End - Missing Reject Reason",
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,
       "position": [
-        670,
-        800
+        1120,
+        912
       ],
-      "parameters": {
-        "operation": "completion",
-        "respondWith": "text",
-        "completionTitle": "Reason required",
-        "completionMessage": "You chose Rejected. Please go back, enter a short reason in the Reason field, and submit again."
-      }
+      "webhookId": "442522f6-d604-469f-a62d-4256348b42c2"
     },
     {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "Invalid approval link",
+        "completionMessage": "Required parameters were missing or incomplete (task_id, cycle_id, role, decision). Use the approval link from the task comment.",
+        "options": {}
+      },
       "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00010",
       "name": "Form End - Invalid Approval",
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,
       "position": [
-        580,
-        800
+        896,
+        1008
       ],
-      "parameters": {
-        "operation": "completion",
-        "respondWith": "text",
-        "completionTitle": "Invalid approval link",
-        "completionMessage": "Required parameters were missing or incomplete (task_id, cycle_id, role, decision). Use the approval link from the task comment."
-      }
+      "webhookId": "ad128407-b9af-4701-9e0c-f6481e175fd7"
     },
     {
-      "id": "026d243a-4f55-4944-b6fd-3fceecc381e9",
-      "name": "MCP Add Decision Comment",
-      "type": "@n8n/n8n-nodes-langchain.mcpClient",
-      "typeVersion": 1,
-      "position": [
-        760,
-        620
-      ],
       "parameters": {
-        "endpointUrl": "https://exo.example.com/mcp-server/mcp",
+        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -1137,17 +1327,23 @@
         "options": {
           "timeout": 60000
         }
+      },
+      "id": "026d243a-4f55-4944-b6fd-3fceecc381e9",
+      "name": "MCP Add Decision Comment",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        720
+      ],
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "vaCQUg5NblUEOrlR",
+          "name": "EXO MIPS MCP"
+        }
       }
     },
     {
-      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00011",
-      "name": "Get Approval Rows",
-      "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1.1,
-      "position": [
-        940,
-        620
-      ],
       "parameters": {
         "operation": "get",
         "dataTableId": {
@@ -1157,33 +1353,32 @@
         },
         "returnAll": true
       },
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00011",
+      "name": "Get Approval Rows",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1568,
+        720
+      ],
       "executeOnce": true,
       "alwaysOutputData": true,
       "onError": "continueRegularOutput"
     },
     {
+      "parameters": {
+        "jsCode": "const parse = $('Parse Approval').first();\nif (!parse || !parse.json) {\n  return [{ json: {} }];\n}\nconst pa = parse.json;\nconst cycleKey = String(pa.cycleKey ?? '');\nconst rows = $('Get Approval Rows').all();\nlet found = {};\nfor (let i = 0; i < rows.length; i++) {\n  const j = rows[i].json || {};\n  if (String(j.cycleKey ?? '') === cycleKey) {\n    found = j;\n    break;\n  }\n}\nconst role = String(pa.role ?? '');\nconst now =\n  typeof $now !== 'undefined' && typeof $now.toISO === 'function'\n    ? $now.toISO()\n    : new Date().toISOString();\n\nlet artistic_decision = String(found.artistic_decision ?? 'PENDING');\nlet artistic_reason = String(found.artistic_reason ?? '');\nlet artistic_at = String(found.artistic_at ?? '');\nlet technical_decision = String(found.technical_decision ?? 'PENDING');\nlet technical_reason = String(found.technical_reason ?? '');\nlet technical_at = String(found.technical_at ?? '');\n\nif (role === 'artistic') {\n  artistic_decision = String(pa.decision ?? 'PENDING');\n  artistic_reason = String(pa.reason ?? '');\n  artistic_at = now;\n}\nif (role === 'technical') {\n  technical_decision = String(pa.decision ?? 'PENDING');\n  technical_reason = String(pa.reason ?? '');\n  technical_at = now;\n}\n\nreturn [\n  {\n    json: {\n      cycleKey: pa.cycleKey,\n      task_id: Number(pa.task_id),\n      cycle_id: String(pa.cycle_id ?? ''),\n      document_id: String(found.document_id ?? ''),\n      author_username: String(found.author_username ?? 'claire'),\n      artistic_decision,\n      artistic_reason,\n      artistic_at,\n      technical_decision,\n      technical_reason,\n      technical_at,\n    },\n  },\n];\n"
+      },
       "id": "0c1f8ed6-0edb-4388-9329-81270cc588fc",
       "name": "Merge Decision",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1120,
-        620
-      ],
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const parse = $('Parse Approval').first();\nif (!parse || !parse.json) {\n  return [{ json: {} }];\n}\nconst pa = parse.json;\nconst cycleKey = String(pa.cycleKey ?? '');\nconst rows = $('Get Approval Rows').all();\nlet found = {};\nfor (let i = 0; i < rows.length; i++) {\n  const j = rows[i].json || {};\n  if (String(j.cycleKey ?? '') === cycleKey) {\n    found = j;\n    break;\n  }\n}\nconst role = String(pa.role ?? '');\nconst now =\n  typeof $now !== 'undefined' && typeof $now.toISO === 'function'\n    ? $now.toISO()\n    : new Date().toISOString();\n\nlet artistic_decision = String(found.artistic_decision ?? 'PENDING');\nlet artistic_reason = String(found.artistic_reason ?? '');\nlet artistic_at = String(found.artistic_at ?? '');\nlet technical_decision = String(found.technical_decision ?? 'PENDING');\nlet technical_reason = String(found.technical_reason ?? '');\nlet technical_at = String(found.technical_at ?? '');\n\nif (role === 'artistic') {\n  artistic_decision = String(pa.decision ?? 'PENDING');\n  artistic_reason = String(pa.reason ?? '');\n  artistic_at = now;\n}\nif (role === 'technical') {\n  technical_decision = String(pa.decision ?? 'PENDING');\n  technical_reason = String(pa.reason ?? '');\n  technical_at = now;\n}\n\nreturn [\n  {\n    json: {\n      cycleKey: pa.cycleKey,\n      task_id: Number(pa.task_id),\n      cycle_id: String(pa.cycle_id ?? ''),\n      document_id: String(found.document_id ?? ''),\n      author_username: String(found.author_username ?? 'claire'),\n      artistic_decision,\n      artistic_reason,\n      artistic_at,\n      technical_decision,\n      technical_reason,\n      technical_at,\n    },\n  },\n];\n"
-      }
+        1792,
+        720
+      ]
     },
     {
-      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00012",
-      "name": "Upsert Approval Row",
-      "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1.1,
-      "position": [
-        1300,
-        620
-      ],
       "parameters": {
         "operation": "upsert",
         "dataTableId": {
@@ -1331,19 +1526,18 @@
           "convertFieldsToString": false
         },
         "options": {}
-      }
+      },
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00012",
+      "name": "Upsert Approval Row",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2016,
+        720
+      ]
     },
     {
-      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00013",
-      "name": "Compute Join",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        1480,
-        620
-      ],
       "parameters": {
-        "mode": "manual",
         "assignments": {
           "assignments": [
             {
@@ -1384,25 +1578,25 @@
             }
           ]
         },
-        "includeOtherFields": false,
         "options": {}
-      }
+      },
+      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00013",
+      "name": "Compute Join",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2240,
+        720
+      ]
     },
     {
-      "id": "11957881-e158-478b-9d45-3e96f7a56d90",
-      "name": "IF Join Ready",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        1660,
-        620
-      ],
       "parameters": {
         "conditions": {
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "strict",
+            "version": 1
           },
           "conditions": [
             {
@@ -1417,24 +1611,26 @@
             }
           ],
           "combinator": "and"
-        }
-      }
-    },
-    {
-      "id": "7c3d7c73-815d-4533-a2e7-80f280e931af",
-      "name": "IF Both Approved",
+        },
+        "options": {}
+      },
+      "id": "11957881-e158-478b-9d45-3e96f7a56d90",
+      "name": "IF Join Ready",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1840,
-        560
-      ],
+        2464,
+        720
+      ]
+    },
+    {
       "parameters": {
         "conditions": {
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "strict",
+            "version": 1
           },
           "conditions": [
             {
@@ -1449,20 +1645,21 @@
             }
           ],
           "combinator": "and"
-        }
-      }
+        },
+        "options": {}
+      },
+      "id": "7c3d7c73-815d-4533-a2e7-80f280e931af",
+      "name": "IF Both Approved",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2688,
+        624
+      ]
     },
     {
-      "id": "8cc03abf-a07f-41b3-b4b9-9a985320131e",
-      "name": "MCP Set Done",
-      "type": "@n8n/n8n-nodes-langchain.mcpClient",
-      "typeVersion": 1,
-      "position": [
-        2020,
-        500
-      ],
       "parameters": {
-        "endpointUrl": "https://exo.example.com/mcp-server/mcp",
+        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -1474,19 +1671,25 @@
         "options": {
           "timeout": 60000
         }
-      }
-    },
-    {
-      "id": "df49998f-6dc6-4961-abd7-7784dca492ee",
-      "name": "MCP Final Comment Approved",
+      },
+      "id": "8cc03abf-a07f-41b3-b4b9-9a985320131e",
+      "name": "MCP Set Done",
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        2200,
-        500
+        2912,
+        528
       ],
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "vaCQUg5NblUEOrlR",
+          "name": "EXO MIPS MCP"
+        }
+      }
+    },
+    {
       "parameters": {
-        "endpointUrl": "https://exo.example.com/mcp-server/mcp",
+        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -1498,35 +1701,42 @@
         "options": {
           "timeout": 60000
         }
+      },
+      "id": "df49998f-6dc6-4961-abd7-7784dca492ee",
+      "name": "MCP Final Comment Approved",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        3136,
+        528
+      ],
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "vaCQUg5NblUEOrlR",
+          "name": "EXO MIPS MCP"
+        }
       }
     },
     {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "Approved",
+        "completionMessage": "Both approvers confirmed. The task has been closed. You can close this tab.",
+        "options": {}
+      },
       "id": "9762fdc0-d4c5-41d2-aa79-3f00eea32208",
       "name": "Form End - Approved",
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,
       "position": [
-        2380,
-        500
+        3360,
+        528
       ],
-      "parameters": {
-        "operation": "completion",
-        "respondWith": "text",
-        "completionTitle": "Approved",
-        "completionMessage": "Both approvers confirmed. The task has been closed. You can close this tab."
-      }
+      "webhookId": "0dcb0616-266e-44f7-8d5f-8b6bd922d3d8"
     },
     {
-      "id": "7f828b4b-6215-4cdb-aca6-3b455a6b7611",
-      "name": "MCP Keep InProgress",
-      "type": "@n8n/n8n-nodes-langchain.mcpClient",
-      "typeVersion": 1,
-      "position": [
-        2020,
-        660
-      ],
       "parameters": {
-        "endpointUrl": "https://exo.example.com/mcp-server/mcp",
+        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -1538,19 +1748,25 @@
         "options": {
           "timeout": 60000
         }
-      }
-    },
-    {
-      "id": "f878b670-aa9f-4551-b4c9-bd5d170d5d2b",
-      "name": "MCP Final Comment Rejected",
+      },
+      "id": "7f828b4b-6215-4cdb-aca6-3b455a6b7611",
+      "name": "MCP Keep InProgress",
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        2200,
-        660
+        2912,
+        720
       ],
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "vaCQUg5NblUEOrlR",
+          "name": "EXO MIPS MCP"
+        }
+      }
+    },
+    {
       "parameters": {
-        "endpointUrl": "https://exo.example.com/mcp-server/mcp",
+        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -1562,39 +1778,55 @@
         "options": {
           "timeout": 60000
         }
+      },
+      "id": "f878b670-aa9f-4551-b4c9-bd5d170d5d2b",
+      "name": "MCP Final Comment Rejected",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        3136,
+        720
+      ],
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "vaCQUg5NblUEOrlR",
+          "name": "EXO MIPS MCP"
+        }
       }
     },
     {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "Validation incomplete",
+        "completionMessage": "Validation is incomplete or was rejected. You can close this tab.",
+        "options": {}
+      },
       "id": "4fbd6cf5-af94-46fa-a724-6a11bebe17fa",
       "name": "Form End - Rejected",
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,
       "position": [
-        2380,
-        660
+        3360,
+        720
       ],
-      "parameters": {
-        "operation": "completion",
-        "respondWith": "text",
-        "completionTitle": "Validation incomplete",
-        "completionMessage": "Validation is incomplete or was rejected. You can close this tab."
-      }
+      "webhookId": "76b51de0-a619-4786-8102-975f49a7cd47"
     },
     {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "Recorded",
+        "completionMessage": "Decision recorded. Waiting for the second stamp. You can close this tab.",
+        "options": {}
+      },
       "id": "033a237b-be9d-4e7c-a913-9374bd1e8136",
       "name": "Form End - Pending",
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,
       "position": [
-        1840,
-        760
+        2688,
+        816
       ],
-      "parameters": {
-        "operation": "completion",
-        "respondWith": "text",
-        "completionTitle": "Recorded",
-        "completionMessage": "Decision recorded. Waiting for the second stamp. You can close this tab."
-      }
+      "webhookId": "ee90b6bb-d515-46ee-9012-b20161b9b4b3"
     }
   ],
   "connections": {
@@ -1602,7 +1834,7 @@
       "main": [
         [
           {
-            "node": "Ensure Tracking Table",
+            "node": "MCP Search Folder Docs",
             "type": "main",
             "index": 0
           }
@@ -1613,7 +1845,7 @@
       "main": [
         [
           {
-            "node": "Ensure Tracking Table",
+            "node": "MCP Search Folder Docs",
             "type": "main",
             "index": 0
           }
@@ -1624,18 +1856,7 @@
       "main": [
         [
           {
-            "node": "Ensure Approvals Table",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Ensure Approvals Table": {
-      "main": [
-        [
-          {
-            "node": "MCP Search Folder Docs",
+            "node": "Get Processed Docs",
             "type": "main",
             "index": 0
           }
@@ -1706,7 +1927,7 @@
             "index": 0
           },
           {
-            "node": "Get Processed Docs",
+            "node": "Ensure Tracking Table",
             "type": "main",
             "index": 0
           }
@@ -1856,6 +2077,17 @@
       "main": [
         [
           {
+            "node": "Ensure Approvals Table (intake)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ensure Approvals Table (intake)": {
+      "main": [
+        [
+          {
             "node": "Seed Approval Row",
             "type": "main",
             "index": 0
@@ -1933,6 +2165,17 @@
       ]
     },
     "MCP Add Decision Comment": {
+      "main": [
+        [
+          {
+            "node": "Ensure Approvals Table (form branch)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ensure Approvals Table (form branch)": {
       "main": [
         [
           {
@@ -2067,5 +2310,37 @@
         ]
       ]
     }
-  }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "99becab7-04e4-4e8c-85c2-00e6ae2977de",
+  "activeVersionId": null,
+  "versionCounter": 11,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-05-07T14:30:33.864Z",
+      "createdAt": "2026-05-07T14:30:33.864Z",
+      "role": "workflow:owner",
+      "workflowId": "vwTQX2yxbgCh3kaG",
+      "projectId": "rzaD0nbLwUWIJxdW",
+      "project": {
+        "updatedAt": "2026-05-05T11:30:25.664Z",
+        "createdAt": "2026-04-20T14:43:55.238Z",
+        "id": "rzaD0nbLwUWIJxdW",
+        "name": "Meeds Lab  <patrice@meedslab.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "8de64810-3c63-4fd1-969c-9915f88c784a"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": null
 }
