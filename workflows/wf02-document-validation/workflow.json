@@ -619,18 +619,18 @@
           "conditions": [
             {
               "keyName": "cycleKey",
-              "keyValue": "={{ String($('Merge Docs to Process').item.json.id || '') + ':' + String($('Merge Docs to Process').item.json.updatedDate || $now.toISO()) }}"
+              "keyValue": "={{ String($('Merge Docs to Process').item.json.id) + ':' + String($('Merge Docs to Process').item.json.updatedDate) }}"
             }
           ]
         },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "cycleKey": "={{ String($('Merge Docs to Process').item.json.id || '') + ':' + String($('Merge Docs to Process').item.json.updatedDate || $now.toISO()) }}",
-            "task_id": "={{ (() => { const c = $('MCP Create Task').item.json; let t = c.content?.[0]?.text; if (typeof t === 'string') { try { t = JSON.parse(t); } catch {} } if (Array.isArray(t)) t = t[0]; const p = (t && typeof t === 'object') ? t : {}; return Number(p.task_id || p.id || (p.task && p.task.task_id) || 0); })() }}",
-            "cycle_id": "={{ String($('Merge Docs to Process').item.json.id || '') + ':' + String($('Merge Docs to Process').item.json.updatedDate || $now.toISO()) }}",
-            "document_id": "={{ String($('Merge Docs to Process').item.json.id || '') }}",
-            "author_username": "={{ String($('Merge Docs to Process').item.json.uploader || 'claire').trim() || 'claire' }}",
+            "cycleKey": "={{ String($('Merge Docs to Process').item.json.id) + ':' + String($('Merge Docs to Process').item.json.updatedDate) }}",
+            "task_id": "={{ Number($('MCP Create Task').item.json.content[0].text.task_id) }}",
+            "cycle_id": "={{ String($('Merge Docs to Process').item.json.id) + ':' + String($('Merge Docs to Process').item.json.updatedDate) }}",
+            "document_id": "={{ String($('Merge Docs to Process').item.json.id) }}",
+            "author_username": "={{ String($('Merge Docs to Process').item.json.uploader) }}",
             "artistic_decision": "PENDING",
             "artistic_reason": "",
             "artistic_at": "",
