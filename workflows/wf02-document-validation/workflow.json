@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-08T08:09:09.264Z",
+  "updatedAt": "2026-05-08T08:35:52.303Z",
   "createdAt": "2026-05-07T14:30:33.862Z",
   "id": "vwTQX2yxbgCh3kaG",
   "name": "WF02 - Document validation (split / join)",
@@ -123,7 +123,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        2240,
+        2016,
         256
       ],
       "executeOnce": true,
@@ -181,7 +181,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        1344,
+        1120,
         816
       ],
       "executeOnce": true,
@@ -346,12 +346,59 @@
     },
     {
       "parameters": {
-        "html": "{{ (() => { const m = $('MCP Get Document By ID').item.json; const merge = $('Merge Docs to Process').item.json; let t = m.content?.[0]?.text; if (Array.isArray(t)) t = t[0]; const d = t && typeof t === 'object' ? t : {}; const docId = String(d.document_id || merge.id || ''); const upd = String(d.updated_date || merge.updatedDate || $now.toISO()); const name = String(d.name || merge.name || 'Untitled document'); const rawUrl = String(d.url || merge.url || ''); const docUrl = rawUrl.startsWith('http') ? rawUrl : ('https://exo.example.com' + rawUrl); const cycleId = docId + ':' + upd; const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/\"/g, '&quot;'); return '<div><p><strong>Source document:</strong> <a href=\"' + esc(docUrl) + '\" target=\"_blank\" rel=\"noopener noreferrer\">' + esc(name) + '</a></p><p><strong>Cycle:</strong> ' + esc(cycleId) + '</p><p><strong>Validation:</strong> use the approval links in the first task comment.</p><p>Rule: move to Done only when both stamps are APPROVED.</p></div>'; })() }}"
+        "html": "<div><p><strong>Source document:</strong> <a href=\"{{ $json.doc_url }}\" target=\"_blank\" rel=\"noopener noreferrer\">{{ $json.doc_name }}</a></p><p><strong>Validation links:</strong></p><p><a href=\"{{ $json.artistic_link }}\" target=\"_blank\" rel=\"noopener noreferrer\">Artistic stamp (Nadia)</a></p><p><a href=\"{{ $json.technical_link }}\" target=\"_blank\" rel=\"noopener noreferrer\">Technical stamp (Etienne)</a></p><p>Rule: move to Done only when both stamps are APPROVED.</p></div>"
       },
       "id": "aa5b4f7c-41dd-4cce-85f1-9fa7756b7c1e",
       "name": "Render Task Description HTML",
       "type": "n8n-nodes-base.html",
       "typeVersion": 1,
+      "position": [
+        1568,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "wf02_doc_name",
+              "name": "doc_name",
+              "value": "={{ String($('Merge Docs to Process').item.json.name) }}",
+              "type": "string"
+            },
+            {
+              "id": "wf02_doc_url",
+              "name": "doc_url",
+              "value": "={{ String($('Merge Docs to Process').item.json.url) }}",
+              "type": "string"
+            },
+            {
+              "id": "wf02_cycle_id",
+              "name": "cycle_id",
+              "value": "={{ String($('Merge Docs to Process').item.json.id) + ':' + String($('Merge Docs to Process').item.json.updatedDate) }}",
+              "type": "string"
+            },
+            {
+              "id": "wf02_artistic_link",
+              "name": "artistic_link",
+              "value": "={{ 'https://meeds.app.n8n.cloud/form/wf02-doc-validation/approve?cycle_id=' + encodeURIComponent($json.cycle_id) + '&role=artistic&actor=nadia' }}",
+              "type": "string"
+            },
+            {
+              "id": "wf02_technical_link",
+              "name": "technical_link",
+              "value": "={{ 'https://meeds.app.n8n.cloud/form/wf02-doc-validation/approve?cycle_id=' + encodeURIComponent($json.cycle_id) + '&role=technical&actor=etienne' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f3ef9047-3e03-4c52-83c2-c2cf0425f401",
+      "name": "Build Task Description Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
       "position": [
         1344,
         256
@@ -494,7 +541,7 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        1568,
+        1792,
         256
       ],
       "credentials": {
@@ -513,8 +560,34 @@
           "mode": "id",
           "value": "update_task_status"
         },
-        "inputMode": "json",
-        "jsonInput": "={{ (() => { const c = $('MCP Create Task').item.json; let t = c.content?.[0]?.text; if (typeof t === 'string') { try { t = JSON.parse(t); } catch {} } if (Array.isArray(t)) t = t[0]; const p = (t && typeof t === 'object') ? t : {}; return { task_id: Number(p.task_id || p.id || (p.task && p.task.task_id) || 0), status_id: Number($vars.WF02_INPROGRESS_STATUS_ID || 6) }; })() }}",
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "task_id": "={{ (() => { const c = $('MCP Create Task').item.json; let t = c.content?.[0]?.text; if (typeof t === 'string') { try { t = JSON.parse(t); } catch {} } if (Array.isArray(t)) t = t[0]; const p = (t && typeof t === 'object') ? t : {}; return Number(p.task_id || p.id || (p.task && p.task.task_id) || 0); })() }}",
+            "status_id": 6
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "task_id",
+              "displayName": "task_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "number"
+            },
+            {
+              "id": "status_id",
+              "displayName": "status_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "number"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
         "options": {
           "timeout": 60000
         }
@@ -524,38 +597,8 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        1792,
-        256
-      ],
-      "credentials": {
-        "mcpOAuth2Api": {
-          "id": "vaCQUg5NblUEOrlR",
-          "name": "EXO MIPS MCP"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
-        "authentication": "mcpOAuth2Api",
-        "tool": {
-          "__rl": true,
-          "mode": "id",
-          "value": "add_task_comment"
-        },
-        "inputMode": "json",
-        "jsonInput": "={{ (() => { const c = $('MCP Create Task').item.json; let t = c.content?.[0]?.text; if (typeof t === 'string') { try { t = JSON.parse(t); } catch {} } if (Array.isArray(t)) t = t[0]; const p = (t && typeof t === 'object') ? t : {}; const taskId = Number(p.task_id || p.id || (p.task && p.task.task_id) || 0); const cycleId = String($('Merge Docs to Process').item.json.id || '') + ':' + String($('Merge Docs to Process').item.json.updatedDate || $now.toISO()); const base = String($vars.WF02_APPROVAL_BASE_URL || \"https://meeds.app.n8n.cloud/form/wf02-doc-validation/approve\").replace(/\\/$/, \"\"); const q = (role, actor) => \"?task_id=\" + taskId + \"&cycle_id=\" + encodeURIComponent(cycleId) + \"&role=\" + role + \"&actor=\" + actor; const art = base + q(\"artistic\", \"nadia\"); const tech = base + q(\"technical\", \"etienne\"); const text = \"<p><strong>Validation started</strong> (cycle: \" + cycleId + \").</p><p>Open the form to <strong>approve or reject</strong> (reason copied to the task). Task stays In progress until both stamps are approved:</p><p><a href=\\\"\" + art + \"\\\" target=\\\"_blank\\\" rel=\\\"noopener noreferrer\\\">Artistic stamp (Nadia)</a></p><p><a href=\\\"\" + tech + \"\\\" target=\\\"_blank\\\" rel=\\\"noopener noreferrer\\\">Technical stamp (Etienne)</a></p>\"; return { task_id: taskId, text }; })() }}",
-        "options": {
-          "timeout": 60000
-        }
-      },
-      "id": "9d988422-9a5d-41e8-8848-e898e206025a",
-      "name": "MCP Add Initial Comment",
-      "type": "@n8n/n8n-nodes-langchain.mcpClient",
-      "typeVersion": 1,
-      "position": [
         2016,
-        256
+        816
       ],
       "credentials": {
         "mcpOAuth2Api": {
@@ -576,14 +619,14 @@
           "conditions": [
             {
               "keyName": "cycleKey",
-              "keyValue": "={{ (() => { const c = $('MCP Create Task').item.json; let t = c.content?.[0]?.text; if (typeof t === 'string') { try { t = JSON.parse(t); } catch {} } if (Array.isArray(t)) t = t[0]; const p = (t && typeof t === 'object') ? t : {}; const taskId = Number(p.task_id || p.id || (p.task && p.task.task_id) || 0); const cycleId = String($('Merge Docs to Process').item.json.id || '') + ':' + String($('Merge Docs to Process').item.json.updatedDate || $now.toISO()); return String(taskId) + ':' + cycleId; })() }}"
+              "keyValue": "={{ String($('Merge Docs to Process').item.json.id || '') + ':' + String($('Merge Docs to Process').item.json.updatedDate || $now.toISO()) }}"
             }
           ]
         },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "cycleKey": "={{ (() => { const c = $('MCP Create Task').item.json; let t = c.content?.[0]?.text; if (typeof t === 'string') { try { t = JSON.parse(t); } catch {} } if (Array.isArray(t)) t = t[0]; const p = (t && typeof t === 'object') ? t : {}; const taskId = Number(p.task_id || p.id || (p.task && p.task.task_id) || 0); const cycleId = String($('Merge Docs to Process').item.json.id || '') + ':' + String($('Merge Docs to Process').item.json.updatedDate || $now.toISO()); return String(taskId) + ':' + cycleId; })() }}",
+            "cycleKey": "={{ String($('Merge Docs to Process').item.json.id || '') + ':' + String($('Merge Docs to Process').item.json.updatedDate || $now.toISO()) }}",
             "task_id": "={{ (() => { const c = $('MCP Create Task').item.json; let t = c.content?.[0]?.text; if (typeof t === 'string') { try { t = JSON.parse(t); } catch {} } if (Array.isArray(t)) t = t[0]; const p = (t && typeof t === 'object') ? t : {}; return Number(p.task_id || p.id || (p.task && p.task.task_id) || 0); })() }}",
             "cycle_id": "={{ String($('Merge Docs to Process').item.json.id || '') + ':' + String($('Merge Docs to Process').item.json.updatedDate || $now.toISO()) }}",
             "document_id": "={{ String($('Merge Docs to Process').item.json.id || '') }}",
@@ -718,7 +761,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        2464,
+        2240,
         256
       ]
     },
@@ -788,7 +831,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        2688,
+        2464,
         256
       ]
     },
@@ -893,7 +936,7 @@
             {
               "id": "cycleKey",
               "name": "cycleKey",
-              "value": "={{ String(Number($json.task_id ?? $json.body?.task_id ?? $json.query?.task_id ?? 0)) + ':' + String($json.cycle_id ?? $json.body?.cycle_id ?? $json.query?.cycle_id ?? '') }}",
+              "value": "={{ String($json.cycle_id ?? $json.body?.cycle_id ?? $json.query?.cycle_id ?? '') }}",
               "type": "string"
             }
           ]
@@ -919,15 +962,6 @@
             "version": 1
           },
           "conditions": [
-            {
-              "id": "task_id_valid",
-              "leftValue": "={{$json.task_id}}",
-              "rightValue": 0,
-              "operator": {
-                "type": "number",
-                "operation": "gt"
-              }
-            },
             {
               "id": "cycle_id_set",
               "leftValue": "={{$json.cycle_id}}",
@@ -1034,7 +1068,7 @@
       "parameters": {
         "operation": "completion",
         "completionTitle": "Invalid approval link",
-        "completionMessage": "Required parameters were missing or incomplete (task_id, cycle_id, role, decision). Use the approval link from the task comment.",
+        "completionMessage": "Required parameters were missing or incomplete (cycle_id, role, decision). Use the approval link from the task description.",
         "options": {}
       },
       "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00010",
@@ -1067,7 +1101,7 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        1120,
+        1792,
         816
       ],
       "credentials": {
@@ -1092,7 +1126,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        1568,
+        1344,
         816
       ],
       "executeOnce": true,
@@ -1101,14 +1135,14 @@
     },
     {
       "parameters": {
-        "jsCode": "const parse = $('Parse Approval').first();\nif (!parse || !parse.json) {\n  return [{ json: {} }];\n}\nconst pa = parse.json;\nconst cycleKey = String(pa.cycleKey ?? '');\nconst rows = $('Get Approval Rows').all();\nlet found = {};\nfor (let i = 0; i < rows.length; i++) {\n  const j = rows[i].json || {};\n  if (String(j.cycleKey ?? '') === cycleKey) {\n    found = j;\n    break;\n  }\n}\nconst role = String(pa.role ?? '');\nconst now =\n  typeof $now !== 'undefined' && typeof $now.toISO === 'function'\n    ? $now.toISO()\n    : new Date().toISOString();\n\nlet artistic_decision = String(found.artistic_decision ?? 'PENDING');\nlet artistic_reason = String(found.artistic_reason ?? '');\nlet artistic_at = String(found.artistic_at ?? '');\nlet technical_decision = String(found.technical_decision ?? 'PENDING');\nlet technical_reason = String(found.technical_reason ?? '');\nlet technical_at = String(found.technical_at ?? '');\n\nif (role === 'artistic') {\n  artistic_decision = String(pa.decision ?? 'PENDING');\n  artistic_reason = String(pa.reason ?? '');\n  artistic_at = now;\n}\nif (role === 'technical') {\n  technical_decision = String(pa.decision ?? 'PENDING');\n  technical_reason = String(pa.reason ?? '');\n  technical_at = now;\n}\n\nreturn [\n  {\n    json: {\n      cycleKey: pa.cycleKey,\n      task_id: Number(pa.task_id),\n      cycle_id: String(pa.cycle_id ?? ''),\n      document_id: String(found.document_id ?? ''),\n      author_username: String(found.author_username ?? 'claire'),\n      artistic_decision,\n      artistic_reason,\n      artistic_at,\n      technical_decision,\n      technical_reason,\n      technical_at,\n    },\n  },\n];\n"
+        "jsCode": "const parse = $('Parse Approval').first();\nif (!parse || !parse.json) {\n  return [{ json: {} }];\n}\nconst pa = parse.json;\nconst cycleKey = String(pa.cycleKey ?? '');\nconst rows = $('Get Approval Rows').all();\nlet found = {};\nfor (let i = 0; i < rows.length; i++) {\n  const j = rows[i].json || {};\n  if (String(j.cycleKey ?? '') === cycleKey) {\n    found = j;\n    break;\n  }\n}\nconst role = String(pa.role ?? '');\nconst now =\n  typeof $now !== 'undefined' && typeof $now.toISO === 'function'\n    ? $now.toISO()\n    : new Date().toISOString();\n\nlet artistic_decision = String(found.artistic_decision ?? 'PENDING');\nlet artistic_reason = String(found.artistic_reason ?? '');\nlet artistic_at = String(found.artistic_at ?? '');\nlet technical_decision = String(found.technical_decision ?? 'PENDING');\nlet technical_reason = String(found.technical_reason ?? '');\nlet technical_at = String(found.technical_at ?? '');\n\nif (role === 'artistic') {\n  artistic_decision = String(pa.decision ?? 'PENDING');\n  artistic_reason = String(pa.reason ?? '');\n  artistic_at = now;\n}\nif (role === 'technical') {\n  technical_decision = String(pa.decision ?? 'PENDING');\n  technical_reason = String(pa.reason ?? '');\n  technical_at = now;\n}\n\nreturn [\n  {\n    json: {\n      cycleKey: cycleKey,\n      task_id: Number(pa.task_id || found.task_id || 0),\n      cycle_id: String(pa.cycle_id ?? found.cycle_id ?? ''),\n      document_id: String(found.document_id ?? ''),\n      author_username: String(found.author_username ?? 'claire'),\n      artistic_decision,\n      artistic_reason,\n      artistic_at,\n      technical_decision,\n      technical_reason,\n      technical_at,\n    },\n  },\n];\n"
       },
       "id": "0c1f8ed6-0edb-4388-9329-81270cc588fc",
       "name": "Merge Decision",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1792,
+        1568,
         816
       ]
     },
@@ -1266,7 +1300,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        2016,
+        2240,
         816
       ]
     },
@@ -1319,7 +1353,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2240,
+        2464,
         816
       ]
     },
@@ -1353,7 +1387,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        2464,
+        2688,
         816
       ]
     },
@@ -1387,7 +1421,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        2688,
+        2912,
         720
       ]
     },
@@ -1411,7 +1445,7 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        2912,
+        3136,
         624
       ],
       "credentials": {
@@ -1441,7 +1475,7 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        3136,
+        3360,
         624
       ],
       "credentials": {
@@ -1463,7 +1497,7 @@
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,
       "position": [
-        3360,
+        3584,
         624
       ],
       "webhookId": "0dcb0616-266e-44f7-8d5f-8b6bd922d3d8"
@@ -1477,8 +1511,34 @@
           "mode": "id",
           "value": "update_task_status"
         },
-        "inputMode": "json",
-        "jsonInput": "={{ { task_id: $json.task_id, status_id: Number($vars.WF02_INPROGRESS_STATUS_ID || 6) } }}",
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "task_id": "={{ Number($json.task_id) }}",
+            "status_id": 6
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "task_id",
+              "displayName": "task_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "number"
+            },
+            {
+              "id": "status_id",
+              "displayName": "status_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "number"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
         "options": {
           "timeout": 60000
         }
@@ -1488,7 +1548,7 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        2912,
+        3136,
         816
       ],
       "credentials": {
@@ -1518,7 +1578,7 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        3136,
+        3360,
         816
       ],
       "credentials": {
@@ -1540,7 +1600,7 @@
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,
       "position": [
-        3360,
+        3584,
         816
       ],
       "webhookId": "76b51de0-a619-4786-8102-975f49a7cd47"
@@ -1557,7 +1617,7 @@
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,
       "position": [
-        2688,
+        2912,
         912
       ],
       "webhookId": "ee90b6bb-d515-46ee-9012-b20161b9b4b3"
@@ -1655,6 +1715,17 @@
       "main": [
         [
           {
+            "node": "Build Task Description Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Task Description Context": {
+      "main": [
+        [
+          {
             "node": "Render Task Description HTML",
             "type": "main",
             "index": 0
@@ -1677,7 +1748,7 @@
       "main": [
         [
           {
-            "node": "MCP Set Task In Progress",
+            "node": "Ensure Approvals Table (intake)",
             "type": "main",
             "index": 0
           }
@@ -1688,18 +1759,7 @@
       "main": [
         [
           {
-            "node": "MCP Add Initial Comment",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "MCP Add Initial Comment": {
-      "main": [
-        [
-          {
-            "node": "Ensure Approvals Table (intake)",
+            "node": "Upsert Approval Row",
             "type": "main",
             "index": 0
           }
@@ -1779,7 +1839,7 @@
         ],
         [
           {
-            "node": "MCP Add Decision Comment",
+            "node": "Ensure Approvals Table (form branch)",
             "type": "main",
             "index": 0
           }
@@ -1790,7 +1850,7 @@
       "main": [
         [
           {
-            "node": "Ensure Approvals Table (form branch)",
+            "node": "MCP Set Task In Progress",
             "type": "main",
             "index": 0
           }
@@ -1823,7 +1883,7 @@
       "main": [
         [
           {
-            "node": "Upsert Approval Row",
+            "node": "MCP Add Decision Comment",
             "type": "main",
             "index": 0
           }
@@ -1940,9 +2000,9 @@
   "staticData": null,
   "meta": null,
   "pinData": {},
-  "versionId": "906f64a5-1158-42bf-8598-3d8388a831d9",
+  "versionId": "b41cf115-358a-4b27-8ca6-8649c437ce38",
   "activeVersionId": null,
-  "versionCounter": 38,
+  "versionCounter": 45,
   "triggerCount": 0,
   "shared": [
     {
