@@ -95,7 +95,16 @@ Status update:
 
 ### 3.5 `create_task_in_project` in canonical `workflow.json`
 
-The **`MCP Create Task`** node uses **Manual** input (resource mapper). Mapped fields: `project_id` (from `WF02_PROJECT_ID` with demo fallback), `title`, `description` (from the **HTML** node output), `assignee`, `priority` (`NORMAL`). Unused optional tool parameters remain in `schema` with **`removed: true`** so UI re-import does not send empty ghosts (same pattern as WF01).
+The **`MCP Create Task`** node uses **Manual** input (resource mapper), **`inputMode`: `manual`**. Mapped fields:
+
+- **`project_id`** — **numeric literal** in git (`2` for the reference tenant). **`npm run generate:workflow-json`** and **`./tools/deploy.sh wf02`** replace it from **`WF02_PROJECT_ID`** in the repository root **`.env`** when set (`applyWf02CreateTaskProjectIdFromEnv` in [n8n-workflow-deploy-core.mjs](../../tools/lib/n8n-workflow-deploy-core.mjs)), matching WF01’s literal board id pattern (avoids empty MCP Client payloads from `$vars` expressions).
+- **`title`** — short label from **`Merge Docs to Process`** (`Validation - …`, extension stripped).
+- **`description`** — from **`Render Task Description HTML`** (`$json.html`).
+- **`assignee`** — document uploader (**`Merge Docs to Process`**.**`uploader`**), fallback **`claire`** per [SPEC.functional.md](SPEC.functional.md) §3.
+- **`coworkers`** — **`['nadia', 'etienne']`** (demo artistic / technical leads per SPEC.functional §3).
+- **`priority`** — **`NORMAL`**.
+
+Other unused optional tool parameters remain in `schema` with **`removed: true`** where omitted (same hygiene pattern as WF01).
 
 ## 4) Technical sequence
 
@@ -104,13 +113,14 @@ The **`MCP Create Task`** node uses **Manual** input (resource mapper). Mapped f
 1. **Triggers** (**`Manual Start`** / **`Schedule Intake (5m)`**) fan out to **two parallel branches**: (A) **`MCP Search Folder Docs`** and (B) **`Ensure Tracking Table`** → **`Get Processed Docs`** → **`Merge Docs to Process`** (**input 2**).
 2. **Branch A:** **`MCP Search Folder Docs`** → **`Split Out Documents`** on **`content[0].text`** (one item per search hit; see §3.3).
 3. **`Merge Docs to Process`** — SQL **`combineBySql`** joins when both branches have supplied data: **input1** = split rows from branch A, **input2** = processed-doc rows from branch B (`documentId`, `lastProcessedDate`, …); see §3.3 for column names and aliases.
-4. **`MCP Get Document By ID`** — raw MCP item shape (**`content[0].text`** document object or array with one row); **`Render Task Description HTML`**, **`MCP Create Task`**, and **`Extract Task ID`** use **`$('MCP Get Document By ID')`** with **`$('Merge Docs to Process')`** fallbacks — **no UTIL** on this hop (WF01-style didactic simplification).
-5. Render description with the **HTML** node (expression-built HTML from MCP + Merge fields).
-6. `create_task_in_project` (**Manual** MCP mapping) → **`Unwrap MCP Create Task`** → extract **`task_id`** (**`Extract Task ID`**; **`payload`** from UTIL).
-7. Guard `task_id`; stop with explicit error when missing.
-8. Move task to `WF02_INPROGRESS_STATUS_ID`.
-9. Add initial comment containing approval form links.
-10. **`Ensure Approvals Table (intake)`** (`createIfNotExists`, **`executeOnce`**) immediately before **`Seed Approval Row`**, then update `wf02_processed_documents`.
+4. **`MCP Get Document By ID`** — raw MCP item (**`content[0].text`** …); **no UTIL** on this hop (§3.2).
+5. **`Render Task Description HTML`** — reads **`$('MCP Get Document By ID')`** with **`$('Merge Docs to Process')`** fallbacks for links/cycle text.
+6. **`MCP Create Task`** — **`create_task_in_project`** mapping per §3.5 (`project_id` literal + **`WF02_PROJECT_ID`** injection from **`.env`** when present).
+7. **`Unwrap MCP Create Task`** → **`Extract Task ID`** (**`task_id`** from UTIL **`payload`**; **`cycle_id`**, **`document_id`**, **`author_username`** from **`Merge Docs to Process`**).
+8. Guard `task_id`; stop with explicit error when missing.
+9. Move task to `WF02_INPROGRESS_STATUS_ID`.
+10. Add initial comment containing approval form links.
+11. **`Ensure Approvals Table (intake)`** (`createIfNotExists`, **`executeOnce`**) immediately before **`Seed Approval Row`**, then update `wf02_processed_documents`.
 
 ### 4.2 Approval form branch (`/form/.../approve`)
 
@@ -187,7 +197,7 @@ This graph is **tutorial-oriented**: explainability on the canvas takes priority
 - **Unwrap scope (Option B):** **`Unwrap MCP Create Task`** only — **`Execute Workflow`** (UTIL) for **`create_task_in_project`** responses. **`search_documents`** and **`get_document_by_id`** use **native MCP item** paths (**`content[0].text`**) without UTIL on those hops (see §3.2, §4.1).
 - **Native HTML:** Task body uses the **HTML** node; template is **expression-backed** from **`MCP Get Document By ID`** + **`Merge Docs to Process`** (no **`Build Task Fields`** Set node).
 - **MCP hygiene:** **`MCP Create Task`** uses **Manual** parameter rows and `removed: true` on unused optional fields (§3.5).
-- **Shorter expressions:** **`MCP Create Task`** (**`title`**, **`assignee`**) and **`Extract Task ID`** (**`cycle_id`**, **`document_id`**, **`author_username`**) read **`content[0].text`** from **`get_document_by_id`** with Merge fallbacks; **`Extract Task ID`** **`task_id`** still unwraps UTIL **`payload`** for **`create_task_in_project`**; narrow **`task.task_id`** fallback remains.
+- **Shorter expressions:** **`MCP Create Task`** (**`title`**, **`assignee`**, **`coworkers`**) read **`Merge Docs to Process`** / fixed demo usernames (§3.5); **`project_id`** is a literal overridden from **`.env`** on generate/deploy. **`Extract Task ID`** (**`cycle_id`**, **`document_id`**, **`author_username`**) uses **`Merge Docs to Process`** only; **`task_id`** unwraps UTIL **`payload`** for **`create_task_in_project`**; narrow **`task.task_id`** fallback remains.
 - **Deferred table bootstrap:** **`Ensure Tracking Table`** still sits immediately before **`Get Processed Docs`**, but both are on a **second branch** started from the **same trigger** as **`MCP Search Folder Docs`** (parallel folder read vs table read). **`Ensure Approvals Table (intake)`** runs immediately before **`Seed Approval Row`**; **`Ensure Approvals Table (form branch)`** runs immediately before **`Get Approval Rows`** (same schema, idempotent `createIfNotExists`; **`executeOnce`** limits redundant work per execution branch).
 - **MCP search clarity:** **`MCP Search Folder Docs`** uses **Manual** parameters so all `search_documents` fields are visible on the canvas; **`parent_folder_id`** is a deploy-time literal (not `$vars`).
 

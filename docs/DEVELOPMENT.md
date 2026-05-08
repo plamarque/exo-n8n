@@ -96,7 +96,7 @@ When your n8n plan cannot rely on **Variables** (`$vars`), put tenant values in 
 2. **Persist into git JSON:** run **`npm run generate:workflow-json`** (or `node tools/generate-workflow-json-from-env.mjs`) to rewrite `workflows/**/workflow.json` (skips `fixtures/`; use `--dry-run` to preview). That removes `$vars` indirection in saved files for keys you set in `.env`.
 3. **Validate** and **deploy** as usual.
 
-Implementation: [tools/generate-workflow-json-from-env.mjs](../tools/generate-workflow-json-from-env.mjs) calls `applyPortfolioHardcodeFromEnv` in [tools/lib/n8n-workflow-deploy-core.mjs](../tools/lib/n8n-workflow-deploy-core.mjs).
+Implementation: [tools/generate-workflow-json-from-env.mjs](../tools/generate-workflow-json-from-env.mjs) calls `applyPortfolioHardcodeFromEnv` in [tools/lib/n8n-workflow-deploy-core.mjs](../tools/lib/n8n-workflow-deploy-core.mjs). **WF02** additionally patches **`MCP Create Task` → `project_id`** from **`WF02_PROJECT_ID`** via **`applyWf02CreateTaskProjectIdFromEnv`** (same hook runs **in memory** on `./tools/deploy.sh wf02` before PUT).
 
 **Git:** either commit generated JSON on a tenant branch or regenerate locally before each deploy — do not commit production secrets in tracked files you publish.
 

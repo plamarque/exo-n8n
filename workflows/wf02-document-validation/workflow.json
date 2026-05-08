@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-07T19:59:12.111Z",
+  "updatedAt": "2026-05-08T08:09:09.264Z",
   "createdAt": "2026-05-07T14:30:33.862Z",
   "id": "vwTQX2yxbgCh3kaG",
   "name": "WF02 - Document validation (split / join)",
@@ -123,8 +123,8 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        3584,
-        160
+        2240,
+        256
       ],
       "executeOnce": true,
       "onError": "continueRegularOutput"
@@ -310,7 +310,7 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        1120,
+        896,
         256
       ]
     },
@@ -334,7 +334,7 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        1344,
+        1120,
         256
       ],
       "credentials": {
@@ -346,14 +346,14 @@
     },
     {
       "parameters": {
-        "html": "={{ (() => { const m = $('MCP Get Document By ID').item.json; const merge = $('Merge Docs to Process').item.json; let t = m.content?.[0]?.text; if (Array.isArray(t)) t = t[0]; const d = t && typeof t === 'object' ? t : {}; const docId = String(d.document_id || merge.id || ''); const upd = String(d.updated_date || merge.updatedDate || $now.toISO()); const name = String(d.name || merge.name || 'Untitled document'); const rawUrl = String(d.url || merge.url || ''); const docUrl = rawUrl.startsWith('http') ? rawUrl : ('https://exo.example.com' + rawUrl); const cycleId = docId + ':' + upd; const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/\"/g, '&quot;'); return '<div><p><strong>Source document:</strong> <a href=\"' + esc(docUrl) + '\" target=\"_blank\" rel=\"noopener noreferrer\">' + esc(name) + '</a></p><p><strong>Cycle:</strong> ' + esc(cycleId) + '</p><p><strong>Validation:</strong> use the approval links in the first task comment.</p><p>Rule: move to Done only when both stamps are APPROVED.</p></div>'; })() }}"
+        "html": "{{ (() => { const m = $('MCP Get Document By ID').item.json; const merge = $('Merge Docs to Process').item.json; let t = m.content?.[0]?.text; if (Array.isArray(t)) t = t[0]; const d = t && typeof t === 'object' ? t : {}; const docId = String(d.document_id || merge.id || ''); const upd = String(d.updated_date || merge.updatedDate || $now.toISO()); const name = String(d.name || merge.name || 'Untitled document'); const rawUrl = String(d.url || merge.url || ''); const docUrl = rawUrl.startsWith('http') ? rawUrl : ('https://exo.example.com' + rawUrl); const cycleId = docId + ':' + upd; const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/\"/g, '&quot;'); return '<div><p><strong>Source document:</strong> <a href=\"' + esc(docUrl) + '\" target=\"_blank\" rel=\"noopener noreferrer\">' + esc(name) + '</a></p><p><strong>Cycle:</strong> ' + esc(cycleId) + '</p><p><strong>Validation:</strong> use the approval links in the first task comment.</p><p>Rule: move to Done only when both stamps are APPROVED.</p></div>'; })() }}"
       },
       "id": "aa5b4f7c-41dd-4cce-85f1-9fa7756b7c1e",
       "name": "Render Task Description HTML",
       "type": "n8n-nodes-base.html",
       "typeVersion": 1,
       "position": [
-        2016,
+        1344,
         256
       ]
     },
@@ -369,10 +369,11 @@
         "parameters": {
           "mappingMode": "defineBelow",
           "value": {
-            "project_id": "={{ Number(($vars.WF02_PROJECT_ID && String($vars.WF02_PROJECT_ID).trim()) || 2) }}",
-            "title": "={{ (() => { const m = $('MCP Get Document By ID').item.json; const merge = $('Merge Docs to Process').item.json; let t = m.content?.[0]?.text; if (Array.isArray(t)) t = t[0]; const d = t && typeof t === 'object' ? t : {}; const name = String(d.name || merge.name || 'Untitled document'); return ('Validation - ' + name.replace(/\\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim()).slice(0, 140); })() }}",
+            "project_id": 2,
+            "title": "={{ ('Validation - ' + String($('Merge Docs to Process').item.json.name || 'Untitled document').replace(/\\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim()).slice(0, 140) }}",
             "description": "={{ $json.html }}",
-            "assignee": "={{ (() => { const m = $('MCP Get Document By ID').item.json; const merge = $('Merge Docs to Process').item.json; let t = m.content?.[0]?.text; if (Array.isArray(t)) t = t[0]; const d = t && typeof t === 'object' ? t : {}; return String(d.created_username?.username || merge.uploader || 'claire').trim() || 'claire'; })() }}",
+            "assignee": "={{ $('Merge Docs to Process').item.json.uploader || 'claire' }}",
+            "coworkers": "={{ ['nadia', 'etienne'] }}",
             "priority": "NORMAL"
           },
           "matchingColumns": [],
@@ -416,8 +417,7 @@
               "required": false,
               "display": true,
               "type": "array",
-              "defaultValue": "[\n  \"string\"\n]",
-              "removed": true
+              "defaultValue": "[\n  \"string\"\n]"
             },
             {
               "id": "start_date",
@@ -494,7 +494,7 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        2240,
+        1568,
         256
       ],
       "credentials": {
@@ -506,113 +506,6 @@
     },
     {
       "parameters": {
-        "workflowId": "GPzd2Ot3xM56rW0u",
-        "options": {}
-      },
-      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b0000b",
-      "name": "Unwrap MCP Create Task",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1,
-      "position": [
-        2464,
-        256
-      ]
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "task_id",
-              "name": "task_id",
-              "value": "={{ Number(($json.payload && ($json.payload.task_id || $json.payload.id || ($json.payload.task && $json.payload.task.task_id))) || 0) }}",
-              "type": "number"
-            },
-            {
-              "id": "cycle_id",
-              "name": "cycle_id",
-              "value": "={{ (() => { const m = $('MCP Get Document By ID').item.json; const merge = $('Merge Docs to Process').item.json; let t = m.content?.[0]?.text; if (Array.isArray(t)) t = t[0]; const d = t && typeof t === 'object' ? t : {}; const id = String(d.document_id || merge.id || ''); return id + ':' + String(d.updated_date || merge.updatedDate || $now.toISO()); })() }}",
-              "type": "string"
-            },
-            {
-              "id": "document_id",
-              "name": "document_id",
-              "value": "={{ (() => { const m = $('MCP Get Document By ID').item.json; const merge = $('Merge Docs to Process').item.json; let t = m.content?.[0]?.text; if (Array.isArray(t)) t = t[0]; const d = t && typeof t === 'object' ? t : {}; return String(d.document_id || merge.id || ''); })() }}",
-              "type": "string"
-            },
-            {
-              "id": "author_username",
-              "name": "author_username",
-              "value": "={{ (() => { const m = $('MCP Get Document By ID').item.json; const merge = $('Merge Docs to Process').item.json; let t = m.content?.[0]?.text; if (Array.isArray(t)) t = t[0]; const d = t && typeof t === 'object' ? t : {}; return String(d.created_username?.username || merge.uploader || 'claire').trim() || 'claire'; })() }}",
-              "type": "string"
-            },
-            {
-              "id": "raw_create_payload",
-              "name": "raw_create_payload",
-              "value": "={{ JSON.stringify($json.payload || {}).slice(0, 800) }}",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "5420c9d5-210d-4d01-9417-d860286d14e2",
-      "name": "Extract Task ID",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        2688,
-        256
-      ]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 1
-          },
-          "conditions": [
-            {
-              "id": "has_task_id",
-              "leftValue": "={{$json.task_id}}",
-              "rightValue": 0,
-              "operator": {
-                "type": "number",
-                "operation": "gt"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b0000c",
-      "name": "IF Has Task ID",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        2912,
-        256
-      ]
-    },
-    {
-      "parameters": {
-        "errorMessage": "=create_task_in_project failed or returned no task_id. payload={{$json.raw_create_payload}}"
-      },
-      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b0000d",
-      "name": "Stop - Missing task_id",
-      "type": "n8n-nodes-base.stopAndError",
-      "typeVersion": 1,
-      "position": [
-        3136,
-        352
-      ]
-    },
-    {
-      "parameters": {
         "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
         "authentication": "mcpOAuth2Api",
         "tool": {
@@ -621,7 +514,7 @@
           "value": "update_task_status"
         },
         "inputMode": "json",
-        "jsonInput": "={{ { task_id: $('Extract Task ID').item.json.task_id, status_id: Number($vars.WF02_INPROGRESS_STATUS_ID || 6) } }}",
+        "jsonInput": "={{ (() => { const c = $('MCP Create Task').item.json; let t = c.content?.[0]?.text; if (typeof t === 'string') { try { t = JSON.parse(t); } catch {} } if (Array.isArray(t)) t = t[0]; const p = (t && typeof t === 'object') ? t : {}; return { task_id: Number(p.task_id || p.id || (p.task && p.task.task_id) || 0), status_id: Number($vars.WF02_INPROGRESS_STATUS_ID || 6) }; })() }}",
         "options": {
           "timeout": 60000
         }
@@ -631,8 +524,8 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        3136,
-        160
+        1792,
+        256
       ],
       "credentials": {
         "mcpOAuth2Api": {
@@ -651,7 +544,7 @@
           "value": "add_task_comment"
         },
         "inputMode": "json",
-        "jsonInput": "={{ (() => { const base = String($vars.WF02_APPROVAL_BASE_URL || \"https://meeds.app.n8n.cloud/form/wf02-doc-validation/approve\").replace(/\\/$/, \"\"); const q = (role, actor) => \"?task_id=\" + $('Extract Task ID').item.json.task_id + \"&cycle_id=\" + encodeURIComponent($('Extract Task ID').item.json.cycle_id) + \"&role=\" + role + \"&actor=\" + actor; const art = base + q(\"artistic\", \"nadia\"); const tech = base + q(\"technical\", \"etienne\"); const text = \"<p><strong>Validation started</strong> (cycle: \" + $('Extract Task ID').item.json.cycle_id + \").</p><p>Open the form to <strong>approve or reject</strong> (reason copied to the task). Task stays In progress until both stamps are approved:</p><p><a href=\\\"\" + art + \"\\\" target=\\\"_blank\\\" rel=\\\"noopener noreferrer\\\">Artistic stamp (Nadia)</a></p><p><a href=\\\"\" + tech + \"\\\" target=\\\"_blank\\\" rel=\\\"noopener noreferrer\\\">Technical stamp (Etienne)</a></p>\"; return { task_id: $('Extract Task ID').item.json.task_id, text }; })() }}",
+        "jsonInput": "={{ (() => { const c = $('MCP Create Task').item.json; let t = c.content?.[0]?.text; if (typeof t === 'string') { try { t = JSON.parse(t); } catch {} } if (Array.isArray(t)) t = t[0]; const p = (t && typeof t === 'object') ? t : {}; const taskId = Number(p.task_id || p.id || (p.task && p.task.task_id) || 0); const cycleId = String($('Merge Docs to Process').item.json.id || '') + ':' + String($('Merge Docs to Process').item.json.updatedDate || $now.toISO()); const base = String($vars.WF02_APPROVAL_BASE_URL || \"https://meeds.app.n8n.cloud/form/wf02-doc-validation/approve\").replace(/\\/$/, \"\"); const q = (role, actor) => \"?task_id=\" + taskId + \"&cycle_id=\" + encodeURIComponent(cycleId) + \"&role=\" + role + \"&actor=\" + actor; const art = base + q(\"artistic\", \"nadia\"); const tech = base + q(\"technical\", \"etienne\"); const text = \"<p><strong>Validation started</strong> (cycle: \" + cycleId + \").</p><p>Open the form to <strong>approve or reject</strong> (reason copied to the task). Task stays In progress until both stamps are approved:</p><p><a href=\\\"\" + art + \"\\\" target=\\\"_blank\\\" rel=\\\"noopener noreferrer\\\">Artistic stamp (Nadia)</a></p><p><a href=\\\"\" + tech + \"\\\" target=\\\"_blank\\\" rel=\\\"noopener noreferrer\\\">Technical stamp (Etienne)</a></p>\"; return { task_id: taskId, text }; })() }}",
         "options": {
           "timeout": 60000
         }
@@ -661,8 +554,8 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        3360,
-        160
+        2016,
+        256
       ],
       "credentials": {
         "mcpOAuth2Api": {
@@ -683,18 +576,18 @@
           "conditions": [
             {
               "keyName": "cycleKey",
-              "keyValue": "={{ String($('Extract Task ID').item.json.task_id) + ':' + String($('Extract Task ID').item.json.cycle_id) }}"
+              "keyValue": "={{ (() => { const c = $('MCP Create Task').item.json; let t = c.content?.[0]?.text; if (typeof t === 'string') { try { t = JSON.parse(t); } catch {} } if (Array.isArray(t)) t = t[0]; const p = (t && typeof t === 'object') ? t : {}; const taskId = Number(p.task_id || p.id || (p.task && p.task.task_id) || 0); const cycleId = String($('Merge Docs to Process').item.json.id || '') + ':' + String($('Merge Docs to Process').item.json.updatedDate || $now.toISO()); return String(taskId) + ':' + cycleId; })() }}"
             }
           ]
         },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "cycleKey": "={{ String($('Extract Task ID').item.json.task_id) + ':' + String($('Extract Task ID').item.json.cycle_id) }}",
-            "task_id": "={{ Number($('Extract Task ID').item.json.task_id) }}",
-            "cycle_id": "={{ $('Extract Task ID').item.json.cycle_id }}",
-            "document_id": "={{ $('Extract Task ID').item.json.document_id }}",
-            "author_username": "={{ $('Extract Task ID').item.json.author_username }}",
+            "cycleKey": "={{ (() => { const c = $('MCP Create Task').item.json; let t = c.content?.[0]?.text; if (typeof t === 'string') { try { t = JSON.parse(t); } catch {} } if (Array.isArray(t)) t = t[0]; const p = (t && typeof t === 'object') ? t : {}; const taskId = Number(p.task_id || p.id || (p.task && p.task.task_id) || 0); const cycleId = String($('Merge Docs to Process').item.json.id || '') + ':' + String($('Merge Docs to Process').item.json.updatedDate || $now.toISO()); return String(taskId) + ':' + cycleId; })() }}",
+            "task_id": "={{ (() => { const c = $('MCP Create Task').item.json; let t = c.content?.[0]?.text; if (typeof t === 'string') { try { t = JSON.parse(t); } catch {} } if (Array.isArray(t)) t = t[0]; const p = (t && typeof t === 'object') ? t : {}; return Number(p.task_id || p.id || (p.task && p.task.task_id) || 0); })() }}",
+            "cycle_id": "={{ String($('Merge Docs to Process').item.json.id || '') + ':' + String($('Merge Docs to Process').item.json.updatedDate || $now.toISO()) }}",
+            "document_id": "={{ String($('Merge Docs to Process').item.json.id || '') }}",
+            "author_username": "={{ String($('Merge Docs to Process').item.json.uploader || 'claire').trim() || 'claire' }}",
             "artistic_decision": "PENDING",
             "artistic_reason": "",
             "artistic_at": "",
@@ -825,8 +718,8 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        3808,
-        160
+        2464,
+        256
       ]
     },
     {
@@ -841,16 +734,16 @@
           "conditions": [
             {
               "keyName": "documentId",
-              "keyValue": "={{ $('Extract Task ID').item.json.document_id }}"
+              "keyValue": "={{ String($('Merge Docs to Process').item.json.id || '') }}"
             }
           ]
         },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "documentId": "={{ $('Extract Task ID').item.json.document_id }}",
+            "documentId": "={{ String($('Merge Docs to Process').item.json.id || '') }}",
             "lastProcessedDate": "={{ $now.toISO() }}",
-            "cycleId": "={{ $('Extract Task ID').item.json.cycle_id }}"
+            "cycleId": "={{ String($('Merge Docs to Process').item.json.id || '') + ':' + String($('Merge Docs to Process').item.json.updatedDate || $now.toISO()) }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -895,8 +788,8 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        4032,
-        160
+        2688,
+        256
       ]
     },
     {
@@ -1784,47 +1677,7 @@
       "main": [
         [
           {
-            "node": "Unwrap MCP Create Task",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Unwrap MCP Create Task": {
-      "main": [
-        [
-          {
-            "node": "Extract Task ID",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Extract Task ID": {
-      "main": [
-        [
-          {
-            "node": "IF Has Task ID",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "IF Has Task ID": {
-      "main": [
-        [
-          {
             "node": "MCP Set Task In Progress",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Stop - Missing task_id",
             "type": "main",
             "index": 0
           }
@@ -2087,9 +1940,9 @@
   "staticData": null,
   "meta": null,
   "pinData": {},
-  "versionId": "f2c165c3-35e9-40ef-96d1-11f38b2d9874",
+  "versionId": "906f64a5-1158-42bf-8598-3d8388a831d9",
   "activeVersionId": null,
-  "versionCounter": 26,
+  "versionCounter": 38,
   "triggerCount": 0,
   "shared": [
     {

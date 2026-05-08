@@ -7,6 +7,7 @@ import {
   applyExoMcpEndpointDeployOverride,
   applyN8nPortfolioVarsFallbackOverrides,
   applyPortfolioHardcodeFromEnv,
+  applyWf02CreateTaskProjectIdFromEnv,
   escapeSingleQuotedJsStringLiteral,
   WF02_CANONICAL_PARENT_FOLDER_ID,
 } from "./n8n-workflow-deploy-core.mjs";
@@ -189,6 +190,40 @@ function testExoMcpEndpointInvalidSkips() {
   }
 }
 
+function testWf02CreateTaskProjectIdOnlyWf02Node() {
+  const nodes = [
+    {
+      name: "MCP Create Task",
+      parameters: {
+        tool: { value: "create_task_in_project" },
+        parameters: {
+          value: {
+            project_id: 2,
+            title:
+              "={{ ('Validation - ' + $('Merge Docs to Process').item.json.name).slice(0, 12) }}",
+          },
+        },
+      },
+    },
+    {
+      name: "MCP Create Task",
+      parameters: {
+        tool: { value: "create_task_in_project" },
+        parameters: {
+          value: {
+            project_id: 3,
+            title: "={{ $('AI Router').item.json.output.task_title }}",
+          },
+        },
+      },
+    },
+  ];
+  process.env.WF02_PROJECT_ID = "9";
+  applyWf02CreateTaskProjectIdFromEnv(nodes);
+  assert.equal(nodes[0].parameters.parameters.value.project_id, 9);
+  assert.equal(nodes[1].parameters.parameters.value.project_id, 3);
+}
+
 function testPortfolioHardcodeRemovesVars() {
   const prevP = process.env.WF01_PROJECT_ID;
   const prevS = process.env.EXO_SPACE_NAME;
@@ -227,6 +262,7 @@ try {
   testWf02ParentFolderManualMcpValue();
   testExoMcpEndpointLiteral();
   testExoMcpEndpointInvalidSkips();
+  testWf02CreateTaskProjectIdOnlyWf02Node();
   testPortfolioHardcodeRemovesVars();
   console.log("n8n-workflow-deploy-core.vars-injection.test.mjs: OK");
 } finally {

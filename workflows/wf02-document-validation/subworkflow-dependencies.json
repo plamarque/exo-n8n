@@ -1,12 +1,4 @@
 {
   "version": 1,
-  "dependencies": [
-    {
-      "path": "../unwrap-mcp-json/workflow.json",
-      "remoteIdEnv": "N8N_WORKFLOW_ID_UNWRAP",
-      "parentExecuteWorkflowNodeNames": [
-        "Unwrap MCP Create Task"
-      ]
-    }
-  ]
+  "dependencies": []
 }

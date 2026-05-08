@@ -60,7 +60,7 @@ Set these in **n8n Variables** (or equivalent instance env mapping), because WF0
 |----------|---------|--------------|
 | `EXO_MCP_ENDPOINT` | MCP endpoint for document/task/comment/status operations. | Root `.env` → **`npm run generate:workflow-json`**. |
 | `WF02_PARENT_FOLDER_ID` | Watched eXo folder id for document intake (baked into **`MCP Search Folder Docs`** Manual `parent_folder_id` via root **`.env`** at `generate:workflow-json` / deploy). | Root `.env` → generate or deploy injection; not an n8n `$vars` expression in the canonical graph. |
-| `WF02_PROJECT_ID` | Target eXo project id where validation tasks are created. | n8n Variables. |
+| `WF02_PROJECT_ID` | Target eXo project id where validation tasks are created. | **Canonical `workflow.json`** keeps a **numeric literal** (`2` on the reference tenant); root **`.env`** **`WF02_PROJECT_ID`** is applied by **`npm run generate:workflow-json`** and **`./tools/deploy.sh wf02`** into **`MCP Create Task`** (no n8n `$vars` needed for `project_id`). |
 | `WF02_INPROGRESS_STATUS_ID` | Project status id used after create and on non-final outcomes. | n8n Variables. |
 | `WF02_DONE_STATUS_ID` | Project status id used when both approvals are `APPROVED`. | n8n Variables. |
 | `WF02_APPROVAL_BASE_URL` | Hosted n8n **Form** URL used in task comments for reviewer links. | n8n Variables. |

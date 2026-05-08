@@ -359,6 +359,50 @@ export function applyExoMcpEndpointDeployOverride(nodes, opts = {}) {
  */
 export const WF02_CANONICAL_PARENT_FOLDER_ID = "ced6e9c539805e114bd65696b26bd073";
 
+/** WF02 reference tenant board id in canonical `workflow.json`; overridden when `WF02_PROJECT_ID` is set in root `.env`. */
+export const WF02_CANONICAL_PROJECT_ID = 2;
+
+/**
+ * True when this node is WF02's **`MCP Create Task`** (WF01 uses AI Router on `title`; WF02 uses **`Merge Docs to Process`**).
+ * @param {unknown} node
+ */
+function isWf02DocumentValidationCreateTaskNode(node) {
+  if (!node || typeof node !== "object") return false;
+  if (/** @type {{ name?: string }} */ (node).name !== "MCP Create Task") return false;
+  const pl =
+    /** @type {{ parameters?: { tool?: { value?: unknown }; parameters?: { value?: Record<string, unknown> } } }} */ (
+      node
+    ).parameters;
+  if (pl?.tool?.value !== "create_task_in_project") return false;
+  const title = pl?.parameters?.value?.title;
+  return typeof title === "string" && title.includes("$('Merge Docs to Process')");
+}
+
+/**
+ * When **`WF02_PROJECT_ID`** is set (digits only), sets **`project_id`** on WF02 **`MCP Create Task`** to that number.
+ * Safe for mixed portfolios: skips WF01 (`$('AI Router')` titles).
+ *
+ * @param {unknown[] | undefined} nodes
+ * @returns {number} nodes mutated
+ */
+export function applyWf02CreateTaskProjectIdFromEnv(nodes) {
+  if (!Array.isArray(nodes)) return 0;
+  const raw = (process.env.WF02_PROJECT_ID || "").trim();
+  if (!raw || !/^\d+$/.test(raw)) return 0;
+  const num = Number(raw);
+  let touched = 0;
+  for (const node of nodes) {
+    if (!isWf02DocumentValidationCreateTaskNode(node)) continue;
+    const inner =
+      /** @type {{ parameters?: { parameters?: { value?: Record<string, unknown> } } }} */ (node).parameters
+        ?.parameters?.value;
+    if (!inner || typeof inner !== "object") continue;
+    inner.project_id = num;
+    touched++;
+  }
+  return touched;
+}
+
 /** Portfolio workflow keys mirrored as n8n `$vars.*` in canonical expressions (hardcode via {@link applyPortfolioHardcodeFromEnv}). */
 export const PORTFOLIO_INTEGER_VAR_KEYS = [
   "WF01_PROJECT_ID",
@@ -526,6 +570,7 @@ export function applyN8nPortfolioVarsFallbackOverrides(nodes) {
  */
 export function applyPortfolioEnvOverridesBeforePush(nodes) {
   applyExoMcpEndpointDeployOverride(nodes);
+  applyWf02CreateTaskProjectIdFromEnv(nodes);
   applyN8nPortfolioVarsFallbackOverrides(nodes);
 }
 
@@ -601,6 +646,8 @@ export function applyPortfolioHardcodeFromEnv(nodes, opts = {}) {
 
     return out;
   }
+
+  applyWf02CreateTaskProjectIdFromEnv(nodes);
 
   let stringNodes = 0;
   for (const node of nodes) {
