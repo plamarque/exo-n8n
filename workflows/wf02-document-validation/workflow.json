@@ -346,7 +346,7 @@
     },
     {
       "parameters": {
-        "html": "<div><p><strong>Source document:</strong> <a href=\"{{ $json.doc_url }}\" target=\"_blank\" rel=\"noopener noreferrer\">{{ $json.doc_name }}</a></p><p><strong>Validation links:</strong></p><p><a href=\"{{ $json.artistic_link }}\" target=\"_blank\" rel=\"noopener noreferrer\">Artistic stamp (Nadia)</a></p><p><a href=\"{{ $json.technical_link }}\" target=\"_blank\" rel=\"noopener noreferrer\">Technical stamp (Etienne)</a></p><p>Rule: move to Done only when both stamps are APPROVED.</p></div>"
+        "html": "<div><p><strong>Source document:</strong> <a href=\"{{ $json.doc_url }}\" target=\"_blank\" rel=\"noopener noreferrer\">{{ $json.doc_name }}</a></p><p><strong>Validation links:</strong></p><p><a href=\"{{ $json.artistic_link }}\" target=\"_top\" rel=\"noopener noreferrer\">Artistic stamp (Nadia)</a></p><p><a href=\"{{ $json.technical_link }}\" target=\"_top\" rel=\"noopener noreferrer\">Technical stamp (Etienne)</a></p><p>Rule: move to Done only when both stamps are APPROVED.</p></div>"
       },
       "id": "aa5b4f7c-41dd-4cce-85f1-9fa7756b7c1e",
       "name": "Render Task Description HTML",
@@ -382,13 +382,13 @@
             {
               "id": "wf02_artistic_link",
               "name": "artistic_link",
-              "value": "={{ 'https://meeds.app.n8n.cloud/form/wf02-doc-validation/approve?cycle_id=' + encodeURIComponent($json.cycle_id) + '&role=artistic&actor=nadia' }}",
+              "value": "={{ 'https://meeds.app.n8n.cloud/form/wf02-doc-validation/approve?cycle_id=' + encodeURIComponent(String($('Merge Docs to Process').item.json.id) + ':' + String($('Merge Docs to Process').item.json.updatedDate)) + '&role=artistic&actor=nadia' }}",
               "type": "string"
             },
             {
               "id": "wf02_technical_link",
               "name": "technical_link",
-              "value": "={{ 'https://meeds.app.n8n.cloud/form/wf02-doc-validation/approve?cycle_id=' + encodeURIComponent($json.cycle_id) + '&role=technical&actor=etienne' }}",
+              "value": "={{ 'https://meeds.app.n8n.cloud/form/wf02-doc-validation/approve?cycle_id=' + encodeURIComponent(String($('Merge Docs to Process').item.json.id) + ':' + String($('Merge Docs to Process').item.json.updatedDate)) + '&role=technical&actor=etienne' }}",
               "type": "string"
             }
           ]
@@ -563,7 +563,7 @@
         "parameters": {
           "mappingMode": "defineBelow",
           "value": {
-            "task_id": "={{ (() => { const c = $('MCP Create Task').item.json; let t = c.content?.[0]?.text; if (typeof t === 'string') { try { t = JSON.parse(t); } catch {} } if (Array.isArray(t)) t = t[0]; const p = (t && typeof t === 'object') ? t : {}; return Number(p.task_id || p.id || (p.task && p.task.task_id) || 0); })() }}",
+            "task_id": "={{ Number($('Merge Decision').first().json.task_id) }}",
             "status_id": 6
           },
           "matchingColumns": [],
@@ -1135,7 +1135,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const parse = $('Parse Approval').first();\nif (!parse || !parse.json) {\n  return [{ json: {} }];\n}\nconst pa = parse.json;\nconst cycleKey = String(pa.cycleKey ?? '');\nconst rows = $('Get Approval Rows').all();\nlet found = {};\nfor (let i = 0; i < rows.length; i++) {\n  const j = rows[i].json || {};\n  if (String(j.cycleKey ?? '') === cycleKey) {\n    found = j;\n    break;\n  }\n}\nconst role = String(pa.role ?? '');\nconst now =\n  typeof $now !== 'undefined' && typeof $now.toISO === 'function'\n    ? $now.toISO()\n    : new Date().toISOString();\n\nlet artistic_decision = String(found.artistic_decision ?? 'PENDING');\nlet artistic_reason = String(found.artistic_reason ?? '');\nlet artistic_at = String(found.artistic_at ?? '');\nlet technical_decision = String(found.technical_decision ?? 'PENDING');\nlet technical_reason = String(found.technical_reason ?? '');\nlet technical_at = String(found.technical_at ?? '');\n\nif (role === 'artistic') {\n  artistic_decision = String(pa.decision ?? 'PENDING');\n  artistic_reason = String(pa.reason ?? '');\n  artistic_at = now;\n}\nif (role === 'technical') {\n  technical_decision = String(pa.decision ?? 'PENDING');\n  technical_reason = String(pa.reason ?? '');\n  technical_at = now;\n}\n\nreturn [\n  {\n    json: {\n      cycleKey: cycleKey,\n      task_id: Number(pa.task_id || found.task_id || 0),\n      cycle_id: String(pa.cycle_id ?? found.cycle_id ?? ''),\n      document_id: String(found.document_id ?? ''),\n      author_username: String(found.author_username ?? 'claire'),\n      artistic_decision,\n      artistic_reason,\n      artistic_at,\n      technical_decision,\n      technical_reason,\n      technical_at,\n    },\n  },\n];\n"
+        "jsCode": "const parse = $('Parse Approval').first();\nif (!parse || !parse.json) {\n  return [{ json: {} }];\n}\nconst pa = parse.json;\nconst cycleKeyRaw = String(pa.cycleKey ?? pa.cycle_id ?? '').trim();\nconst cycleIdRaw = String(pa.cycle_id ?? pa.cycleKey ?? '').trim();\nconst safeDecode = (s) => {\n  try {\n    return decodeURIComponent(s);\n  } catch {\n    return s;\n  }\n};\nconst norm = (s) => safeDecode(String(s ?? '').trim());\nconst cycleKeyNorm = norm(cycleKeyRaw);\nconst cycleIdNorm = norm(cycleIdRaw);\nconst rows = $('Get Approval Rows').all();\nlet found = {};\nfor (let i = 0; i < rows.length; i++) {\n  const j = rows[i].json || {};\n  const rowKey = String(j.cycleKey ?? '').trim();\n  const rowCycle = String(j.cycle_id ?? '').trim();\n  if (\n    rowKey === cycleKeyRaw ||\n    rowCycle === cycleIdRaw ||\n    norm(rowKey) === cycleKeyNorm ||\n    norm(rowCycle) === cycleIdNorm ||\n    norm(rowKey) === cycleIdNorm\n  ) {\n    found = j;\n    break;\n  }\n}\nconst role = String(pa.role ?? '');\nconst now =\n  typeof $now !== 'undefined' && typeof $now.toISO === 'function'\n    ? $now.toISO()\n    : new Date().toISOString();\n\nlet artistic_decision = String(found.artistic_decision ?? 'PENDING');\nlet artistic_reason = String(found.artistic_reason ?? '');\nlet artistic_at = String(found.artistic_at ?? '');\nlet technical_decision = String(found.technical_decision ?? 'PENDING');\nlet technical_reason = String(found.technical_reason ?? '');\nlet technical_at = String(found.technical_at ?? '');\n\nif (role === 'artistic') {\n  artistic_decision = String(pa.decision ?? 'PENDING');\n  artistic_reason = String(pa.reason ?? '');\n  artistic_at = now;\n}\nif (role === 'technical') {\n  technical_decision = String(pa.decision ?? 'PENDING');\n  technical_reason = String(pa.reason ?? '');\n  technical_at = now;\n}\n\nreturn [\n  {\n    json: {\n      cycleKey: cycleKeyRaw,\n      task_id: Number(pa.task_id || found.task_id || 0),\n      cycle_id: String(pa.cycle_id ?? found.cycle_id ?? ''),\n      document_id: String(found.document_id ?? ''),\n      author_username: String(found.author_username ?? 'claire'),\n      artistic_decision,\n      artistic_reason,\n      artistic_at,\n      technical_decision,\n      technical_reason,\n      technical_at,\n      role,\n      decision: String(pa.decision ?? ''),\n      reason: String(pa.reason ?? ''),\n    },\n  },\n];\n"
       },
       "id": "0c1f8ed6-0edb-4388-9329-81270cc588fc",
       "name": "Merge Decision",
@@ -1158,24 +1158,24 @@
           "conditions": [
             {
               "keyName": "cycleKey",
-              "keyValue": "={{ $json.cycleKey }}"
+              "keyValue": "={{ $('Merge Decision').first().json.cycleKey }}"
             }
           ]
         },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "cycleKey": "={{ $json.cycleKey }}",
-            "task_id": "={{ Number($json.task_id) }}",
-            "cycle_id": "={{ $json.cycle_id }}",
-            "document_id": "={{ $json.document_id }}",
-            "author_username": "={{ $json.author_username }}",
-            "artistic_decision": "={{ $json.artistic_decision }}",
-            "artistic_reason": "={{ $json.artistic_reason }}",
-            "artistic_at": "={{ $json.artistic_at }}",
-            "technical_decision": "={{ $json.technical_decision }}",
-            "technical_reason": "={{ $json.technical_reason }}",
-            "technical_at": "={{ $json.technical_at }}"
+            "cycleKey": "={{ $('Merge Decision').first().json.cycleKey }}",
+            "task_id": "={{ Number($('Merge Decision').first().json.task_id) }}",
+            "cycle_id": "={{ $('Merge Decision').first().json.cycle_id }}",
+            "document_id": "={{ $('Merge Decision').first().json.document_id }}",
+            "author_username": "={{ $('Merge Decision').first().json.author_username }}",
+            "artistic_decision": "={{ $('Merge Decision').first().json.artistic_decision }}",
+            "artistic_reason": "={{ $('Merge Decision').first().json.artistic_reason }}",
+            "artistic_at": "={{ $('Merge Decision').first().json.artistic_at }}",
+            "technical_decision": "={{ $('Merge Decision').first().json.technical_decision }}",
+            "technical_reason": "={{ $('Merge Decision').first().json.technical_reason }}",
+            "technical_at": "={{ $('Merge Decision').first().json.technical_at }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -1311,37 +1311,37 @@
             {
               "id": "task_id",
               "name": "task_id",
-              "value": "={{ Number($json.task_id) }}",
+              "value": "={{ Number($('Merge Decision').first().json.task_id) }}",
               "type": "number"
             },
             {
               "id": "cycle_id",
               "name": "cycle_id",
-              "value": "={{ $json.cycle_id }}",
+              "value": "={{ $('Merge Decision').first().json.cycle_id }}",
               "type": "string"
             },
             {
               "id": "artistic_decision",
               "name": "artistic_decision",
-              "value": "={{ $json.artistic_decision }}",
+              "value": "={{ $('Merge Decision').first().json.artistic_decision }}",
               "type": "string"
             },
             {
               "id": "technical_decision",
               "name": "technical_decision",
-              "value": "={{ $json.technical_decision }}",
+              "value": "={{ $('Merge Decision').first().json.technical_decision }}",
               "type": "string"
             },
             {
               "id": "joinReady",
               "name": "joinReady",
-              "value": "={{ $json.artistic_decision !== 'PENDING' && $json.technical_decision !== 'PENDING' }}",
+              "value": "={{ $('Merge Decision').first().json.artistic_decision !== 'PENDING' && $('Merge Decision').first().json.technical_decision !== 'PENDING' }}",
               "type": "boolean"
             },
             {
               "id": "bothApproved",
               "name": "bothApproved",
-              "value": "={{ $json.artistic_decision === 'APPROVED' && $json.technical_decision === 'APPROVED' }}",
+              "value": "={{ $('Merge Decision').first().json.artistic_decision === 'APPROVED' && $('Merge Decision').first().json.technical_decision === 'APPROVED' }}",
               "type": "boolean"
             }
           ]
