@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-11T17:06:29.443Z",
+  "updatedAt": "2026-05-11T20:54:56.228Z",
   "createdAt": "2026-05-07T14:30:33.862Z",
   "id": "vwTQX2yxbgCh3kaG",
   "name": "WF02 - Document validation (split / join)",
@@ -123,7 +123,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        2016,
+        2240,
         256
       ],
       "executeOnce": true,
@@ -181,7 +181,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        896,
+        672,
         816
       ],
       "executeOnce": true,
@@ -571,7 +571,7 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        1904,
+        2016,
         256
       ],
       "credentials": {
@@ -593,7 +593,7 @@
         "parameters": {
           "mappingMode": "defineBelow",
           "value": {
-            "task_id": "={{ Number($('Parse Approval').first().json.task_id || ($('Get Approval Rows').first().json || {}).task_id || 0) }}",
+            "task_id": "={{ Number(($('Approval Form').first().json.task_id ?? $('Approval Form').first().json.query?.task_id) || ($('Get Approval Rows').first().json || {}).task_id || 0) }}",
             "status_id": 6
           },
           "matchingColumns": [],
@@ -627,7 +627,7 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        1568,
+        1344,
         816
       ],
       "credentials": {
@@ -791,7 +791,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        2240,
+        2464,
         256
       ]
     },
@@ -861,125 +861,8 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        2464,
+        2688,
         256
-      ]
-    },
-    {
-      "parameters": {
-        "formTitle": "WF02 — Validation stamp",
-        "formDescription": "<p>Context is pre-filled from your task link. Choose <strong>Approved</strong> or <strong>Rejected</strong>. If you reject, add a <strong>reason</strong> (it is copied to the task).</p><p>The task stays <em>In progress</em> until both stamps are <strong>Approved</strong>.</p>",
-        "formFields": {
-          "values": [
-            {
-              "fieldType": "hiddenField",
-              "fieldName": "task_id"
-            },
-            {
-              "fieldType": "hiddenField",
-              "fieldName": "cycle_id"
-            },
-            {
-              "fieldType": "hiddenField",
-              "fieldName": "role"
-            },
-            {
-              "fieldType": "hiddenField",
-              "fieldName": "actor"
-            },
-            {
-              "fieldLabel": "Decision",
-              "fieldType": "radio",
-              "fieldName": "decision",
-              "defaultValue": "Approved",
-              "fieldOptions": {
-                "values": [
-                  {
-                    "option": "Approved"
-                  },
-                  {
-                    "option": "Rejected"
-                  }
-                ]
-              },
-              "requiredField": true
-            },
-            {
-              "fieldLabel": "Reason",
-              "fieldType": "textarea",
-              "fieldName": "reason",
-              "placeholder": "Required when rejecting; optional when approving"
-            }
-          ]
-        },
-        "responseMode": "lastNode",
-        "options": {
-          "appendAttribution": false,
-          "buttonLabel": "Submit decision",
-          "path": "wf02-doc-validation/approve"
-        }
-      },
-      "id": "e08bc8c4-3ef3-468b-9f43-1314eb143cc6",
-      "name": "Approval Form Trigger",
-      "type": "n8n-nodes-base.formTrigger",
-      "typeVersion": 2.5,
-      "position": [
-        224,
-        912
-      ],
-      "webhookId": "ca8ca31c-e44a-4cb4-8e8f-14b7db56958a"
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "task_id",
-              "name": "task_id",
-              "value": "={{ Number($json.task_id ?? $json.query?.task_id) }}",
-              "type": "number"
-            },
-            {
-              "id": "cycle_id",
-              "name": "cycle_id",
-              "value": "={{ $json.cycle_id }}",
-              "type": "string"
-            },
-            {
-              "id": "role",
-              "name": "role",
-              "value": "={{ $json.role }}",
-              "type": "string"
-            },
-            {
-              "id": "decision",
-              "name": "decision",
-              "value": "={{ String($json.decision).toUpperCase() }}",
-              "type": "string"
-            },
-            {
-              "id": "reason",
-              "name": "reason",
-              "value": "={{ $json.reason ?? '' }}",
-              "type": "string"
-            },
-            {
-              "id": "cycleKey",
-              "name": "cycleKey",
-              "value": "={{ $json.cycle_id }}",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "349ac036-e76f-43fb-9df4-2d126eaabc50",
-      "name": "Parse Approval",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        448,
-        912
       ]
     },
     {
@@ -989,7 +872,7 @@
             "caseSensitive": true,
             "leftValue": "",
             "typeValidation": "strict",
-            "version": 1
+            "version": 3
           },
           "conditions": [
             {
@@ -1022,7 +905,7 @@
             },
             {
               "id": "decision_allowed",
-              "leftValue": "={{ ['APPROVED', 'REJECTED'].includes($json.decision) }}",
+              "leftValue": "={{ ['APPROVED', 'REJECTED'].includes(String($json.decision).toUpperCase()) }}",
               "rightValue": true,
               "operator": {
                 "type": "boolean",
@@ -1032,7 +915,7 @@
             },
             {
               "id": "reject_reason_if_rejected",
-              "leftValue": "={{ $json.decision !== 'REJECTED' || Boolean($json.reason?.trim()) }}",
+              "leftValue": "={{ String($json.decision).toUpperCase() !== 'REJECTED' || Boolean($json.reason?.trim()) }}",
               "rightValue": true,
               "operator": {
                 "type": "boolean",
@@ -1050,7 +933,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        672,
+        448,
         912
       ]
     },
@@ -1066,7 +949,7 @@
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,
       "position": [
-        896,
+        672,
         1008
       ],
       "webhookId": "ad128407-b9af-4701-9e0c-f6481e175fd7"
@@ -1080,8 +963,34 @@
           "mode": "id",
           "value": "add_task_comment"
         },
-        "inputMode": "json",
-        "jsonInput": "={{ { task_id: Number($('Parse Approval').first().json.task_id || $('Get Approval Rows').first().json.task_id || 0), text: \"Stamp \" + $('Parse Approval').first().json.role + \": \" + $('Parse Approval').first().json.decision + ($('Parse Approval').first().json.reason ? (\". Reason: \" + $('Parse Approval').first().json.reason) : \"\") } }}",
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "task_id": "={{ Number(($('Approval Form').first().json.task_id ?? $('Approval Form').first().json.query?.task_id) || $('Get Approval Rows').first().json.task_id || 0) }}",
+            "text": "={{ 'Stamp ' + $('Approval Form').first().json.role + ': ' + String($('Approval Form').first().json.decision).toUpperCase() + ($('Approval Form').first().json.reason ? ('. Reason: ' + $('Approval Form').first().json.reason) : '') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "task_id",
+              "displayName": "task_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "number"
+            },
+            {
+              "id": "text",
+              "displayName": "text",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
         "options": {
           "timeout": 60000
         }
@@ -1091,7 +1000,7 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        1344,
+        1120,
         816
       ],
       "credentials": {
@@ -1114,7 +1023,7 @@
           "conditions": [
             {
               "keyName": "cycleKey",
-              "keyValue": "={{ $('Parse Approval').first().json.cycleKey }}"
+              "keyValue": "={{ $('Approval Form').first().json.cycle_id }}"
             }
           ]
         },
@@ -1125,7 +1034,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        1120,
+        896,
         816
       ],
       "executeOnce": true,
@@ -1144,24 +1053,24 @@
           "conditions": [
             {
               "keyName": "cycleKey",
-              "keyValue": "={{ $('Parse Approval').first().json.cycleKey }}"
+              "keyValue": "={{ $('Approval Form').first().json.cycle_id }}"
             }
           ]
         },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "cycleKey": "={{ $('Parse Approval').first().json.cycleKey }}",
-            "task_id": "={{ Number($('Parse Approval').first().json.task_id || $('Get Approval Rows').first().json.task_id) }}",
-            "cycle_id": "={{ $('Parse Approval').first().json.cycle_id }}",
+            "cycleKey": "={{ $('Approval Form').first().json.cycle_id }}",
+            "task_id": "={{ Number(($('Approval Form').first().json.task_id ?? $('Approval Form').first().json.query?.task_id) || $('Get Approval Rows').first().json.task_id) }}",
+            "cycle_id": "={{ $('Approval Form').first().json.cycle_id }}",
             "document_id": "={{ $('Get Approval Rows').first().json.document_id }}",
             "author_username": "={{ $('Get Approval Rows').first().json.author_username }}",
-            "artistic_decision": "={{ $('Parse Approval').first().json.role === 'artistic' ? $('Parse Approval').first().json.decision : ($('Get Approval Rows').first().json.artistic_decision ?? 'PENDING') }}",
-            "artistic_reason": "={{ $('Parse Approval').first().json.role === 'artistic' ? $('Parse Approval').first().json.reason : $('Get Approval Rows').first().json.artistic_reason }}",
-            "artistic_at": "={{ $('Parse Approval').first().json.role === 'artistic' ? $now.toISO() : $('Get Approval Rows').first().json.artistic_at }}",
-            "technical_decision": "={{ $('Parse Approval').first().json.role === 'technical' ? $('Parse Approval').first().json.decision : ($('Get Approval Rows').first().json.technical_decision ?? 'PENDING') }}",
-            "technical_reason": "={{ $('Parse Approval').first().json.role === 'technical' ? $('Parse Approval').first().json.reason : $('Get Approval Rows').first().json.technical_reason }}",
-            "technical_at": "={{ $('Parse Approval').first().json.role === 'technical' ? $now.toISO() : $('Get Approval Rows').first().json.technical_at }}"
+            "artistic_decision": "={{ $('Approval Form').first().json.role === 'artistic' ? String($('Approval Form').first().json.decision).toUpperCase() : ($('Get Approval Rows').first().json.artistic_decision ?? 'PENDING') }}",
+            "artistic_reason": "={{ $('Approval Form').first().json.role === 'artistic' ? $('Approval Form').first().json.reason : $('Get Approval Rows').first().json.artistic_reason }}",
+            "artistic_at": "={{ $('Approval Form').first().json.role === 'artistic' ? $now.toISO() : $('Get Approval Rows').first().json.artistic_at }}",
+            "technical_decision": "={{ $('Approval Form').first().json.role === 'technical' ? String($('Approval Form').first().json.decision).toUpperCase() : ($('Get Approval Rows').first().json.technical_decision ?? 'PENDING') }}",
+            "technical_reason": "={{ $('Approval Form').first().json.role === 'technical' ? $('Approval Form').first().json.reason : $('Get Approval Rows').first().json.technical_reason }}",
+            "technical_at": "={{ $('Approval Form').first().json.role === 'technical' ? $now.toISO() : $('Get Approval Rows').first().json.technical_at }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -1286,7 +1195,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        1792,
+        1568,
         816
       ]
     },
@@ -1316,7 +1225,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2016,
+        1792,
         816
       ]
     },
@@ -1331,7 +1240,7 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        2240,
+        2016,
         800
       ]
     },
@@ -1355,7 +1264,7 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        2464,
+        2240,
         816
       ],
       "credentials": {
@@ -1375,7 +1284,7 @@
           "value": "add_task_comment"
         },
         "inputMode": "json",
-        "jsonInput": "={{ { task_id: Number($('Parse Approval').first().json.task_id || ($('Get Approval Rows').first().json || {}).task_id || 0), text: \"Both stamps received. Task approved and closed.\" } }}",
+        "jsonInput": "={{ { task_id: Number(($('Approval Form').first().json.task_id ?? $('Approval Form').first().json.query?.task_id) || ($('Get Approval Rows').first().json || {}).task_id || 0), text: \"Both stamps received. Task approved and closed.\" } }}",
         "options": {
           "timeout": 60000
         }
@@ -1385,7 +1294,7 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        2688,
+        2464,
         816
       ],
       "credentials": {
@@ -1407,7 +1316,7 @@
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,
       "position": [
-        2912,
+        2688,
         816
       ],
       "webhookId": "0dcb0616-266e-44f7-8d5f-8b6bd922d3d8"
@@ -1458,7 +1367,7 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        2464,
+        2240,
         1008
       ],
       "credentials": {
@@ -1478,7 +1387,7 @@
           "value": "add_task_comment"
         },
         "inputMode": "json",
-        "jsonInput": "={{ { task_id: Number($('Parse Approval').first().json.task_id || ($('Get Approval Rows').first().json || {}).task_id || 0), text: \"Validation incomplete or rejected. Please fix the document and resubmit.\" } }}",
+        "jsonInput": "={{ { task_id: Number(($('Approval Form').first().json.task_id ?? $('Approval Form').first().json.query?.task_id) || ($('Get Approval Rows').first().json || {}).task_id || 0), text: \"Validation incomplete or rejected. Please fix the document and resubmit.\" } }}",
         "options": {
           "timeout": 60000
         }
@@ -1488,7 +1397,7 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        2688,
+        2464,
         1008
       ],
       "credentials": {
@@ -1510,7 +1419,7 @@
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,
       "position": [
-        2912,
+        2688,
         1008
       ],
       "webhookId": "76b51de0-a619-4786-8102-975f49a7cd47"
@@ -1527,10 +1436,74 @@
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,
       "position": [
-        2464,
+        2240,
         624
       ],
       "webhookId": "ee90b6bb-d515-46ee-9012-b20161b9b4b3"
+    },
+    {
+      "parameters": {
+        "formTitle": "WF02 — Validation stamp",
+        "formDescription": "<p>Context is pre-filled from your task link. Choose <strong>Approved</strong> or <strong>Rejected</strong>. If you reject, add a <strong>reason</strong> (it is copied to the task).</p><p>The task stays <em>In progress</em> until both stamps are <strong>Approved</strong>.</p>",
+        "formFields": {
+          "values": [
+            {
+              "fieldType": "hiddenField",
+              "fieldName": "task_id"
+            },
+            {
+              "fieldType": "hiddenField",
+              "fieldName": "cycle_id"
+            },
+            {
+              "fieldType": "hiddenField",
+              "fieldName": "role"
+            },
+            {
+              "fieldType": "hiddenField",
+              "fieldName": "actor"
+            },
+            {
+              "fieldLabel": "Decision",
+              "fieldType": "radio",
+              "fieldName": "decision",
+              "defaultValue": "Approved",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Approved"
+                  },
+                  {
+                    "option": "Rejected"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Reason",
+              "fieldType": "textarea",
+              "fieldName": "reason",
+              "placeholder": "Required when rejecting; optional when approving"
+            }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": {
+          "appendAttribution": false,
+          "buttonLabel": "Submit decision",
+          "path": "wf02-doc-validation/approve"
+        }
+      },
+      "id": "e08bc8c4-3ef3-468b-9f43-1314eb143cc6",
+      "name": "Approval Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        224,
+        912
+      ],
+      "webhookId": "ca8ca31c-e44a-4cb4-8e8f-14b7db56958a"
     }
   ],
   "connections": {
@@ -1709,28 +1682,6 @@
         ]
       ]
     },
-    "Approval Form Trigger": {
-      "main": [
-        [
-          {
-            "node": "Parse Approval",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Parse Approval": {
-      "main": [
-        [
-          {
-            "node": "IF Valid Approval",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "IF Valid Approval": {
       "main": [
         [
@@ -1872,6 +1823,17 @@
           }
         ]
       ]
+    },
+    "Approval Form": {
+      "main": [
+        [
+          {
+            "node": "IF Valid Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -1888,9 +1850,9 @@
   },
   "meta": null,
   "pinData": {},
-  "versionId": "22db29fa-79de-45a6-b8bb-2f969d875d7b",
-  "activeVersionId": "48f01de5-0fa7-4561-af0d-72697636725a",
-  "versionCounter": 167,
+  "versionId": "8559b435-8d1b-4c1b-a64d-be1bc011e3f4",
+  "activeVersionId": "d5f6438d-eba1-44e0-b846-7a3d9e641d37",
+  "versionCounter": 200,
   "triggerCount": 2,
   "shared": [
     {
@@ -1913,9 +1875,9 @@
   ],
   "tags": [],
   "activeVersion": {
-    "updatedAt": "2026-05-11T17:05:46.067Z",
-    "createdAt": "2026-05-11T17:05:46.067Z",
-    "versionId": "48f01de5-0fa7-4561-af0d-72697636725a",
+    "updatedAt": "2026-05-11T20:54:18.738Z",
+    "createdAt": "2026-05-11T20:54:18.738Z",
+    "versionId": "d5f6438d-eba1-44e0-b846-7a3d9e641d37",
     "workflowId": "vwTQX2yxbgCh3kaG",
     "nodes": [
       {
@@ -2034,7 +1996,7 @@
         "type": "n8n-nodes-base.dataTable",
         "typeVersion": 1.1,
         "position": [
-          2016,
+          2240,
           256
         ],
         "executeOnce": true,
@@ -2092,7 +2054,7 @@
         "type": "n8n-nodes-base.dataTable",
         "typeVersion": 1.1,
         "position": [
-          1120,
+          896,
           816
         ],
         "executeOnce": true,
@@ -2482,7 +2444,7 @@
         "type": "@n8n/n8n-nodes-langchain.mcpClient",
         "typeVersion": 1,
         "position": [
-          1904,
+          2016,
           256
         ],
         "credentials": {
@@ -2504,7 +2466,7 @@
           "parameters": {
             "mappingMode": "defineBelow",
             "value": {
-              "task_id": "={{ Number($('Parse Approval').first().json.task_id || ($('Get Approval Rows').first().json || {}).task_id || 0) }}",
+              "task_id": "={{ Number(($('Approval Form').first().json.task_id ?? $('Approval Form').first().json.query?.task_id) || ($('Get Approval Rows').first().json || {}).task_id || 0) }}",
               "status_id": 6
             },
             "matchingColumns": [],
@@ -2538,7 +2500,7 @@
         "type": "@n8n/n8n-nodes-langchain.mcpClient",
         "typeVersion": 1,
         "position": [
-          2016,
+          1568,
           816
         ],
         "credentials": {
@@ -2702,7 +2664,7 @@
         "type": "n8n-nodes-base.dataTable",
         "typeVersion": 1.1,
         "position": [
-          2240,
+          2464,
           256
         ]
       },
@@ -2772,125 +2734,8 @@
         "type": "n8n-nodes-base.dataTable",
         "typeVersion": 1.1,
         "position": [
-          2464,
+          2688,
           256
-        ]
-      },
-      {
-        "parameters": {
-          "formTitle": "WF02 — Validation stamp",
-          "formDescription": "<p>Context is pre-filled from your task link. Choose <strong>Approved</strong> or <strong>Rejected</strong>. If you reject, add a <strong>reason</strong> (it is copied to the task).</p><p>The task stays <em>In progress</em> until both stamps are <strong>Approved</strong>.</p>",
-          "formFields": {
-            "values": [
-              {
-                "fieldType": "hiddenField",
-                "fieldName": "task_id"
-              },
-              {
-                "fieldType": "hiddenField",
-                "fieldName": "cycle_id"
-              },
-              {
-                "fieldType": "hiddenField",
-                "fieldName": "role"
-              },
-              {
-                "fieldType": "hiddenField",
-                "fieldName": "actor"
-              },
-              {
-                "fieldLabel": "Decision",
-                "fieldType": "radio",
-                "fieldName": "decision",
-                "defaultValue": "Approved",
-                "fieldOptions": {
-                  "values": [
-                    {
-                      "option": "Approved"
-                    },
-                    {
-                      "option": "Rejected"
-                    }
-                  ]
-                },
-                "requiredField": true
-              },
-              {
-                "fieldLabel": "Reason",
-                "fieldType": "textarea",
-                "fieldName": "reason",
-                "placeholder": "Required when rejecting; optional when approving"
-              }
-            ]
-          },
-          "responseMode": "lastNode",
-          "options": {
-            "appendAttribution": false,
-            "buttonLabel": "Submit decision",
-            "path": "wf02-doc-validation/approve"
-          }
-        },
-        "id": "e08bc8c4-3ef3-468b-9f43-1314eb143cc6",
-        "name": "Approval Form Trigger",
-        "type": "n8n-nodes-base.formTrigger",
-        "typeVersion": 2.5,
-        "position": [
-          224,
-          1008
-        ],
-        "webhookId": "ca8ca31c-e44a-4cb4-8e8f-14b7db56958a"
-      },
-      {
-        "parameters": {
-          "assignments": {
-            "assignments": [
-              {
-                "id": "task_id",
-                "name": "task_id",
-                "value": "={{ Number($json.task_id ?? $json.query?.task_id) }}",
-                "type": "number"
-              },
-              {
-                "id": "cycle_id",
-                "name": "cycle_id",
-                "value": "={{ $json.cycle_id }}",
-                "type": "string"
-              },
-              {
-                "id": "role",
-                "name": "role",
-                "value": "={{ $json.role }}",
-                "type": "string"
-              },
-              {
-                "id": "decision",
-                "name": "decision",
-                "value": "={{ String($json.decision).toUpperCase() }}",
-                "type": "string"
-              },
-              {
-                "id": "reason",
-                "name": "reason",
-                "value": "={{ $json.reason ?? '' }}",
-                "type": "string"
-              },
-              {
-                "id": "cycleKey",
-                "name": "cycleKey",
-                "value": "={{ $json.cycle_id }}",
-                "type": "string"
-              }
-            ]
-          },
-          "options": {}
-        },
-        "id": "349ac036-e76f-43fb-9df4-2d126eaabc50",
-        "name": "Parse Approval",
-        "type": "n8n-nodes-base.set",
-        "typeVersion": 3.4,
-        "position": [
-          448,
-          1008
         ]
       },
       {
@@ -2933,7 +2778,7 @@
               },
               {
                 "id": "decision_allowed",
-                "leftValue": "={{ ['APPROVED', 'REJECTED'].includes($json.decision) }}",
+                "leftValue": "={{ ['APPROVED', 'REJECTED'].includes(String($json.decision).toUpperCase()) }}",
                 "rightValue": true,
                 "operator": {
                   "type": "boolean",
@@ -2943,7 +2788,7 @@
               },
               {
                 "id": "reject_reason_if_rejected",
-                "leftValue": "={{ $json.decision !== 'REJECTED' || Boolean($json.reason?.trim()) }}",
+                "leftValue": "={{ String($json.decision).toUpperCase() !== 'REJECTED' || Boolean($json.reason?.trim()) }}",
                 "rightValue": true,
                 "operator": {
                   "type": "boolean",
@@ -2962,7 +2807,7 @@
         "typeVersion": 2.3,
         "position": [
           672,
-          1008
+          912
         ]
       },
       {
@@ -2978,7 +2823,7 @@
         "typeVersion": 2.5,
         "position": [
           896,
-          1104
+          1008
         ],
         "webhookId": "ad128407-b9af-4701-9e0c-f6481e175fd7"
       },
@@ -2991,8 +2836,34 @@
             "mode": "id",
             "value": "add_task_comment"
           },
-          "inputMode": "json",
-          "jsonInput": "={{ { task_id: Number($('Parse Approval').first().json.task_id || $('Get Approval Rows').first().json.task_id || 0), text: \"Stamp \" + $('Parse Approval').first().json.role + \": \" + $('Parse Approval').first().json.decision + ($('Parse Approval').first().json.reason ? (\". Reason: \" + $('Parse Approval').first().json.reason) : \"\") } }}",
+          "parameters": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "task_id": "={{ Number(($('Approval Form').first().json.task_id ?? $('Approval Form').first().json.query?.task_id) || $('Get Approval Rows').first().json.task_id || 0) }}",
+              "text": "={{ 'Stamp ' + $('Approval Form').first().json.role + ': ' + String($('Approval Form').first().json.decision).toUpperCase() + ($('Approval Form').first().json.reason ? ('. Reason: ' + $('Approval Form').first().json.reason) : '') }}"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "task_id",
+                "displayName": "task_id",
+                "defaultMatch": false,
+                "required": true,
+                "display": true,
+                "type": "number"
+              },
+              {
+                "id": "text",
+                "displayName": "text",
+                "defaultMatch": false,
+                "required": true,
+                "display": true,
+                "type": "string"
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
           "options": {
             "timeout": 60000
           }
@@ -3002,7 +2873,7 @@
         "type": "@n8n/n8n-nodes-langchain.mcpClient",
         "typeVersion": 1,
         "position": [
-          1792,
+          1344,
           816
         ],
         "credentials": {
@@ -3025,12 +2896,10 @@
             "conditions": [
               {
                 "keyName": "cycleKey",
-                "condition": "eq",
-                "keyValue": "={{ $('Parse Approval').first().json.cycleKey }}"
+                "keyValue": "={{ $('Approval Form').first().json.cycle_id }}"
               }
             ]
           },
-          "returnAll": false,
           "limit": 1
         },
         "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00011",
@@ -3038,7 +2907,7 @@
         "type": "n8n-nodes-base.dataTable",
         "typeVersion": 1.1,
         "position": [
-          1344,
+          1120,
           816
         ],
         "executeOnce": true,
@@ -3057,24 +2926,24 @@
             "conditions": [
               {
                 "keyName": "cycleKey",
-                "keyValue": "={{ $('Parse Approval').first().json.cycleKey }}"
+                "keyValue": "={{ $('Approval Form').first().json.cycle_id }}"
               }
             ]
           },
           "columns": {
             "mappingMode": "defineBelow",
             "value": {
-              "cycleKey": "={{ $('Parse Approval').first().json.cycleKey }}",
-              "task_id": "={{ Number($('Parse Approval').first().json.task_id || $('Get Approval Rows').first().json.task_id) }}",
-              "cycle_id": "={{ $('Parse Approval').first().json.cycle_id }}",
+              "cycleKey": "={{ $('Approval Form').first().json.cycle_id }}",
+              "task_id": "={{ Number(($('Approval Form').first().json.task_id ?? $('Approval Form').first().json.query?.task_id) || $('Get Approval Rows').first().json.task_id) }}",
+              "cycle_id": "={{ $('Approval Form').first().json.cycle_id }}",
               "document_id": "={{ $('Get Approval Rows').first().json.document_id }}",
               "author_username": "={{ $('Get Approval Rows').first().json.author_username }}",
-              "artistic_decision": "={{ $('Parse Approval').first().json.role === 'artistic' ? $('Parse Approval').first().json.decision : ($('Get Approval Rows').first().json.artistic_decision ?? 'PENDING') }}",
-              "artistic_reason": "={{ $('Parse Approval').first().json.role === 'artistic' ? $('Parse Approval').first().json.reason : $('Get Approval Rows').first().json.artistic_reason }}",
-              "artistic_at": "={{ $('Parse Approval').first().json.role === 'artistic' ? $now.toISO() : $('Get Approval Rows').first().json.artistic_at }}",
-              "technical_decision": "={{ $('Parse Approval').first().json.role === 'technical' ? $('Parse Approval').first().json.decision : ($('Get Approval Rows').first().json.technical_decision ?? 'PENDING') }}",
-              "technical_reason": "={{ $('Parse Approval').first().json.role === 'technical' ? $('Parse Approval').first().json.reason : $('Get Approval Rows').first().json.technical_reason }}",
-              "technical_at": "={{ $('Parse Approval').first().json.role === 'technical' ? $now.toISO() : $('Get Approval Rows').first().json.technical_at }}"
+              "artistic_decision": "={{ $('Approval Form').first().json.role === 'artistic' ? String($('Approval Form').first().json.decision).toUpperCase() : ($('Get Approval Rows').first().json.artistic_decision ?? 'PENDING') }}",
+              "artistic_reason": "={{ $('Approval Form').first().json.role === 'artistic' ? $('Approval Form').first().json.reason : $('Get Approval Rows').first().json.artistic_reason }}",
+              "artistic_at": "={{ $('Approval Form').first().json.role === 'artistic' ? $now.toISO() : $('Get Approval Rows').first().json.artistic_at }}",
+              "technical_decision": "={{ $('Approval Form').first().json.role === 'technical' ? String($('Approval Form').first().json.decision).toUpperCase() : ($('Get Approval Rows').first().json.technical_decision ?? 'PENDING') }}",
+              "technical_reason": "={{ $('Approval Form').first().json.role === 'technical' ? $('Approval Form').first().json.reason : $('Get Approval Rows').first().json.technical_reason }}",
+              "technical_at": "={{ $('Approval Form').first().json.role === 'technical' ? $now.toISO() : $('Get Approval Rows').first().json.technical_at }}"
             },
             "matchingColumns": [],
             "schema": [
@@ -3199,32 +3068,29 @@
         "type": "n8n-nodes-base.dataTable",
         "typeVersion": 1.1,
         "position": [
-          2240,
+          1792,
           816
         ]
       },
       {
         "parameters": {
-          "mode": "manual",
-          "duplicateItem": false,
           "assignments": {
             "assignments": [
               {
                 "id": "eff-art",
                 "name": "effectiveArtistic",
-                "value": "={{ String($json.artistic_decision || 'PENDING') }}",
+                "value": "={{ $json.artistic_decision ?? 'PENDING' }}",
                 "type": "string"
               },
               {
                 "id": "eff-tech",
                 "name": "effectiveTechnical",
-                "value": "={{ String($json.technical_decision || 'PENDING') }}",
+                "value": "={{ $json.technical_decision ?? 'PENDING' }}",
                 "type": "string"
               }
             ]
           },
           "includeOtherFields": true,
-          "include": "all",
           "options": {}
         },
         "id": "c4d8e1f2-5a6b-4c7d-9e0f-1a2b3c4d5e6f",
@@ -3232,7 +3098,7 @@
         "type": "n8n-nodes-base.set",
         "typeVersion": 3.4,
         "position": [
-          2464,
+          2016,
           816
         ]
       },
@@ -3240,16 +3106,15 @@
         "parameters": {
           "mode": "expression",
           "numberOutputs": 3,
-          "output": "={{ $json.effectiveArtistic === 'PENDING' || $json.effectiveTechnical === 'PENDING' ? 0 : ($json.effectiveArtistic === 'APPROVED' && $json.effectiveTechnical === 'APPROVED' ? 1 : 2) }}",
-          "options": {}
+          "output": "={{ $json.effectiveArtistic === 'PENDING' || $json.effectiveTechnical === 'PENDING' ? 0 : ($json.effectiveArtistic === 'APPROVED' && $json.effectiveTechnical === 'APPROVED' ? 1 : 2) }}"
         },
         "id": "f3a8b2c1-4d9e-4a1f-9b2c-7e8d6f5a4b3c",
         "name": "Switch Approval Outcome",
         "type": "n8n-nodes-base.switch",
         "typeVersion": 3.2,
         "position": [
-          2912,
-          816
+          2240,
+          800
         ]
       },
       {
@@ -3272,8 +3137,8 @@
         "type": "@n8n/n8n-nodes-langchain.mcpClient",
         "typeVersion": 1,
         "position": [
-          3136,
-          624
+          2464,
+          816
         ],
         "credentials": {
           "mcpOAuth2Api": {
@@ -3292,7 +3157,7 @@
             "value": "add_task_comment"
           },
           "inputMode": "json",
-          "jsonInput": "={{ { task_id: Number($('Parse Approval').first().json.task_id || ($('Get Approval Rows').first().json || {}).task_id || 0), text: \"Both stamps received. Task approved and closed.\" } }}",
+          "jsonInput": "={{ { task_id: Number(($('Approval Form').first().json.task_id ?? $('Approval Form').first().json.query?.task_id) || ($('Get Approval Rows').first().json || {}).task_id || 0), text: \"Both stamps received. Task approved and closed.\" } }}",
           "options": {
             "timeout": 60000
           }
@@ -3302,8 +3167,8 @@
         "type": "@n8n/n8n-nodes-langchain.mcpClient",
         "typeVersion": 1,
         "position": [
-          3360,
-          624
+          2688,
+          816
         ],
         "credentials": {
           "mcpOAuth2Api": {
@@ -3324,8 +3189,8 @@
         "type": "n8n-nodes-base.form",
         "typeVersion": 2.5,
         "position": [
-          3584,
-          624
+          2912,
+          816
         ],
         "webhookId": "0dcb0616-266e-44f7-8d5f-8b6bd922d3d8"
       },
@@ -3375,8 +3240,8 @@
         "type": "@n8n/n8n-nodes-langchain.mcpClient",
         "typeVersion": 1,
         "position": [
-          3136,
-          816
+          2464,
+          1008
         ],
         "credentials": {
           "mcpOAuth2Api": {
@@ -3395,7 +3260,7 @@
             "value": "add_task_comment"
           },
           "inputMode": "json",
-          "jsonInput": "={{ { task_id: Number($('Parse Approval').first().json.task_id || ($('Get Approval Rows').first().json || {}).task_id || 0), text: \"Validation incomplete or rejected. Please fix the document and resubmit.\" } }}",
+          "jsonInput": "={{ { task_id: Number(($('Approval Form').first().json.task_id ?? $('Approval Form').first().json.query?.task_id) || ($('Get Approval Rows').first().json || {}).task_id || 0), text: \"Validation incomplete or rejected. Please fix the document and resubmit.\" } }}",
           "options": {
             "timeout": 60000
           }
@@ -3405,8 +3270,8 @@
         "type": "@n8n/n8n-nodes-langchain.mcpClient",
         "typeVersion": 1,
         "position": [
-          3360,
-          816
+          2688,
+          1008
         ],
         "credentials": {
           "mcpOAuth2Api": {
@@ -3427,8 +3292,8 @@
         "type": "n8n-nodes-base.form",
         "typeVersion": 2.5,
         "position": [
-          3584,
-          816
+          2912,
+          1008
         ],
         "webhookId": "76b51de0-a619-4786-8102-975f49a7cd47"
       },
@@ -3444,10 +3309,74 @@
         "type": "n8n-nodes-base.form",
         "typeVersion": 2.5,
         "position": [
-          2912,
-          912
+          2464,
+          624
         ],
         "webhookId": "ee90b6bb-d515-46ee-9012-b20161b9b4b3"
+      },
+      {
+        "parameters": {
+          "formTitle": "WF02 — Validation stamp",
+          "formDescription": "<p>Context is pre-filled from your task link. Choose <strong>Approved</strong> or <strong>Rejected</strong>. If you reject, add a <strong>reason</strong> (it is copied to the task).</p><p>The task stays <em>In progress</em> until both stamps are <strong>Approved</strong>.</p>",
+          "formFields": {
+            "values": [
+              {
+                "fieldType": "hiddenField",
+                "fieldName": "task_id"
+              },
+              {
+                "fieldType": "hiddenField",
+                "fieldName": "cycle_id"
+              },
+              {
+                "fieldType": "hiddenField",
+                "fieldName": "role"
+              },
+              {
+                "fieldType": "hiddenField",
+                "fieldName": "actor"
+              },
+              {
+                "fieldLabel": "Decision",
+                "fieldType": "radio",
+                "fieldName": "decision",
+                "defaultValue": "Approved",
+                "fieldOptions": {
+                  "values": [
+                    {
+                      "option": "Approved"
+                    },
+                    {
+                      "option": "Rejected"
+                    }
+                  ]
+                },
+                "requiredField": true
+              },
+              {
+                "fieldLabel": "Reason",
+                "fieldType": "textarea",
+                "fieldName": "reason",
+                "placeholder": "Required when rejecting; optional when approving"
+              }
+            ]
+          },
+          "responseMode": "lastNode",
+          "options": {
+            "appendAttribution": false,
+            "buttonLabel": "Submit decision",
+            "path": "wf02-doc-validation/approve"
+          }
+        },
+        "id": "e08bc8c4-3ef3-468b-9f43-1314eb143cc6",
+        "name": "Approval Form",
+        "type": "n8n-nodes-base.formTrigger",
+        "typeVersion": 2.5,
+        "position": [
+          224,
+          912
+        ],
+        "webhookId": "ca8ca31c-e44a-4cb4-8e8f-14b7db56958a"
       }
     ],
     "connections": {
@@ -3626,28 +3555,6 @@
           ]
         ]
       },
-      "Approval Form Trigger": {
-        "main": [
-          [
-            {
-              "node": "Parse Approval",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Parse Approval": {
-        "main": [
-          [
-            {
-              "node": "IF Valid Approval",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
       "IF Valid Approval": {
         "main": [
           [
@@ -3789,6 +3696,17 @@
             }
           ]
         ]
+      },
+      "Approval Form": {
+        "main": [
+          [
+            {
+              "node": "IF Valid Approval",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
       }
     },
     "authors": "Meeds Lab ",
@@ -3797,10 +3715,10 @@
     "autosaved": false,
     "workflowPublishHistory": [
       {
-        "createdAt": "2026-05-11T17:05:46.528Z",
-        "id": 142,
+        "createdAt": "2026-05-11T20:54:19.053Z",
+        "id": 156,
         "workflowId": "vwTQX2yxbgCh3kaG",
-        "versionId": "48f01de5-0fa7-4561-af0d-72697636725a",
+        "versionId": "d5f6438d-eba1-44e0-b846-7a3d9e641d37",
         "event": "activated",
         "userId": "8de64810-3c63-4fd1-969c-9915f88c784a"
       }
