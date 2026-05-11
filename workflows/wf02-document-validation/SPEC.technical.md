@@ -114,27 +114,21 @@ Other unused optional tool parameters remain in `schema` with **`removed: true`*
 2. **Branch A:** **`MCP Search Folder Docs`** → **`Split Out Documents`** on **`content[0].text`** (one item per search hit; see §3.3).
 3. **`Merge Docs to Process`** — SQL **`combineBySql`** joins when both branches have supplied data: **input1** = split rows from branch A, **input2** = processed-doc rows from branch B (`documentId`, `lastProcessedDate`, …); see §3.3 for column names and aliases.
 4. **`MCP Get Document By ID`** — raw MCP item (**`content[0].text`** …); **no UTIL** on this hop (§3.2).
-5. **`Render Task Description HTML`** — reads **`$('MCP Get Document By ID')`** with **`$('Merge Docs to Process')`** fallbacks for links/cycle text.
+5. **`Build Task Description Context`** then **`Render Task Description HTML`** — task body includes document context and **approval URLs built before the task exists**, so those URLs contain **`cycle_id`**, **`role`**, and **`actor`** only (no eXo **`task_id`** yet).
 6. **`MCP Create Task`** — **`create_task_in_project`** mapping per §3.5 (`project_id` literal + **`WF02_PROJECT_ID`** injection from **`.env`** when present).
-7. **`Unwrap MCP Create Task`** → **`Extract Task ID`** (**`task_id`** from UTIL **`payload`**; **`cycle_id`**, **`document_id`**, **`author_username`** from **`Merge Docs to Process`**).
-8. Guard `task_id`; stop with explicit error when missing.
-9. Move task to `WF02_INPROGRESS_STATUS_ID`.
-10. Add initial comment containing approval form links.
-11. **`Ensure Approvals Table (intake)`** (`createIfNotExists`, **`executeOnce`**) immediately before **`Seed Approval Row`**, then update `wf02_processed_documents`.
+7. **`MCP Post Approval Form Links`** — **`add_task_comment`** right after create: HTML comment whose links repeat the same **`cycle_id`** / roles but add **`task_id=`** from **`MCP Create Task`** output. Approvers should prefer these links (or any URL that includes **`task_id`**) so the Form hidden field is populated.
+8. **`Ensure Approvals Table (intake)`** (`createIfNotExists`, **`executeOnce`**) immediately before **`Seed Approval Row`** (Data Table row stores **`task_id`** from **`MCP Create Task`**), then **`Update Tracking Doc`** for `wf02_processed_documents`.
 
 ### 4.2 Approval form branch (`/form/.../approve`)
 
-1. Form receives `task_id`, `cycle_id`, `role`, `actor`, `decision`, optional `reason`.
-2. Parse and normalize (`role` lowercased, decision enum normalization).
-3. Validate payload and required reject reason.
-4. Add decision comment to task.
-5. **`Ensure Approvals Table (form branch)`** (`createIfNotExists`, **`executeOnce`**) immediately before **`Get Approval Rows`** (covers cold-start form submissions if the approvals table was never created on intake).
-6. Read current approval row and merge the new stamp.
-7. Upsert merged row into `wf02_approvals`.
-8. Compute `joinReady` and `bothApproved`.
-9. If not join-ready: return pending form completion.
-10. If both approved: set `WF02_DONE_STATUS_ID` + final approved comment.
-11. Else: keep `WF02_INPROGRESS_STATUS_ID` + final rejected comment.
+1. Form receives `task_id`, `cycle_id`, `role`, `actor`, `decision`, optional `reason`. Hidden **`task_id`** is only reliable when the opened URL includes **`task_id`** as a query parameter (see **`MCP Post Approval Form Links`** in §4.1).
+2. **`Parse Approval`** maps the submitted item to typed fields: **`Number($json.task_id ?? $json.query?.task_id)`**, **`$json.cycle_id`**, **`$json.role`**, **`String($json.decision).toUpperCase()`**, **`$json.reason ?? ''`**, **`cycleKey`** = **`$json.cycle_id`**.
+3. Validate payload and required reject reason (single **`IF Valid Approval`** gate).
+4. **`Ensure Approvals Table (form branch)`** (`createIfNotExists`, **`executeOnce`**) immediately before **`Get Approval Rows`** (covers cold-start form submissions if the approvals table was never created on intake).
+5. **`Get Approval Rows`** — Data Table **Get** with a single filter: `cycleKey` **equals** the value from **`Parse Approval`** (`cycleKey` / `cycle_id`). It must match the row written at intake (**`Seed Approval Row`**) and the `cycle_id` query parameter on approval links. If keys differ (double-encoding, manual edits), the row will not load and downstream behavior degrades.
+6. **`MCP Add Decision Comment`**, **`MCP Set Task In Progress`**, and **`Upsert Approval Row`** read fields from **`Parse Approval`** and **`Get Approval Rows`**. **`Upsert`** **`task_id`** uses **`Parse Approval`** first, then falls back to **`Get Approval Rows`** so an empty form **`task_id`** does not overwrite the seeded row with **`0`**.
+7. **`Set Effective Decisions`** — **`n8n-nodes-base.set`** immediately after **`Upsert Approval Row`**, with **`includeOtherFields`** so the Data Table row (including **`task_id`**) stays on the item. Two string fields: **`effectiveArtistic`** and **`effectiveTechnical`** from `$json.artistic_decision ?? 'PENDING'` and `$json.technical_decision ?? 'PENDING'` (post-upsert merged values, aligned with Upsert column mappings).
+8. **`Switch Approval Outcome`** — **`n8n-nodes-base.switch`** in **expression** mode with **3 outputs** (`numberOutputs: 3`). The `output` expression reads **`$json.effectiveArtistic`** / **`$json.effectiveTechnical`**: **`PENDING` on either lane → 0**; **both `APPROVED` → 1**; **else → 2**. **Output 0** → **Form End - Pending**; **output 1** → **`MCP Set Done`** + approved final comment + **Form End - Approved**; **output 2** → **`MCP Keep InProgress`** + rejected final comment + **Form End - Rejected**.
 
 ## 5) Data and mappings
 
@@ -155,10 +149,11 @@ Other unused optional tool parameters remain in `schema` with **`removed: true`*
 
 ### 5.2 Approval payload mapping
 
-- `role` must resolve to `artistic` or `technical` (case-insensitive).
-- `decision` must resolve to `APPROVED` or `REJECTED`.
+- `role` must be exactly `artistic` or `technical` (as pre-filled by the task links).
+- `decision` is accepted only as **`APPROVED`** or **`REJECTED`** after **`Parse Approval`** (canonical radio values are uppercased from the form submission).
 - Rejected decisions require a non-empty reason.
 - Join rule: close only when both role decisions are `APPROVED`.
+- **`cycleKey` contract:** the approval link `cycle_id` (and `cycleKey` after **`Parse Approval`**) must be **byte-identical** to the `cycleKey` stored in **`wf02_approvals`** at seed time. **`Get Approval Rows`** filters with `eq` on that column; tolerant decoding or alternate key shapes are intentionally not applied in downstream expressions.
 
 ### 5.3 Status mapping
 

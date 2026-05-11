@@ -1,10 +1,10 @@
 {
-  "updatedAt": "2026-05-08T08:35:52.303Z",
+  "updatedAt": "2026-05-11T17:06:29.443Z",
   "createdAt": "2026-05-07T14:30:33.862Z",
   "id": "vwTQX2yxbgCh3kaG",
   "name": "WF02 - Document validation (split / join)",
   "description": null,
-  "active": false,
+  "active": true,
   "isArchived": false,
   "nodes": [
     {
@@ -181,7 +181,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        1120,
+        896,
         816
       ],
       "executeOnce": true,
@@ -346,7 +346,7 @@
     },
     {
       "parameters": {
-        "html": "<div><p><strong>Source document:</strong> <a href=\"{{ $json.doc_url }}\" target=\"_blank\" rel=\"noopener noreferrer\">{{ $json.doc_name }}</a></p><p><strong>Validation links:</strong></p><p><a href=\"{{ $json.artistic_link }}\" target=\"_top\" rel=\"noopener noreferrer\">Artistic stamp (Nadia)</a></p><p><a href=\"{{ $json.technical_link }}\" target=\"_top\" rel=\"noopener noreferrer\">Technical stamp (Etienne)</a></p><p>Rule: move to Done only when both stamps are APPROVED.</p></div>"
+        "html": "<div><p><strong>Source document:</strong> <a href=\"{{ $json.doc_url }}\" target=\"_blank\" rel=\"noopener noreferrer\">{{ $json.doc_name }}</a></p><p><strong>Validation links:</strong></p><p><a href=\"{{ $json.artistic_link }}\" target=\"_top\" rel=\"noopener noreferrer\">Artistic stamp (Nadia)</a></p><p><a href=\"{{ $json.technical_link }}\" target=\"_top\" rel=\"noopener noreferrer\">Technical stamp (Etienne)</a></p><p><em>Prefer the <strong>Stamp links</strong> task comment added right after creation: it includes <code>task_id</code> because the description is rendered before the task exists.</em></p><p>Rule: move to Done only when both stamps are APPROVED.</p></div>"
       },
       "id": "aa5b4f7c-41dd-4cce-85f1-9fa7756b7c1e",
       "name": "Render Task Description HTML",
@@ -558,12 +558,42 @@
         "tool": {
           "__rl": true,
           "mode": "id",
+          "value": "add_task_comment"
+        },
+        "inputMode": "json",
+        "jsonInput": "={{ (() => { const tid = Number($('MCP Create Task').item.json.content[0].text.task_id); const cyc = encodeURIComponent(String($('Merge Docs to Process').item.json.id) + ':' + String($('Merge Docs to Process').item.json.updatedDate)); const base = 'https://meeds.app.n8n.cloud/form/wf02-doc-validation/approve?cycle_id=' + cyc; const artistic = base + '&task_id=' + tid + '&role=artistic&actor=nadia'; const technical = base + '&task_id=' + tid + '&role=technical&actor=etienne'; const html = '<p><strong>Stamp links</strong> (task id included)</p><p><a href=\"' + artistic + '\" target=\"_blank\" rel=\"noopener noreferrer\">Artistic stamp (Nadia)</a></p><p><a href=\"' + technical + '\" target=\"_blank\" rel=\"noopener noreferrer\">Technical stamp (Etienne)</a></p>'; return { task_id: tid, text: html }; })() }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "b7e2a91c-3d44-4f8a-9c01-a4f5e8d2c103",
+      "name": "MCP Post Approval Form Links",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        1904,
+        256
+      ],
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "vaCQUg5NblUEOrlR",
+          "name": "EXO MIPS MCP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
+        "authentication": "mcpOAuth2Api",
+        "tool": {
+          "__rl": true,
+          "mode": "id",
           "value": "update_task_status"
         },
         "parameters": {
           "mappingMode": "defineBelow",
           "value": {
-            "task_id": "={{ Number($('Merge Decision').first().json.task_id) }}",
+            "task_id": "={{ Number($('Parse Approval').first().json.task_id || ($('Get Approval Rows').first().json || {}).task_id || 0) }}",
             "status_id": 6
           },
           "matchingColumns": [],
@@ -597,7 +627,7 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        2016,
+        1568,
         816
       ],
       "credentials": {
@@ -895,7 +925,7 @@
       "typeVersion": 2.5,
       "position": [
         224,
-        1008
+        912
       ],
       "webhookId": "ca8ca31c-e44a-4cb4-8e8f-14b7db56958a"
     },
@@ -906,37 +936,37 @@
             {
               "id": "task_id",
               "name": "task_id",
-              "value": "={{ Number($json.task_id ?? $json.body?.task_id ?? $json.query?.task_id ?? 0) }}",
+              "value": "={{ Number($json.task_id ?? $json.query?.task_id) }}",
               "type": "number"
             },
             {
               "id": "cycle_id",
               "name": "cycle_id",
-              "value": "={{ String($json.cycle_id ?? $json.body?.cycle_id ?? $json.query?.cycle_id ?? '') }}",
+              "value": "={{ $json.cycle_id }}",
               "type": "string"
             },
             {
               "id": "role",
               "name": "role",
-              "value": "={{ String($json.role ?? $json.body?.role ?? $json.query?.role ?? '').toLowerCase() }}",
+              "value": "={{ $json.role }}",
               "type": "string"
             },
             {
               "id": "decision",
               "name": "decision",
-              "value": "={{ (() => { const raw = String($json.decision ?? $json.body?.decision ?? $json.query?.decision ?? '').trim(); const u = raw.toUpperCase(); if (u === 'APPROVED' || u === 'REJECTED') return u; if (raw.toLowerCase() === 'approved') return 'APPROVED'; if (raw.toLowerCase() === 'rejected') return 'REJECTED'; return ''; })() }}",
+              "value": "={{ String($json.decision).toUpperCase() }}",
               "type": "string"
             },
             {
               "id": "reason",
               "name": "reason",
-              "value": "={{ String($json.reason ?? $json.body?.reason ?? $json.query?.reason ?? '') }}",
+              "value": "={{ $json.reason ?? '' }}",
               "type": "string"
             },
             {
               "id": "cycleKey",
               "name": "cycleKey",
-              "value": "={{ String($json.cycle_id ?? $json.body?.cycle_id ?? $json.query?.cycle_id ?? '') }}",
+              "value": "={{ $json.cycle_id }}",
               "type": "string"
             }
           ]
@@ -949,7 +979,7 @@
       "typeVersion": 3.4,
       "position": [
         448,
-        1008
+        912
       ]
     },
     {
@@ -973,11 +1003,12 @@
             },
             {
               "id": "role_set",
-              "leftValue": "={{$json.role}}",
-              "rightValue": "",
+              "leftValue": "={{ ['artistic', 'technical'].includes($json.role) }}",
+              "rightValue": true,
               "operator": {
-                "type": "string",
-                "operation": "notEmpty"
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
               }
             },
             {
@@ -1001,7 +1032,7 @@
             },
             {
               "id": "reject_reason_if_rejected",
-              "leftValue": "={{ $json.decision !== 'REJECTED' || String($json.reason ?? '').trim() !== '' }}",
+              "leftValue": "={{ $json.decision !== 'REJECTED' || Boolean($json.reason?.trim()) }}",
               "rightValue": true,
               "operator": {
                 "type": "boolean",
@@ -1020,7 +1051,7 @@
       "typeVersion": 2.3,
       "position": [
         672,
-        1008
+        912
       ]
     },
     {
@@ -1036,7 +1067,7 @@
       "typeVersion": 2.5,
       "position": [
         896,
-        1104
+        1008
       ],
       "webhookId": "ad128407-b9af-4701-9e0c-f6481e175fd7"
     },
@@ -1050,7 +1081,7 @@
           "value": "add_task_comment"
         },
         "inputMode": "json",
-        "jsonInput": "={{ { task_id: $json.task_id, text: \"Stamp \" + $json.role + \": \" + $json.decision + ($json.reason ? (\". Reason: \" + $json.reason) : \"\") } }}",
+        "jsonInput": "={{ { task_id: Number($('Parse Approval').first().json.task_id || $('Get Approval Rows').first().json.task_id || 0), text: \"Stamp \" + $('Parse Approval').first().json.role + \": \" + $('Parse Approval').first().json.decision + ($('Parse Approval').first().json.reason ? (\". Reason: \" + $('Parse Approval').first().json.reason) : \"\") } }}",
         "options": {
           "timeout": 60000
         }
@@ -1060,7 +1091,7 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        1792,
+        1344,
         816
       ],
       "credentials": {
@@ -1078,32 +1109,28 @@
           "mode": "name",
           "value": "wf02_approvals"
         },
-        "returnAll": true
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "cycleKey",
+              "keyValue": "={{ $('Parse Approval').first().json.cycleKey }}"
+            }
+          ]
+        },
+        "limit": 1
       },
       "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00011",
       "name": "Get Approval Rows",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        1344,
+        1120,
         816
       ],
       "executeOnce": true,
       "alwaysOutputData": true,
       "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
-        "jsCode": "const parse = $('Parse Approval').first();\nif (!parse || !parse.json) {\n  return [{ json: {} }];\n}\nconst pa = parse.json;\nconst cycleKeyRaw = String(pa.cycleKey ?? pa.cycle_id ?? '').trim();\nconst cycleIdRaw = String(pa.cycle_id ?? pa.cycleKey ?? '').trim();\nconst safeDecode = (s) => {\n  try {\n    return decodeURIComponent(s);\n  } catch {\n    return s;\n  }\n};\nconst norm = (s) => safeDecode(String(s ?? '').trim());\nconst cycleKeyNorm = norm(cycleKeyRaw);\nconst cycleIdNorm = norm(cycleIdRaw);\nconst rows = $('Get Approval Rows').all();\nlet found = {};\nfor (let i = 0; i < rows.length; i++) {\n  const j = rows[i].json || {};\n  const rowKey = String(j.cycleKey ?? '').trim();\n  const rowCycle = String(j.cycle_id ?? '').trim();\n  if (\n    rowKey === cycleKeyRaw ||\n    rowCycle === cycleIdRaw ||\n    norm(rowKey) === cycleKeyNorm ||\n    norm(rowCycle) === cycleIdNorm ||\n    norm(rowKey) === cycleIdNorm\n  ) {\n    found = j;\n    break;\n  }\n}\nconst role = String(pa.role ?? '');\nconst now =\n  typeof $now !== 'undefined' && typeof $now.toISO === 'function'\n    ? $now.toISO()\n    : new Date().toISOString();\n\nlet artistic_decision = String(found.artistic_decision ?? 'PENDING');\nlet artistic_reason = String(found.artistic_reason ?? '');\nlet artistic_at = String(found.artistic_at ?? '');\nlet technical_decision = String(found.technical_decision ?? 'PENDING');\nlet technical_reason = String(found.technical_reason ?? '');\nlet technical_at = String(found.technical_at ?? '');\n\nif (role === 'artistic') {\n  artistic_decision = String(pa.decision ?? 'PENDING');\n  artistic_reason = String(pa.reason ?? '');\n  artistic_at = now;\n}\nif (role === 'technical') {\n  technical_decision = String(pa.decision ?? 'PENDING');\n  technical_reason = String(pa.reason ?? '');\n  technical_at = now;\n}\n\nreturn [\n  {\n    json: {\n      cycleKey: cycleKeyRaw,\n      task_id: Number(pa.task_id || found.task_id || 0),\n      cycle_id: String(pa.cycle_id ?? found.cycle_id ?? ''),\n      document_id: String(found.document_id ?? ''),\n      author_username: String(found.author_username ?? 'claire'),\n      artistic_decision,\n      artistic_reason,\n      artistic_at,\n      technical_decision,\n      technical_reason,\n      technical_at,\n      role,\n      decision: String(pa.decision ?? ''),\n      reason: String(pa.reason ?? ''),\n    },\n  },\n];\n"
-      },
-      "id": "0c1f8ed6-0edb-4388-9329-81270cc588fc",
-      "name": "Merge Decision",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1568,
-        816
-      ]
     },
     {
       "parameters": {
@@ -1117,24 +1144,24 @@
           "conditions": [
             {
               "keyName": "cycleKey",
-              "keyValue": "={{ $('Merge Decision').first().json.cycleKey }}"
+              "keyValue": "={{ $('Parse Approval').first().json.cycleKey }}"
             }
           ]
         },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "cycleKey": "={{ $('Merge Decision').first().json.cycleKey }}",
-            "task_id": "={{ Number($('Merge Decision').first().json.task_id) }}",
-            "cycle_id": "={{ $('Merge Decision').first().json.cycle_id }}",
-            "document_id": "={{ $('Merge Decision').first().json.document_id }}",
-            "author_username": "={{ $('Merge Decision').first().json.author_username }}",
-            "artistic_decision": "={{ $('Merge Decision').first().json.artistic_decision }}",
-            "artistic_reason": "={{ $('Merge Decision').first().json.artistic_reason }}",
-            "artistic_at": "={{ $('Merge Decision').first().json.artistic_at }}",
-            "technical_decision": "={{ $('Merge Decision').first().json.technical_decision }}",
-            "technical_reason": "={{ $('Merge Decision').first().json.technical_reason }}",
-            "technical_at": "={{ $('Merge Decision').first().json.technical_at }}"
+            "cycleKey": "={{ $('Parse Approval').first().json.cycleKey }}",
+            "task_id": "={{ Number($('Parse Approval').first().json.task_id || $('Get Approval Rows').first().json.task_id) }}",
+            "cycle_id": "={{ $('Parse Approval').first().json.cycle_id }}",
+            "document_id": "={{ $('Get Approval Rows').first().json.document_id }}",
+            "author_username": "={{ $('Get Approval Rows').first().json.author_username }}",
+            "artistic_decision": "={{ $('Parse Approval').first().json.role === 'artistic' ? $('Parse Approval').first().json.decision : ($('Get Approval Rows').first().json.artistic_decision ?? 'PENDING') }}",
+            "artistic_reason": "={{ $('Parse Approval').first().json.role === 'artistic' ? $('Parse Approval').first().json.reason : $('Get Approval Rows').first().json.artistic_reason }}",
+            "artistic_at": "={{ $('Parse Approval').first().json.role === 'artistic' ? $now.toISO() : $('Get Approval Rows').first().json.artistic_at }}",
+            "technical_decision": "={{ $('Parse Approval').first().json.role === 'technical' ? $('Parse Approval').first().json.decision : ($('Get Approval Rows').first().json.technical_decision ?? 'PENDING') }}",
+            "technical_reason": "={{ $('Parse Approval').first().json.role === 'technical' ? $('Parse Approval').first().json.reason : $('Get Approval Rows').first().json.technical_reason }}",
+            "technical_at": "={{ $('Parse Approval').first().json.role === 'technical' ? $now.toISO() : $('Get Approval Rows').first().json.technical_at }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -1259,7 +1286,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        2240,
+        1792,
         816
       ]
     },
@@ -1268,120 +1295,44 @@
         "assignments": {
           "assignments": [
             {
-              "id": "task_id",
-              "name": "task_id",
-              "value": "={{ Number($('Merge Decision').first().json.task_id) }}",
-              "type": "number"
-            },
-            {
-              "id": "cycle_id",
-              "name": "cycle_id",
-              "value": "={{ $('Merge Decision').first().json.cycle_id }}",
+              "id": "eff-art",
+              "name": "effectiveArtistic",
+              "value": "={{ $json.artistic_decision ?? 'PENDING' }}",
               "type": "string"
             },
             {
-              "id": "artistic_decision",
-              "name": "artistic_decision",
-              "value": "={{ $('Merge Decision').first().json.artistic_decision }}",
+              "id": "eff-tech",
+              "name": "effectiveTechnical",
+              "value": "={{ $json.technical_decision ?? 'PENDING' }}",
               "type": "string"
-            },
-            {
-              "id": "technical_decision",
-              "name": "technical_decision",
-              "value": "={{ $('Merge Decision').first().json.technical_decision }}",
-              "type": "string"
-            },
-            {
-              "id": "joinReady",
-              "name": "joinReady",
-              "value": "={{ $('Merge Decision').first().json.artistic_decision !== 'PENDING' && $('Merge Decision').first().json.technical_decision !== 'PENDING' }}",
-              "type": "boolean"
-            },
-            {
-              "id": "bothApproved",
-              "name": "bothApproved",
-              "value": "={{ $('Merge Decision').first().json.artistic_decision === 'APPROVED' && $('Merge Decision').first().json.technical_decision === 'APPROVED' }}",
-              "type": "boolean"
             }
           ]
         },
+        "includeOtherFields": true,
         "options": {}
       },
-      "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00013",
-      "name": "Compute Join",
+      "id": "c4d8e1f2-5a6b-4c7d-9e0f-1a2b3c4d5e6f",
+      "name": "Set Effective Decisions",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2464,
+        2016,
         816
       ]
     },
     {
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 1
-          },
-          "conditions": [
-            {
-              "id": "join",
-              "leftValue": "={{$json.joinReady}}",
-              "rightValue": true,
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
+        "mode": "expression",
+        "numberOutputs": 3,
+        "output": "={{ $json.effectiveArtistic === 'PENDING' || $json.effectiveTechnical === 'PENDING' ? 0 : ($json.effectiveArtistic === 'APPROVED' && $json.effectiveTechnical === 'APPROVED' ? 1 : 2) }}"
       },
-      "id": "11957881-e158-478b-9d45-3e96f7a56d90",
-      "name": "IF Join Ready",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
+      "id": "f3a8b2c1-4d9e-4a1f-9b2c-7e8d6f5a4b3c",
+      "name": "Switch Approval Outcome",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
       "position": [
-        2688,
-        816
-      ]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 1
-          },
-          "conditions": [
-            {
-              "id": "approved",
-              "leftValue": "={{$json.bothApproved}}",
-              "rightValue": true,
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "7c3d7c73-815d-4533-a2e7-80f280e931af",
-      "name": "IF Both Approved",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        2912,
-        720
+        2240,
+        800
       ]
     },
     {
@@ -1404,8 +1355,8 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        3136,
-        624
+        2464,
+        816
       ],
       "credentials": {
         "mcpOAuth2Api": {
@@ -1424,7 +1375,7 @@
           "value": "add_task_comment"
         },
         "inputMode": "json",
-        "jsonInput": "={{ { task_id: $('Compute Join').item.json.task_id, text: \"Both stamps received. Task approved and closed.\" } }}",
+        "jsonInput": "={{ { task_id: Number($('Parse Approval').first().json.task_id || ($('Get Approval Rows').first().json || {}).task_id || 0), text: \"Both stamps received. Task approved and closed.\" } }}",
         "options": {
           "timeout": 60000
         }
@@ -1434,8 +1385,8 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        3360,
-        624
+        2688,
+        816
       ],
       "credentials": {
         "mcpOAuth2Api": {
@@ -1456,8 +1407,8 @@
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,
       "position": [
-        3584,
-        624
+        2912,
+        816
       ],
       "webhookId": "0dcb0616-266e-44f7-8d5f-8b6bd922d3d8"
     },
@@ -1507,8 +1458,8 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        3136,
-        816
+        2464,
+        1008
       ],
       "credentials": {
         "mcpOAuth2Api": {
@@ -1527,7 +1478,7 @@
           "value": "add_task_comment"
         },
         "inputMode": "json",
-        "jsonInput": "={{ { task_id: $('Compute Join').item.json.task_id, text: \"Validation incomplete or rejected. Please fix the document and resubmit.\" } }}",
+        "jsonInput": "={{ { task_id: Number($('Parse Approval').first().json.task_id || ($('Get Approval Rows').first().json || {}).task_id || 0), text: \"Validation incomplete or rejected. Please fix the document and resubmit.\" } }}",
         "options": {
           "timeout": 60000
         }
@@ -1537,8 +1488,8 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        3360,
-        816
+        2688,
+        1008
       ],
       "credentials": {
         "mcpOAuth2Api": {
@@ -1559,8 +1510,8 @@
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,
       "position": [
-        3584,
-        816
+        2912,
+        1008
       ],
       "webhookId": "76b51de0-a619-4786-8102-975f49a7cd47"
     },
@@ -1576,8 +1527,8 @@
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,
       "position": [
-        2912,
-        912
+        2464,
+        624
       ],
       "webhookId": "ee90b6bb-d515-46ee-9012-b20161b9b4b3"
     }
@@ -1707,6 +1658,17 @@
       "main": [
         [
           {
+            "node": "MCP Post Approval Form Links",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Post Approval Form Links": {
+      "main": [
+        [
+          {
             "node": "Ensure Approvals Table (intake)",
             "type": "main",
             "index": 0
@@ -1813,17 +1775,6 @@
       "main": [
         [
           {
-            "node": "Merge Decision",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Merge Decision": {
-      "main": [
-        [
-          {
             "node": "MCP Add Decision Comment",
             "type": "main",
             "index": 0
@@ -1835,44 +1786,33 @@
       "main": [
         [
           {
-            "node": "Compute Join",
+            "node": "Set Effective Decisions",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Compute Join": {
+    "Set Effective Decisions": {
       "main": [
         [
           {
-            "node": "IF Join Ready",
+            "node": "Switch Approval Outcome",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "IF Join Ready": {
+    "Switch Approval Outcome": {
       "main": [
-        [
-          {
-            "node": "IF Both Approved",
-            "type": "main",
-            "index": 0
-          }
-        ],
         [
           {
             "node": "Form End - Pending",
             "type": "main",
             "index": 0
           }
-        ]
-      ]
-    },
-    "IF Both Approved": {
-      "main": [
+        ],
         [
           {
             "node": "MCP Set Done",
@@ -1936,15 +1876,22 @@
   },
   "settings": {
     "executionOrder": "v1",
-    "binaryMode": "separate"
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": true
   },
-  "staticData": null,
+  "staticData": {
+    "node:Schedule Intake (5m)": {
+      "recurrenceRules": []
+    }
+  },
   "meta": null,
   "pinData": {},
-  "versionId": "b41cf115-358a-4b27-8ca6-8649c437ce38",
-  "activeVersionId": null,
-  "versionCounter": 45,
-  "triggerCount": 0,
+  "versionId": "22db29fa-79de-45a6-b8bb-2f969d875d7b",
+  "activeVersionId": "48f01de5-0fa7-4561-af0d-72697636725a",
+  "versionCounter": 167,
+  "triggerCount": 2,
   "shared": [
     {
       "updatedAt": "2026-05-07T14:30:33.864Z",
@@ -1965,5 +1912,1898 @@
     }
   ],
   "tags": [],
-  "activeVersion": null
+  "activeVersion": {
+    "updatedAt": "2026-05-11T17:05:46.067Z",
+    "createdAt": "2026-05-11T17:05:46.067Z",
+    "versionId": "48f01de5-0fa7-4561-af0d-72697636725a",
+    "workflowId": "vwTQX2yxbgCh3kaG",
+    "nodes": [
+      {
+        "parameters": {},
+        "id": "df141cbe-a4d7-4e77-8e44-1ab7f06a9630",
+        "name": "Manual Start",
+        "type": "n8n-nodes-base.manualTrigger",
+        "typeVersion": 1,
+        "position": [
+          224,
+          112
+        ]
+      },
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "minutes"
+              }
+            ]
+          }
+        },
+        "id": "72df2575-2650-47df-8452-29735347fd3b",
+        "name": "Schedule Intake (5m)",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          224,
+          400
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "table",
+          "operation": "create",
+          "tableName": "wf02_processed_documents",
+          "columns": {
+            "column": [
+              {
+                "name": "documentId"
+              },
+              {
+                "name": "lastProcessedDate",
+                "type": "date"
+              },
+              {
+                "name": "cycleId"
+              }
+            ]
+          },
+          "options": {
+            "createIfNotExists": true
+          }
+        },
+        "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00001",
+        "name": "Ensure Tracking Table",
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "position": [
+          448,
+          352
+        ],
+        "executeOnce": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "resource": "table",
+          "operation": "create",
+          "tableName": "wf02_approvals",
+          "columns": {
+            "column": [
+              {
+                "name": "cycleKey"
+              },
+              {
+                "name": "task_id",
+                "type": "number"
+              },
+              {
+                "name": "cycle_id"
+              },
+              {
+                "name": "document_id"
+              },
+              {
+                "name": "author_username"
+              },
+              {
+                "name": "artistic_decision"
+              },
+              {
+                "name": "artistic_reason"
+              },
+              {
+                "name": "artistic_at"
+              },
+              {
+                "name": "technical_decision"
+              },
+              {
+                "name": "technical_reason"
+              },
+              {
+                "name": "technical_at"
+              }
+            ]
+          },
+          "options": {
+            "createIfNotExists": true
+          }
+        },
+        "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00002",
+        "name": "Ensure Approvals Table (intake)",
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "position": [
+          2016,
+          256
+        ],
+        "executeOnce": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "resource": "table",
+          "operation": "create",
+          "tableName": "wf02_approvals",
+          "columns": {
+            "column": [
+              {
+                "name": "cycleKey"
+              },
+              {
+                "name": "task_id",
+                "type": "number"
+              },
+              {
+                "name": "cycle_id"
+              },
+              {
+                "name": "document_id"
+              },
+              {
+                "name": "author_username"
+              },
+              {
+                "name": "artistic_decision"
+              },
+              {
+                "name": "artistic_reason"
+              },
+              {
+                "name": "artistic_at"
+              },
+              {
+                "name": "technical_decision"
+              },
+              {
+                "name": "technical_reason"
+              },
+              {
+                "name": "technical_at"
+              }
+            ]
+          },
+          "options": {
+            "createIfNotExists": true
+          }
+        },
+        "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00002c",
+        "name": "Ensure Approvals Table (form branch)",
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "position": [
+          1120,
+          816
+        ],
+        "executeOnce": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
+          "authentication": "mcpOAuth2Api",
+          "tool": {
+            "__rl": true,
+            "mode": "id",
+            "value": "search_documents"
+          },
+          "parameters": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "query": "",
+              "parent_folder_id": "ced6e9c539805e114bd65696b26bd073",
+              "limit": 100,
+              "offset": 0
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "query",
+                "displayName": "query",
+                "defaultMatch": false,
+                "required": false,
+                "display": true,
+                "type": "string"
+              },
+              {
+                "id": "parent_folder_id",
+                "displayName": "parent_folder_id",
+                "defaultMatch": false,
+                "required": true,
+                "display": true,
+                "type": "string"
+              },
+              {
+                "id": "limit",
+                "displayName": "limit",
+                "defaultMatch": false,
+                "required": false,
+                "display": true,
+                "type": "number"
+              },
+              {
+                "id": "offset",
+                "displayName": "offset",
+                "defaultMatch": false,
+                "required": false,
+                "display": true,
+                "type": "number"
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {
+            "timeout": 60000
+          }
+        },
+        "id": "9d6d0ca6-a0de-46f3-bbfa-3565e44f10d0",
+        "name": "MCP Search Folder Docs",
+        "type": "@n8n/n8n-nodes-langchain.mcpClient",
+        "typeVersion": 1,
+        "position": [
+          448,
+          160
+        ],
+        "credentials": {
+          "mcpOAuth2Api": {
+            "id": "vaCQUg5NblUEOrlR",
+            "name": "EXO MIPS MCP"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "fieldToSplitOut": "content[0].text",
+          "options": {}
+        },
+        "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00004",
+        "name": "Split Out Documents",
+        "type": "n8n-nodes-base.splitOut",
+        "typeVersion": 1,
+        "position": [
+          672,
+          160
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "get",
+          "dataTableId": {
+            "__rl": true,
+            "mode": "name",
+            "value": "wf02_processed_documents"
+          },
+          "returnAll": true
+        },
+        "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00007",
+        "name": "Get Processed Docs",
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "position": [
+          672,
+          352
+        ],
+        "executeOnce": true,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "mode": "combineBySql",
+          "query": "SELECT\n  input1.document_id AS id,\n  COALESCE(input1.updated_date, input1.created_date) AS updatedDate,\n  input1.name,\n  input1.url,\n  input1.created_username.username AS uploader\nFROM input1\nLEFT JOIN input2 ON input1.document_id = input2.documentId\nWHERE (input2.documentId IS NULL\n   OR input2.lastProcessedDate IS NULL\n   OR input2.lastProcessedDate = ''\n   OR COALESCE(input1.updated_date, input1.created_date) > input2.lastProcessedDate)\n  AND input1.document_id IS NOT NULL\n  AND input1.document_id != ''",
+          "options": {
+            "emptyQueryResult": "empty"
+          }
+        },
+        "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00008",
+        "name": "Merge Docs to Process",
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3.2,
+        "position": [
+          896,
+          256
+        ]
+      },
+      {
+        "parameters": {
+          "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
+          "authentication": "mcpOAuth2Api",
+          "tool": {
+            "__rl": true,
+            "mode": "id",
+            "value": "get_document_by_id"
+          },
+          "inputMode": "json",
+          "jsonInput": "={{ { document_id: $json.id } }}",
+          "options": {
+            "timeout": 60000
+          }
+        },
+        "id": "d06c3f8f-61ff-47f8-84ee-2481db4c5fe7",
+        "name": "MCP Get Document By ID",
+        "type": "@n8n/n8n-nodes-langchain.mcpClient",
+        "typeVersion": 1,
+        "position": [
+          1120,
+          256
+        ],
+        "credentials": {
+          "mcpOAuth2Api": {
+            "id": "vaCQUg5NblUEOrlR",
+            "name": "EXO MIPS MCP"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "html": "<div><p><strong>Source document:</strong> <a href=\"{{ $json.doc_url }}\" target=\"_blank\" rel=\"noopener noreferrer\">{{ $json.doc_name }}</a></p><p><strong>Validation links:</strong></p><p><a href=\"{{ $json.artistic_link }}\" target=\"_top\" rel=\"noopener noreferrer\">Artistic stamp (Nadia)</a></p><p><a href=\"{{ $json.technical_link }}\" target=\"_top\" rel=\"noopener noreferrer\">Technical stamp (Etienne)</a></p><p><em>Prefer the <strong>Stamp links</strong> task comment added right after creation: it includes <code>task_id</code> because the description is rendered before the task exists.</em></p><p>Rule: move to Done only when both stamps are APPROVED.</p></div>"
+        },
+        "id": "aa5b4f7c-41dd-4cce-85f1-9fa7756b7c1e",
+        "name": "Render Task Description HTML",
+        "type": "n8n-nodes-base.html",
+        "typeVersion": 1,
+        "position": [
+          1568,
+          256
+        ]
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "wf02_doc_name",
+                "name": "doc_name",
+                "value": "={{ String($('Merge Docs to Process').item.json.name) }}",
+                "type": "string"
+              },
+              {
+                "id": "wf02_doc_url",
+                "name": "doc_url",
+                "value": "={{ String($('Merge Docs to Process').item.json.url) }}",
+                "type": "string"
+              },
+              {
+                "id": "wf02_cycle_id",
+                "name": "cycle_id",
+                "value": "={{ String($('Merge Docs to Process').item.json.id) + ':' + String($('Merge Docs to Process').item.json.updatedDate) }}",
+                "type": "string"
+              },
+              {
+                "id": "wf02_artistic_link",
+                "name": "artistic_link",
+                "value": "={{ 'https://meeds.app.n8n.cloud/form/wf02-doc-validation/approve?cycle_id=' + encodeURIComponent(String($('Merge Docs to Process').item.json.id) + ':' + String($('Merge Docs to Process').item.json.updatedDate)) + '&role=artistic&actor=nadia' }}",
+                "type": "string"
+              },
+              {
+                "id": "wf02_technical_link",
+                "name": "technical_link",
+                "value": "={{ 'https://meeds.app.n8n.cloud/form/wf02-doc-validation/approve?cycle_id=' + encodeURIComponent(String($('Merge Docs to Process').item.json.id) + ':' + String($('Merge Docs to Process').item.json.updatedDate)) + '&role=technical&actor=etienne' }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "f3ef9047-3e03-4c52-83c2-c2cf0425f401",
+        "name": "Build Task Description Context",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          1344,
+          256
+        ]
+      },
+      {
+        "parameters": {
+          "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
+          "authentication": "mcpOAuth2Api",
+          "tool": {
+            "__rl": true,
+            "mode": "id",
+            "value": "create_task_in_project"
+          },
+          "parameters": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "project_id": 2,
+              "title": "={{ ('Validation - ' + String($('Merge Docs to Process').item.json.name || 'Untitled document').replace(/\\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim()).slice(0, 140) }}",
+              "description": "={{ $json.html }}",
+              "assignee": "={{ $('Merge Docs to Process').item.json.uploader || 'claire' }}",
+              "coworkers": "={{ ['nadia', 'etienne'] }}",
+              "priority": "NORMAL"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "project_id",
+                "displayName": "project_id",
+                "defaultMatch": false,
+                "required": true,
+                "display": true,
+                "type": "number"
+              },
+              {
+                "id": "title",
+                "displayName": "title",
+                "defaultMatch": false,
+                "required": true,
+                "display": true,
+                "type": "string"
+              },
+              {
+                "id": "description",
+                "displayName": "description",
+                "defaultMatch": false,
+                "required": false,
+                "display": true,
+                "type": "string"
+              },
+              {
+                "id": "assignee",
+                "displayName": "assignee",
+                "defaultMatch": false,
+                "required": false,
+                "display": true,
+                "type": "string"
+              },
+              {
+                "id": "coworkers",
+                "displayName": "coworkers",
+                "defaultMatch": false,
+                "required": false,
+                "display": true,
+                "type": "array",
+                "defaultValue": "[\n  \"string\"\n]"
+              },
+              {
+                "id": "start_date",
+                "displayName": "start_date",
+                "defaultMatch": false,
+                "required": false,
+                "display": true,
+                "type": "string",
+                "removed": true
+              },
+              {
+                "id": "end_date",
+                "displayName": "end_date",
+                "defaultMatch": false,
+                "required": false,
+                "display": true,
+                "type": "string",
+                "removed": true
+              },
+              {
+                "id": "due_date",
+                "displayName": "due_date",
+                "defaultMatch": false,
+                "required": false,
+                "display": true,
+                "type": "string",
+                "removed": true
+              },
+              {
+                "id": "priority",
+                "displayName": "priority",
+                "defaultMatch": false,
+                "required": false,
+                "display": true,
+                "type": "options",
+                "options": [
+                  {
+                    "name": "NONE",
+                    "value": "NONE"
+                  },
+                  {
+                    "name": "LOW",
+                    "value": "LOW"
+                  },
+                  {
+                    "name": "NORMAL",
+                    "value": "NORMAL"
+                  },
+                  {
+                    "name": "HIGH",
+                    "value": "HIGH"
+                  }
+                ]
+              },
+              {
+                "id": "status_id",
+                "displayName": "status_id",
+                "defaultMatch": false,
+                "required": false,
+                "display": true,
+                "type": "number",
+                "removed": true
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {
+            "timeout": 60000
+          }
+        },
+        "id": "aeff4690-23b9-461d-8b64-ec0ed8271dff",
+        "name": "MCP Create Task",
+        "type": "@n8n/n8n-nodes-langchain.mcpClient",
+        "typeVersion": 1,
+        "position": [
+          1792,
+          256
+        ],
+        "credentials": {
+          "mcpOAuth2Api": {
+            "id": "vaCQUg5NblUEOrlR",
+            "name": "EXO MIPS MCP"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
+          "authentication": "mcpOAuth2Api",
+          "tool": {
+            "__rl": true,
+            "mode": "id",
+            "value": "add_task_comment"
+          },
+          "inputMode": "json",
+          "jsonInput": "={{ (() => { const tid = Number($('MCP Create Task').item.json.content[0].text.task_id); const cyc = encodeURIComponent(String($('Merge Docs to Process').item.json.id) + ':' + String($('Merge Docs to Process').item.json.updatedDate)); const base = 'https://meeds.app.n8n.cloud/form/wf02-doc-validation/approve?cycle_id=' + cyc; const artistic = base + '&task_id=' + tid + '&role=artistic&actor=nadia'; const technical = base + '&task_id=' + tid + '&role=technical&actor=etienne'; const html = '<p><strong>Stamp links</strong> (task id included)</p><p><a href=\"' + artistic + '\" target=\"_blank\" rel=\"noopener noreferrer\">Artistic stamp (Nadia)</a></p><p><a href=\"' + technical + '\" target=\"_blank\" rel=\"noopener noreferrer\">Technical stamp (Etienne)</a></p>'; return { task_id: tid, text: html }; })() }}",
+          "options": {
+            "timeout": 60000
+          }
+        },
+        "id": "b7e2a91c-3d44-4f8a-9c01-a4f5e8d2c103",
+        "name": "MCP Post Approval Form Links",
+        "type": "@n8n/n8n-nodes-langchain.mcpClient",
+        "typeVersion": 1,
+        "position": [
+          1904,
+          256
+        ],
+        "credentials": {
+          "mcpOAuth2Api": {
+            "id": "vaCQUg5NblUEOrlR",
+            "name": "EXO MIPS MCP"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
+          "authentication": "mcpOAuth2Api",
+          "tool": {
+            "__rl": true,
+            "mode": "id",
+            "value": "update_task_status"
+          },
+          "parameters": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "task_id": "={{ Number($('Parse Approval').first().json.task_id || ($('Get Approval Rows').first().json || {}).task_id || 0) }}",
+              "status_id": 6
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "task_id",
+                "displayName": "task_id",
+                "defaultMatch": false,
+                "required": true,
+                "display": true,
+                "type": "number"
+              },
+              {
+                "id": "status_id",
+                "displayName": "status_id",
+                "defaultMatch": false,
+                "required": true,
+                "display": true,
+                "type": "number"
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {
+            "timeout": 60000
+          }
+        },
+        "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b0000e",
+        "name": "MCP Set Task In Progress",
+        "type": "@n8n/n8n-nodes-langchain.mcpClient",
+        "typeVersion": 1,
+        "position": [
+          2016,
+          816
+        ],
+        "credentials": {
+          "mcpOAuth2Api": {
+            "id": "vaCQUg5NblUEOrlR",
+            "name": "EXO MIPS MCP"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "upsert",
+          "dataTableId": {
+            "__rl": true,
+            "mode": "name",
+            "value": "wf02_approvals"
+          },
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "cycleKey",
+                "keyValue": "={{ String($('Merge Docs to Process').item.json.id) + ':' + String($('Merge Docs to Process').item.json.updatedDate) }}"
+              }
+            ]
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "cycleKey": "={{ String($('Merge Docs to Process').item.json.id) + ':' + String($('Merge Docs to Process').item.json.updatedDate) }}",
+              "task_id": "={{ Number($('MCP Create Task').item.json.content[0].text.task_id) }}",
+              "cycle_id": "={{ String($('Merge Docs to Process').item.json.id) + ':' + String($('Merge Docs to Process').item.json.updatedDate) }}",
+              "document_id": "={{ String($('Merge Docs to Process').item.json.id) }}",
+              "author_username": "={{ String($('Merge Docs to Process').item.json.uploader) }}",
+              "artistic_decision": "PENDING",
+              "artistic_reason": "",
+              "artistic_at": "",
+              "technical_decision": "PENDING",
+              "technical_reason": "",
+              "technical_at": ""
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "cycleKey",
+                "displayName": "cycleKey",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "task_id",
+                "displayName": "task_id",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "number",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "cycle_id",
+                "displayName": "cycle_id",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "document_id",
+                "displayName": "document_id",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "author_username",
+                "displayName": "author_username",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "artistic_decision",
+                "displayName": "artistic_decision",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "artistic_reason",
+                "displayName": "artistic_reason",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "artistic_at",
+                "displayName": "artistic_at",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "technical_decision",
+                "displayName": "technical_decision",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "technical_reason",
+                "displayName": "technical_reason",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "technical_at",
+                "displayName": "technical_at",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "id": "56693cbc-0d87-42de-952f-c74efef6f95e",
+        "name": "Seed Approval Row",
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "position": [
+          2240,
+          256
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "upsert",
+          "dataTableId": {
+            "__rl": true,
+            "mode": "name",
+            "value": "wf02_processed_documents"
+          },
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "documentId",
+                "keyValue": "={{ String($('Merge Docs to Process').item.json.id || '') }}"
+              }
+            ]
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "documentId": "={{ String($('Merge Docs to Process').item.json.id || '') }}",
+              "lastProcessedDate": "={{ $now.toISO() }}",
+              "cycleId": "={{ String($('Merge Docs to Process').item.json.id || '') + ':' + String($('Merge Docs to Process').item.json.updatedDate || $now.toISO()) }}"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "documentId",
+                "displayName": "documentId",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "lastProcessedDate",
+                "displayName": "lastProcessedDate",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "dateTime",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "cycleId",
+                "displayName": "cycleId",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00014",
+        "name": "Update Tracking Doc",
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "position": [
+          2464,
+          256
+        ]
+      },
+      {
+        "parameters": {
+          "formTitle": "WF02 — Validation stamp",
+          "formDescription": "<p>Context is pre-filled from your task link. Choose <strong>Approved</strong> or <strong>Rejected</strong>. If you reject, add a <strong>reason</strong> (it is copied to the task).</p><p>The task stays <em>In progress</em> until both stamps are <strong>Approved</strong>.</p>",
+          "formFields": {
+            "values": [
+              {
+                "fieldType": "hiddenField",
+                "fieldName": "task_id"
+              },
+              {
+                "fieldType": "hiddenField",
+                "fieldName": "cycle_id"
+              },
+              {
+                "fieldType": "hiddenField",
+                "fieldName": "role"
+              },
+              {
+                "fieldType": "hiddenField",
+                "fieldName": "actor"
+              },
+              {
+                "fieldLabel": "Decision",
+                "fieldType": "radio",
+                "fieldName": "decision",
+                "defaultValue": "Approved",
+                "fieldOptions": {
+                  "values": [
+                    {
+                      "option": "Approved"
+                    },
+                    {
+                      "option": "Rejected"
+                    }
+                  ]
+                },
+                "requiredField": true
+              },
+              {
+                "fieldLabel": "Reason",
+                "fieldType": "textarea",
+                "fieldName": "reason",
+                "placeholder": "Required when rejecting; optional when approving"
+              }
+            ]
+          },
+          "responseMode": "lastNode",
+          "options": {
+            "appendAttribution": false,
+            "buttonLabel": "Submit decision",
+            "path": "wf02-doc-validation/approve"
+          }
+        },
+        "id": "e08bc8c4-3ef3-468b-9f43-1314eb143cc6",
+        "name": "Approval Form Trigger",
+        "type": "n8n-nodes-base.formTrigger",
+        "typeVersion": 2.5,
+        "position": [
+          224,
+          1008
+        ],
+        "webhookId": "ca8ca31c-e44a-4cb4-8e8f-14b7db56958a"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "task_id",
+                "name": "task_id",
+                "value": "={{ Number($json.task_id ?? $json.query?.task_id) }}",
+                "type": "number"
+              },
+              {
+                "id": "cycle_id",
+                "name": "cycle_id",
+                "value": "={{ $json.cycle_id }}",
+                "type": "string"
+              },
+              {
+                "id": "role",
+                "name": "role",
+                "value": "={{ $json.role }}",
+                "type": "string"
+              },
+              {
+                "id": "decision",
+                "name": "decision",
+                "value": "={{ String($json.decision).toUpperCase() }}",
+                "type": "string"
+              },
+              {
+                "id": "reason",
+                "name": "reason",
+                "value": "={{ $json.reason ?? '' }}",
+                "type": "string"
+              },
+              {
+                "id": "cycleKey",
+                "name": "cycleKey",
+                "value": "={{ $json.cycle_id }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "349ac036-e76f-43fb-9df4-2d126eaabc50",
+        "name": "Parse Approval",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          448,
+          1008
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "id": "cycle_id_set",
+                "leftValue": "={{$json.cycle_id}}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty"
+                }
+              },
+              {
+                "id": "role_set",
+                "leftValue": "={{ ['artistic', 'technical'].includes($json.role) }}",
+                "rightValue": true,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              },
+              {
+                "id": "decision_set",
+                "leftValue": "={{$json.decision}}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty"
+                }
+              },
+              {
+                "id": "decision_allowed",
+                "leftValue": "={{ ['APPROVED', 'REJECTED'].includes($json.decision) }}",
+                "rightValue": true,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              },
+              {
+                "id": "reject_reason_if_rejected",
+                "leftValue": "={{ $json.decision !== 'REJECTED' || Boolean($json.reason?.trim()) }}",
+                "rightValue": true,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b0000f",
+        "name": "IF Valid Approval",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          672,
+          1008
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "completion",
+          "completionTitle": "Could not submit approval",
+          "completionMessage": "This submission could not be processed. Check that you opened the approval link from the task description (cycle, role, and decision). If you chose Rejected, enter a short reason in the Reason field and submit again.",
+          "options": {}
+        },
+        "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00010",
+        "name": "Form End - Invalid Approval",
+        "type": "n8n-nodes-base.form",
+        "typeVersion": 2.5,
+        "position": [
+          896,
+          1104
+        ],
+        "webhookId": "ad128407-b9af-4701-9e0c-f6481e175fd7"
+      },
+      {
+        "parameters": {
+          "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
+          "authentication": "mcpOAuth2Api",
+          "tool": {
+            "__rl": true,
+            "mode": "id",
+            "value": "add_task_comment"
+          },
+          "inputMode": "json",
+          "jsonInput": "={{ { task_id: Number($('Parse Approval').first().json.task_id || $('Get Approval Rows').first().json.task_id || 0), text: \"Stamp \" + $('Parse Approval').first().json.role + \": \" + $('Parse Approval').first().json.decision + ($('Parse Approval').first().json.reason ? (\". Reason: \" + $('Parse Approval').first().json.reason) : \"\") } }}",
+          "options": {
+            "timeout": 60000
+          }
+        },
+        "id": "026d243a-4f55-4944-b6fd-3fceecc381e9",
+        "name": "MCP Add Decision Comment",
+        "type": "@n8n/n8n-nodes-langchain.mcpClient",
+        "typeVersion": 1,
+        "position": [
+          1792,
+          816
+        ],
+        "credentials": {
+          "mcpOAuth2Api": {
+            "id": "vaCQUg5NblUEOrlR",
+            "name": "EXO MIPS MCP"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "get",
+          "dataTableId": {
+            "__rl": true,
+            "mode": "name",
+            "value": "wf02_approvals"
+          },
+          "matchType": "allConditions",
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "cycleKey",
+                "condition": "eq",
+                "keyValue": "={{ $('Parse Approval').first().json.cycleKey }}"
+              }
+            ]
+          },
+          "returnAll": false,
+          "limit": 1
+        },
+        "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00011",
+        "name": "Get Approval Rows",
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "position": [
+          1344,
+          816
+        ],
+        "executeOnce": true,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "operation": "upsert",
+          "dataTableId": {
+            "__rl": true,
+            "mode": "name",
+            "value": "wf02_approvals"
+          },
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "cycleKey",
+                "keyValue": "={{ $('Parse Approval').first().json.cycleKey }}"
+              }
+            ]
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "cycleKey": "={{ $('Parse Approval').first().json.cycleKey }}",
+              "task_id": "={{ Number($('Parse Approval').first().json.task_id || $('Get Approval Rows').first().json.task_id) }}",
+              "cycle_id": "={{ $('Parse Approval').first().json.cycle_id }}",
+              "document_id": "={{ $('Get Approval Rows').first().json.document_id }}",
+              "author_username": "={{ $('Get Approval Rows').first().json.author_username }}",
+              "artistic_decision": "={{ $('Parse Approval').first().json.role === 'artistic' ? $('Parse Approval').first().json.decision : ($('Get Approval Rows').first().json.artistic_decision ?? 'PENDING') }}",
+              "artistic_reason": "={{ $('Parse Approval').first().json.role === 'artistic' ? $('Parse Approval').first().json.reason : $('Get Approval Rows').first().json.artistic_reason }}",
+              "artistic_at": "={{ $('Parse Approval').first().json.role === 'artistic' ? $now.toISO() : $('Get Approval Rows').first().json.artistic_at }}",
+              "technical_decision": "={{ $('Parse Approval').first().json.role === 'technical' ? $('Parse Approval').first().json.decision : ($('Get Approval Rows').first().json.technical_decision ?? 'PENDING') }}",
+              "technical_reason": "={{ $('Parse Approval').first().json.role === 'technical' ? $('Parse Approval').first().json.reason : $('Get Approval Rows').first().json.technical_reason }}",
+              "technical_at": "={{ $('Parse Approval').first().json.role === 'technical' ? $now.toISO() : $('Get Approval Rows').first().json.technical_at }}"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "cycleKey",
+                "displayName": "cycleKey",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "task_id",
+                "displayName": "task_id",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "number",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "cycle_id",
+                "displayName": "cycle_id",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "document_id",
+                "displayName": "document_id",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "author_username",
+                "displayName": "author_username",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "artistic_decision",
+                "displayName": "artistic_decision",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "artistic_reason",
+                "displayName": "artistic_reason",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "artistic_at",
+                "displayName": "artistic_at",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "technical_decision",
+                "displayName": "technical_decision",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "technical_reason",
+                "displayName": "technical_reason",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "technical_at",
+                "displayName": "technical_at",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "id": "1a3e7a70-f4ac-4d5b-9f01-1b2cd8b00012",
+        "name": "Upsert Approval Row",
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "position": [
+          2240,
+          816
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "manual",
+          "duplicateItem": false,
+          "assignments": {
+            "assignments": [
+              {
+                "id": "eff-art",
+                "name": "effectiveArtistic",
+                "value": "={{ String($json.artistic_decision || 'PENDING') }}",
+                "type": "string"
+              },
+              {
+                "id": "eff-tech",
+                "name": "effectiveTechnical",
+                "value": "={{ String($json.technical_decision || 'PENDING') }}",
+                "type": "string"
+              }
+            ]
+          },
+          "includeOtherFields": true,
+          "include": "all",
+          "options": {}
+        },
+        "id": "c4d8e1f2-5a6b-4c7d-9e0f-1a2b3c4d5e6f",
+        "name": "Set Effective Decisions",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          2464,
+          816
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "expression",
+          "numberOutputs": 3,
+          "output": "={{ $json.effectiveArtistic === 'PENDING' || $json.effectiveTechnical === 'PENDING' ? 0 : ($json.effectiveArtistic === 'APPROVED' && $json.effectiveTechnical === 'APPROVED' ? 1 : 2) }}",
+          "options": {}
+        },
+        "id": "f3a8b2c1-4d9e-4a1f-9b2c-7e8d6f5a4b3c",
+        "name": "Switch Approval Outcome",
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.2,
+        "position": [
+          2912,
+          816
+        ]
+      },
+      {
+        "parameters": {
+          "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
+          "authentication": "mcpOAuth2Api",
+          "tool": {
+            "__rl": true,
+            "mode": "id",
+            "value": "update_task_status"
+          },
+          "inputMode": "json",
+          "jsonInput": "={{ { task_id: $json.task_id, status_id: Number($vars.WF02_DONE_STATUS_ID || 8) } }}",
+          "options": {
+            "timeout": 60000
+          }
+        },
+        "id": "8cc03abf-a07f-41b3-b4b9-9a985320131e",
+        "name": "MCP Set Done",
+        "type": "@n8n/n8n-nodes-langchain.mcpClient",
+        "typeVersion": 1,
+        "position": [
+          3136,
+          624
+        ],
+        "credentials": {
+          "mcpOAuth2Api": {
+            "id": "vaCQUg5NblUEOrlR",
+            "name": "EXO MIPS MCP"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
+          "authentication": "mcpOAuth2Api",
+          "tool": {
+            "__rl": true,
+            "mode": "id",
+            "value": "add_task_comment"
+          },
+          "inputMode": "json",
+          "jsonInput": "={{ { task_id: Number($('Parse Approval').first().json.task_id || ($('Get Approval Rows').first().json || {}).task_id || 0), text: \"Both stamps received. Task approved and closed.\" } }}",
+          "options": {
+            "timeout": 60000
+          }
+        },
+        "id": "df49998f-6dc6-4961-abd7-7784dca492ee",
+        "name": "MCP Final Comment Approved",
+        "type": "@n8n/n8n-nodes-langchain.mcpClient",
+        "typeVersion": 1,
+        "position": [
+          3360,
+          624
+        ],
+        "credentials": {
+          "mcpOAuth2Api": {
+            "id": "vaCQUg5NblUEOrlR",
+            "name": "EXO MIPS MCP"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "completion",
+          "completionTitle": "Approved",
+          "completionMessage": "Both approvers confirmed. The task has been closed. You can close this tab.",
+          "options": {}
+        },
+        "id": "9762fdc0-d4c5-41d2-aa79-3f00eea32208",
+        "name": "Form End - Approved",
+        "type": "n8n-nodes-base.form",
+        "typeVersion": 2.5,
+        "position": [
+          3584,
+          624
+        ],
+        "webhookId": "0dcb0616-266e-44f7-8d5f-8b6bd922d3d8"
+      },
+      {
+        "parameters": {
+          "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
+          "authentication": "mcpOAuth2Api",
+          "tool": {
+            "__rl": true,
+            "mode": "id",
+            "value": "update_task_status"
+          },
+          "parameters": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "task_id": "={{ Number($json.task_id) }}",
+              "status_id": 6
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "task_id",
+                "displayName": "task_id",
+                "defaultMatch": false,
+                "required": true,
+                "display": true,
+                "type": "number"
+              },
+              {
+                "id": "status_id",
+                "displayName": "status_id",
+                "defaultMatch": false,
+                "required": true,
+                "display": true,
+                "type": "number"
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {
+            "timeout": 60000
+          }
+        },
+        "id": "7f828b4b-6215-4cdb-aca6-3b455a6b7611",
+        "name": "MCP Keep InProgress",
+        "type": "@n8n/n8n-nodes-langchain.mcpClient",
+        "typeVersion": 1,
+        "position": [
+          3136,
+          816
+        ],
+        "credentials": {
+          "mcpOAuth2Api": {
+            "id": "vaCQUg5NblUEOrlR",
+            "name": "EXO MIPS MCP"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
+          "authentication": "mcpOAuth2Api",
+          "tool": {
+            "__rl": true,
+            "mode": "id",
+            "value": "add_task_comment"
+          },
+          "inputMode": "json",
+          "jsonInput": "={{ { task_id: Number($('Parse Approval').first().json.task_id || ($('Get Approval Rows').first().json || {}).task_id || 0), text: \"Validation incomplete or rejected. Please fix the document and resubmit.\" } }}",
+          "options": {
+            "timeout": 60000
+          }
+        },
+        "id": "f878b670-aa9f-4551-b4c9-bd5d170d5d2b",
+        "name": "MCP Final Comment Rejected",
+        "type": "@n8n/n8n-nodes-langchain.mcpClient",
+        "typeVersion": 1,
+        "position": [
+          3360,
+          816
+        ],
+        "credentials": {
+          "mcpOAuth2Api": {
+            "id": "vaCQUg5NblUEOrlR",
+            "name": "EXO MIPS MCP"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "completion",
+          "completionTitle": "Validation incomplete",
+          "completionMessage": "Validation is incomplete or was rejected. You can close this tab.",
+          "options": {}
+        },
+        "id": "4fbd6cf5-af94-46fa-a724-6a11bebe17fa",
+        "name": "Form End - Rejected",
+        "type": "n8n-nodes-base.form",
+        "typeVersion": 2.5,
+        "position": [
+          3584,
+          816
+        ],
+        "webhookId": "76b51de0-a619-4786-8102-975f49a7cd47"
+      },
+      {
+        "parameters": {
+          "operation": "completion",
+          "completionTitle": "Recorded",
+          "completionMessage": "Decision recorded. Waiting for the second stamp. You can close this tab.",
+          "options": {}
+        },
+        "id": "033a237b-be9d-4e7c-a913-9374bd1e8136",
+        "name": "Form End - Pending",
+        "type": "n8n-nodes-base.form",
+        "typeVersion": 2.5,
+        "position": [
+          2912,
+          912
+        ],
+        "webhookId": "ee90b6bb-d515-46ee-9012-b20161b9b4b3"
+      }
+    ],
+    "connections": {
+      "Manual Start": {
+        "main": [
+          [
+            {
+              "node": "MCP Search Folder Docs",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Ensure Tracking Table",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Schedule Intake (5m)": {
+        "main": [
+          [
+            {
+              "node": "MCP Search Folder Docs",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Ensure Tracking Table",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ensure Tracking Table": {
+        "main": [
+          [
+            {
+              "node": "Get Processed Docs",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "MCP Search Folder Docs": {
+        "main": [
+          [
+            {
+              "node": "Split Out Documents",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Split Out Documents": {
+        "main": [
+          [
+            {
+              "node": "Merge Docs to Process",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Processed Docs": {
+        "main": [
+          [
+            {
+              "node": "Merge Docs to Process",
+              "type": "main",
+              "index": 1
+            }
+          ]
+        ]
+      },
+      "Merge Docs to Process": {
+        "main": [
+          [
+            {
+              "node": "MCP Get Document By ID",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "MCP Get Document By ID": {
+        "main": [
+          [
+            {
+              "node": "Build Task Description Context",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Task Description Context": {
+        "main": [
+          [
+            {
+              "node": "Render Task Description HTML",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Render Task Description HTML": {
+        "main": [
+          [
+            {
+              "node": "MCP Create Task",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "MCP Create Task": {
+        "main": [
+          [
+            {
+              "node": "MCP Post Approval Form Links",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "MCP Post Approval Form Links": {
+        "main": [
+          [
+            {
+              "node": "Ensure Approvals Table (intake)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "MCP Set Task In Progress": {
+        "main": [
+          [
+            {
+              "node": "Upsert Approval Row",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ensure Approvals Table (intake)": {
+        "main": [
+          [
+            {
+              "node": "Seed Approval Row",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Seed Approval Row": {
+        "main": [
+          [
+            {
+              "node": "Update Tracking Doc",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Approval Form Trigger": {
+        "main": [
+          [
+            {
+              "node": "Parse Approval",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse Approval": {
+        "main": [
+          [
+            {
+              "node": "IF Valid Approval",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "IF Valid Approval": {
+        "main": [
+          [
+            {
+              "node": "Ensure Approvals Table (form branch)",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Form End - Invalid Approval",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "MCP Add Decision Comment": {
+        "main": [
+          [
+            {
+              "node": "MCP Set Task In Progress",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ensure Approvals Table (form branch)": {
+        "main": [
+          [
+            {
+              "node": "Get Approval Rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Approval Rows": {
+        "main": [
+          [
+            {
+              "node": "MCP Add Decision Comment",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Upsert Approval Row": {
+        "main": [
+          [
+            {
+              "node": "Set Effective Decisions",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Set Effective Decisions": {
+        "main": [
+          [
+            {
+              "node": "Switch Approval Outcome",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Switch Approval Outcome": {
+        "main": [
+          [
+            {
+              "node": "Form End - Pending",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "MCP Set Done",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "MCP Keep InProgress",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "MCP Set Done": {
+        "main": [
+          [
+            {
+              "node": "MCP Final Comment Approved",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "MCP Final Comment Approved": {
+        "main": [
+          [
+            {
+              "node": "Form End - Approved",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "MCP Keep InProgress": {
+        "main": [
+          [
+            {
+              "node": "MCP Final Comment Rejected",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "MCP Final Comment Rejected": {
+        "main": [
+          [
+            {
+              "node": "Form End - Rejected",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Meeds Lab ",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-05-11T17:05:46.528Z",
+        "id": 142,
+        "workflowId": "vwTQX2yxbgCh3kaG",
+        "versionId": "48f01de5-0fa7-4561-af0d-72697636725a",
+        "event": "activated",
+        "userId": "8de64810-3c63-4fd1-969c-9915f88c784a"
+      }
+    ]
+  }
 }

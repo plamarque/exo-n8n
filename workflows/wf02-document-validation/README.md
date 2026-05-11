@@ -86,7 +86,7 @@ Use `config.env.example` as a naming/meaning template. Copy values into **n8n Va
 | Parallelism   | **Split + wait for webhooks + merge**                  | Models two **independent** human decisions; **join** encodes the business rule.                                                                           |
 | Idempotency   | **Data Table + Merge (SQL-style combine)**             | Same pattern as WF04: **skip** unchanged docs; avoid accidental duplicate tasks when rerunning intake.                                                    |
 | MCP envelopes | **UTIL** for **create** only; **Split Out** for search; raw **`get_document`** | **`create_task_in_project`** uses **`Unwrap MCP JSON`**; **`search_documents`** splits **`content[0].text`** like WF04; **`get_document_by_id`** reads **`content[0].text`** directly ([SPEC.technical.md](SPEC.technical.md) §3.2–§3.3). |
-| Code surface  | **Small Code** (approval row merge / **`Merge Decision`**) + **HTML node** for task body | Intake **`combineBySql`** Merge reads **`Get Processed Docs`** directly (**input 2**); **`alwaysOutputData`** on that Data Table node supports empty-table runs. |
+| Code surface  | **HTML node** for task body (approval branch: **Parse Approval** + **Get Approval Rows** + expressions on MCP / Data Table; **`Set Effective Decisions`** after **Upsert Approval Row** then **`Switch Approval Outcome`** — 3-way expression Switch on **`effectiveArtistic`** / **`effectiveTechnical`**) | Intake **`combineBySql`** Merge reads **`Get Processed Docs`** directly (**input 2**); **`alwaysOutputData`** on that Data Table node supports empty-table runs. |
 
 
 ## MCP eXo interaction model
