@@ -10,7 +10,7 @@ Automatically enrich eXo documents with AI (short description + suggested catego
 
 The workflow targets eXo document governance with scheduled, incremental runs:
 
-- pick a space by name (`$vars.EXO_SPACE_NAME`)
+- target a space by configured **`WF04_SPACE_ID`** (document scan) and **`EXO_SPACE_NAME`** (display / LLM context)
 - scan space documents
 - run AI to enrich metadata
 - write the description and assign categories
@@ -26,14 +26,14 @@ The workflow targets eXo document governance with scheduled, incremental runs:
 
 ## 4) Current product limits
 
-1. Canonical `workflow.json` carries a **demo fallback literal** after `$vars.EXO_SPACE_NAME`; execution uses **n8n Variables when set**, otherwise that literal (**`npm run generate:workflow-json`** may hardcode from repository root `.env`). Operators must align the resolved name with a real space on the tenant or runs target the wrong library by design.
+1. Canonical `workflow.json` carries **demo literals** for **`spaceName`** (no **`$vars.EXO_SPACE_NAME`**) and for **`search_documents` `space_id`** in **List Documents** MCP **Manual** `parameters.value` (no n8n **`$vars.WF04_SPACE_ID`**—plain integer **`1`** in git). Repository root **`.env`** drives **`EXO_SPACE_NAME`** and **`WF04_SPACE_ID`** into the graph via **`npm run generate:workflow-json`** and/or REST deploy injection. Operators must align **`WF04_SPACE_ID`** with the real eXo space or runs query the wrong library by design.
 2. MCP **`endpointUrl`** is repeated on each MCP Client node as a **plain URL** (demo literal in git until **`npm run generate:workflow-json`** applies **`EXO_MCP_ENDPOINT`**).
 3. Hard cap: 5 documents per run.
 4. No rollback if description update succeeds but category assign fails (partially handled with explicit stops).
 
 ## 5) Acceptance criteria
 
-- Fail fast when `spaceName` is empty.
+- Operators supply valid **`WF04_SPACE_ID`** / **`EXO_SPACE_NAME`** via root **`.env`** + generate/deploy (there is **no** tutorial IF that blocks empty display strings or invalid ids in-graph).
 - An unprocessed (or changed) document is enriched then tracked.
 - A document already processed and unchanged is skipped.
-- Category assignments reference resolved `category_id` values.
+- Category assignments reference resolved `category_id` values where **`Lookup Category By Label`** / **`Enrich Category Lookup`** / **`Filter Matched Categories`** find an exact **`category_label`** match in **`exo_category_cache`**; otherwise no category assignment is attempted for that label (description updates still apply).

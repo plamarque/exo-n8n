@@ -27,8 +27,15 @@
           "mode": "id",
           "value": "list_emails"
         },
-        "inputMode": "json",
-        "jsonInput": "{}",
+        "inputMode": "manual",
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
         "options": {
           "timeout": 60000
         }

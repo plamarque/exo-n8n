@@ -477,10 +477,28 @@
           "mode": "id",
           "value": "get_note"
         },
-        "inputMode": "json",
-        "jsonInput": "={{ { note_id: $json.template_note_id } }}",
+        "inputMode": "manual",
         "options": {
           "timeout": 60000
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "note_id": "={{ $json.template_note_id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "note_id",
+              "displayName": "note_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "number"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         }
       },
       "id": "98e14ac9-23ba-4258-8149-4b7217373ed1",
@@ -515,10 +533,64 @@
           "mode": "id",
           "value": "list_tasks"
         },
-        "inputMode": "json",
-        "jsonInput": "={{ { project_id: $(\"Prepare COPIL Config\").item.json.project_id, limit: 100, offset: 0, hide_completed_tasks: false, include_change_log: false } }}",
+        "inputMode": "manual",
         "options": {
           "timeout": 60000
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "project_id": "={{ $(\"Prepare COPIL Config\").item.json.project_id }}",
+            "limit": 100,
+            "offset": 0,
+            "hide_completed_tasks": false,
+            "include_change_log": false
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "project_id",
+              "displayName": "project_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "number"
+            },
+            {
+              "id": "limit",
+              "displayName": "limit",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "number"
+            },
+            {
+              "id": "offset",
+              "displayName": "offset",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "number"
+            },
+            {
+              "id": "hide_completed_tasks",
+              "displayName": "hide_completed_tasks",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "boolean"
+            },
+            {
+              "id": "include_change_log",
+              "displayName": "include_change_log",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "boolean"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         }
       },
       "id": "08eef67e-01e2-47c2-9fe8-d9784270d806",
@@ -703,10 +775,55 @@
           "mode": "id",
           "value": "search_notes"
         },
-        "inputMode": "json",
-        "jsonInput": "={{$json.searchNotesInput}}",
+        "inputMode": "manual",
         "options": {
           "timeout": 60000
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "query": "={{ $json.searchNotesInput.query }}",
+            "space_id": "={{ $json.searchNotesInput.space_id }}",
+            "limit": "={{ $json.searchNotesInput.limit }}",
+            "offset": "={{ $json.searchNotesInput.offset }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "query",
+              "displayName": "query",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "string"
+            },
+            {
+              "id": "space_id",
+              "displayName": "space_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "number"
+            },
+            {
+              "id": "limit",
+              "displayName": "limit",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "number"
+            },
+            {
+              "id": "offset",
+              "displayName": "offset",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "number"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         }
       },
       "id": "368f7e34-8e85-4dde-bbce-363dbaf25017",
@@ -789,10 +906,46 @@
           "mode": "id",
           "value": "update_note"
         },
-        "inputMode": "json",
-        "jsonInput": "={{$json.updateNoteInput}}",
+        "inputMode": "manual",
         "options": {
           "timeout": 90000
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "note_id": "={{ $json.updateNoteInput.note_id }}",
+            "title": "={{ $json.updateNoteInput.title }}",
+            "html_content": "={{ $json.updateNoteInput.html_content }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "note_id",
+              "displayName": "note_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "number"
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "string"
+            },
+            {
+              "id": "html_content",
+              "displayName": "html_content",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         }
       },
       "id": "1cad418a-005b-4352-8333-7f14146a62d5",
@@ -863,10 +1016,46 @@
           "mode": "id",
           "value": "update_agenda_event"
         },
-        "inputMode": "json",
-        "jsonInput": "={{$json.agendaUpdateInput}}",
+        "inputMode": "manual",
         "options": {
           "timeout": 60000
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_id": "={{ $json.agendaUpdateInput.event_id }}",
+            "summary": "={{ $json.agendaUpdateInput.summary }}",
+            "description": "={{ $json.agendaUpdateInput.description }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "event_id",
+              "displayName": "event_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "number"
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "string"
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         }
       },
       "id": "f6f0d324-c022-48d0-a227-489eec82f787",
@@ -887,10 +1076,37 @@
           "mode": "id",
           "value": "invite_users_to_agenda_event"
         },
-        "inputMode": "json",
-        "jsonInput": "={{ { event_id: $('Decide Note Upsert').item.json.agenda_parent_event_id, attendee_usernames: $('Decide Note Upsert').item.json.attendee_usernames } }}",
+        "inputMode": "manual",
         "options": {
           "timeout": 60000
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_id": "={{ $('Decide Note Upsert').item.json.agenda_parent_event_id }}",
+            "attendee_usernames": "={{ $('Decide Note Upsert').item.json.attendee_usernames }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "event_id",
+              "displayName": "event_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "number"
+            },
+            {
+              "id": "attendee_usernames",
+              "displayName": "attendee_usernames",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "array"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         }
       },
       "id": "d1e9384b-98f2-43fc-b019-ec150f3c7faa",
@@ -911,10 +1127,55 @@
           "mode": "id",
           "value": "create_child_note"
         },
-        "inputMode": "json",
-        "jsonInput": "={{$json.createNoteInput}}",
+        "inputMode": "manual",
         "options": {
           "timeout": 90000
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "parent_note_id": "={{ $json.createNoteInput.parent_note_id }}",
+            "title": "={{ $json.createNoteInput.title }}",
+            "html_content": "={{ $json.createNoteInput.html_content }}",
+            "summary": "={{ $json.createNoteInput.summary }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "parent_note_id",
+              "displayName": "parent_note_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "number"
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "string"
+            },
+            {
+              "id": "html_content",
+              "displayName": "html_content",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "string"
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         }
       },
       "id": "b56fb862-4a27-4cfd-a7f0-b11a7898a57d",
@@ -985,10 +1246,46 @@
           "mode": "id",
           "value": "update_agenda_event"
         },
-        "inputMode": "json",
-        "jsonInput": "={{$json.agendaUpdateInput}}",
+        "inputMode": "manual",
         "options": {
           "timeout": 60000
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_id": "={{ $json.agendaUpdateInput.event_id }}",
+            "summary": "={{ $json.agendaUpdateInput.summary }}",
+            "description": "={{ $json.agendaUpdateInput.description }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "event_id",
+              "displayName": "event_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "number"
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "string"
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         }
       },
       "id": "3d06a019-0df0-4769-a882-fc8af8843a5b",
@@ -1009,10 +1306,37 @@
           "mode": "id",
           "value": "invite_users_to_agenda_event"
         },
-        "inputMode": "json",
-        "jsonInput": "={{ { event_id: $('Decide Note Upsert').item.json.agenda_parent_event_id, attendee_usernames: $('Decide Note Upsert').item.json.attendee_usernames } }}",
+        "inputMode": "manual",
         "options": {
           "timeout": 60000
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_id": "={{ $('Decide Note Upsert').item.json.agenda_parent_event_id }}",
+            "attendee_usernames": "={{ $('Decide Note Upsert').item.json.attendee_usernames }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "event_id",
+              "displayName": "event_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "number"
+            },
+            {
+              "id": "attendee_usernames",
+              "displayName": "attendee_usernames",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "array"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         }
       },
       "id": "d8164145-f997-4080-a325-1acdce098f68",

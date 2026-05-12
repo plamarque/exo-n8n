@@ -1,506 +1,24 @@
 {
-  "id": "aze2wAktXHYrTBTr",
+  "updatedAt": "2026-05-12T10:14:38.692Z",
+  "createdAt": "2026-05-07T14:30:37.019Z",
+  "id": "EKgSjPqKuas3i4PM",
   "name": "WF04 - Metadata enrichment",
+  "description": null,
   "active": false,
   "isArchived": false,
-  "versionId": "d0261770-8d06-4c53-abc7-5f06706cd6b1",
-  "activeVersionId": null,
-  "triggerCount": 0,
-  "createdAt": "2026-04-21T08:41:34.857Z",
-  "updatedAt": "2026-04-25T16:29:45.413Z",
-  "settings": {
-    "executionOrder": "v1",
-    "binaryMode": "separate",
-    "availableInMCP": true
-  },
-  "connections": {
-    "Manual Start": {
-      "main": [
-        [
-          {
-            "node": "Workflow Input",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Workflow Input": {
-      "main": [
-        [
-          {
-            "node": "IF Space Name",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "IF Space Name": {
-      "main": [
-        [
-          {
-            "node": "Ensure Tracking Table",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Stop - Missing spaceName",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Ensure Tracking Table": {
-      "main": [
-        [
-          {
-            "node": "Get Spaces",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get Spaces": {
-      "main": [
-        [
-          {
-            "node": "Resolve Space",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Resolve Space": {
-      "main": [
-        [
-          {
-            "node": "IF Space Resolved",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "IF Space Resolved": {
-      "main": [
-        [
-          {
-            "node": "List Documents",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Stop - Space not found",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "List Documents": {
-      "main": [
-        [
-          {
-            "node": "Split Out Documents",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Split Out Documents": {
-      "main": [
-        [
-          {
-            "node": "Filter - Has document_id",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Filter - Has document_id": {
-      "main": [
-        [
-          {
-            "node": "Normalize Documents",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Normalize Documents": {
-      "main": [
-        [
-          {
-            "node": "Merge Documents to Process",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Get Processed For Doc",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Merge Documents to Process": {
-      "main": [
-        [
-          {
-            "node": "Limit to 5 Documents",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get Processed For Doc": {
-      "main": [
-        [
-          {
-            "node": "Merge Documents to Process",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "Limit to 5 Documents": {
-      "main": [
-        [
-          {
-            "node": "Process Each Document",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Read Document Content": {
-      "main": [
-        [
-          {
-            "node": "List Categories",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "List Categories": {
-      "main": [
-        [
-          {
-            "node": "Prepare AI Input",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Prepare AI Input": {
-      "main": [
-        [
-          {
-            "node": "Analyze Document",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Analyze Document": {
-      "main": [
-        [
-          {
-            "node": "Extract Results",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "GPT-4o Mini Model": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Analyze Document",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Structured Output": {
-      "ai_outputParser": [
-        [
-          {
-            "node": "Analyze Document",
-            "type": "ai_outputParser",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Extract Results": {
-      "main": [
-        [
-          {
-            "node": "Add Description",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Add Description": {
-      "main": [
-        [
-          {
-            "node": "IF Description MCP OK",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "IF Description MCP OK": {
-      "main": [
-        [
-          {
-            "node": "Check Description Result",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Stop - Description update failed",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Check Description Result": {
-      "main": [
-        [
-          {
-            "node": "IF Suggested Categories",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "IF Suggested Categories": {
-      "main": [
-        [
-          {
-            "node": "Split Suggested Categories",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Stop - No suggested categories",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Split Suggested Categories": {
-      "main": [
-        [
-          {
-            "node": "Prepare Category Assignments",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Prepare Category Assignments": {
-      "main": [
-        [
-          {
-            "node": "Assign Categories",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Assign Categories": {
-      "main": [
-        [
-          {
-            "node": "IF Assign MCP OK",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "IF Assign MCP OK": {
-      "main": [
-        [
-          {
-            "node": "Check Assign Result",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Stop - Category assign failed",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Check Assign Result": {
-      "main": [
-        [
-          {
-            "node": "Update Tracking",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Update Tracking": {
-      "main": [
-        [
-          {
-            "node": "Process Each Document",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Process Each Document": {
-      "main": [
-        [
-          {
-            "node": "Processing Summary",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Read Document Content",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Daily Schedule": {
-      "main": [
-        [
-          {
-            "node": "Workflow Input",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    }
-  },
   "nodes": [
     {
+      "parameters": {},
       "id": "680684fc-47a7-4d46-bebf-f7ca97c732ca",
       "name": "Manual Start",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
         240,
-        288
-      ],
-      "parameters": {}
+        304
+      ]
     },
     {
-      "id": "252fd056-6416-44cf-9dae-272176df33c9",
-      "name": "Workflow Input",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        464,
-        384
-      ],
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "1",
-              "name": "spaceName",
-              "value": "={{ $vars.EXO_SPACE_NAME }}",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      }
-    },
-    {
-      "id": "ef2a2959-7f5c-44c2-b17e-f1f40c7bc837",
-      "name": "IF Space Name",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        688,
-        384
-      ],
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict"
-          },
-          "conditions": [
-            {
-              "id": "s0",
-              "leftValue": "={{ String($json.spaceName || '').trim() }}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "notEmpty"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      }
-    },
-    {
-      "id": "0b88082e-2fcf-494b-822c-45b064b0e5f2",
-      "name": "Ensure Tracking Table",
-      "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1.1,
-      "position": [
-        912,
-        480
-      ],
       "parameters": {
         "resource": "table",
         "operation": "create",
@@ -538,107 +56,19 @@
           "createIfNotExists": true
         }
       },
+      "id": "0b88082e-2fcf-494b-822c-45b064b0e5f2",
+      "name": "Ensure Tracking Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        464,
+        324
+      ],
       "onError": "continueRegularOutput"
     },
     {
-      "id": "482e1bbb-1d62-4d9a-965a-0bd0910e6f3a",
-      "name": "Get Spaces",
-      "type": "@n8n/n8n-nodes-langchain.mcpClient",
-      "typeVersion": 1,
-      "position": [
-        1136,
-        480
-      ],
       "parameters": {
-        "endpointUrl": "https://exo.example.com/mcp-server/mcp",
-        "authentication": "mcpOAuth2Api",
-        "tool": {
-          "__rl": true,
-          "value": "get_my_spaces",
-          "mode": "list",
-          "cachedResultName": "get_my_spaces"
-        },
-        "inputMode": "json",
-        "jsonInput": {},
-        "options": {
-          "timeout": 120000
-        }
-      }
-    },
-    {
-      "id": "37a3490a-0bae-4dc1-a0fd-40e66ac1ad0f",
-      "name": "Resolve Space",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        1360,
-        480
-      ],
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "1",
-              "name": "spaceName",
-              "value": "={{ String($('Workflow Input').item.json.spaceName || '').trim() }}",
-              "type": "string"
-            },
-            {
-              "id": "2",
-              "name": "spaceId",
-              "value": "={{ ($json.content?.[0]?.text || []).find((s) => s.name === String($('Workflow Input').item.json.spaceName || '').trim())?.space_id }}",
-              "type": "number"
-            }
-          ]
-        },
-        "options": {}
-      }
-    },
-    {
-      "id": "2e16c044-e316-4a98-8e9c-88ba6d098707",
-      "name": "IF Space Resolved",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        1584,
-        480
-      ],
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 3
-          },
-          "conditions": [
-            {
-              "id": "k0",
-              "leftValue": "={{ $json.spaceId != null && $json.spaceId !== \"\" && !Number.isNaN(Number($json.spaceId)) }}",
-              "rightValue": true,
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      }
-    },
-    {
-      "id": "37648616-236f-4716-bd6d-aa4e1affeb23",
-      "name": "List Documents",
-      "type": "@n8n/n8n-nodes-langchain.mcpClient",
-      "typeVersion": 1,
-      "position": [
-        1808,
-        672
-      ],
-      "parameters": {
-        "endpointUrl": "https://exo.example.com/mcp-server/mcp",
+        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -646,147 +76,103 @@
           "value": "search_documents",
           "cachedResultName": "search_documents"
         },
-        "inputMode": "json",
-        "jsonInput": "={{ { \"offset\": 0, \"query\": \" \", \"limit\": 500, \"space_id\": $(\"Resolve Space\").item.json.spaceId } }}",
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "offset": 0,
+            "query": " ",
+            "limit": 500,
+            "space_id": 1
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "offset",
+              "displayName": "offset",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "number"
+            },
+            {
+              "id": "query",
+              "displayName": "query",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "string"
+            },
+            {
+              "id": "limit",
+              "displayName": "limit",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "number"
+            },
+            {
+              "id": "space_id",
+              "displayName": "space_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "number"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
         "options": {
           "timeout": 120000
+        }
+      },
+      "id": "37648616-236f-4716-bd6d-aa4e1affeb23",
+      "name": "List Documents",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        464,
+        516
+      ],
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "vaCQUg5NblUEOrlR",
+          "name": "EXO MIPS MCP"
         }
       }
     },
     {
+      "parameters": {
+        "fieldToSplitOut": "content[0].text",
+        "options": {}
+      },
       "id": "be0aed2f-ee80-4736-93ab-3ecfd0a650d9",
       "name": "Split Out Documents",
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        2032,
-        672
-      ],
-      "parameters": {
-        "fieldToSplitOut": "content[0].text",
-        "options": {}
-      }
+        688,
+        516
+      ]
     },
     {
-      "id": "f9213459-683b-4281-a6b2-499cbc684a9a",
-      "name": "Filter - Has document_id",
-      "type": "n8n-nodes-base.filter",
-      "typeVersion": 2.3,
-      "position": [
-        2256,
-        672
-      ],
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 3
-          },
-          "conditions": [
-            {
-              "id": "d0",
-              "leftValue": "={{ String($json.document_id || '') }}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "notEmpty"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      }
-    },
-    {
-      "id": "39a5af6d-f401-4ef3-8f74-7f9a480877c0",
-      "name": "Normalize Documents",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        2480,
-        672
-      ],
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "1",
-              "name": "id",
-              "value": "={{ String($json.document_id) }}",
-              "type": "string"
-            },
-            {
-              "id": "2",
-              "name": "updatedDate",
-              "value": "={{ $json.updated_date }}",
-              "type": "string"
-            },
-            {
-              "id": "3",
-              "name": "description",
-              "value": "={{ $json.description ?? '' }}",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      }
-    },
-    {
+        "mode": "combineBySql",
+        "query": "SELECT input1.document_id AS id, input1.updated_date AS updatedDate, COALESCE(input1.description, '') AS description\nFROM input1\nLEFT JOIN input2 ON input1.document_id = input2.documentId\nWHERE input2.documentId IS NULL\n   OR input2.lastProcessedDate IS NULL\n   OR input2.lastProcessedDate = ''\n   OR input1.updated_date > input2.lastProcessedDate",
+        "options": {
+          "emptyQueryResult": "empty"
+        }
+      },
       "id": "84497a14-9a32-4642-9150-f8c8e504b89a",
       "name": "Merge Documents to Process",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        2928,
-        672
-      ],
-      "parameters": {
-        "mode": "combineBySql",
-        "query": "SELECT input1.id, input1.updatedDate, input1.description\nFROM input1\nLEFT JOIN input2 ON input1.id = input2.documentId\nWHERE input2.documentId IS NULL\n   OR input2.lastProcessedDate IS NULL\n   OR input2.lastProcessedDate = ''\n   OR input1.updatedDate > input2.lastProcessedDate",
-        "options": {
-          "emptyQueryResult": "empty"
-        }
-      }
-    },
-    {
-      "id": "6d2be9da-f6ec-4db9-a117-eb0c1f4b8bdc",
-      "name": "Stop - Space not found",
-      "type": "n8n-nodes-base.stopAndError",
-      "typeVersion": 1,
-      "position": [
-        1808,
-        480
-      ],
-      "parameters": {
-        "errorMessage": "eXo space not found (no space with this name for the user)."
-      }
-    },
-    {
-      "id": "858070af-134a-4735-a520-c65c56d49a96",
-      "name": "Stop - Missing spaceName",
-      "type": "n8n-nodes-base.stopAndError",
-      "typeVersion": 1,
-      "position": [
         912,
-        288
-      ],
-      "parameters": {
-        "errorMessage": "Missing required workflow input: 'spaceName'"
-      }
+        420
+      ]
     },
     {
-      "id": "280ec80e-2511-42b2-8535-a7ef36cba634",
-      "name": "Get Processed For Doc",
-      "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1.1,
-      "position": [
-        2704,
-        772
-      ],
       "parameters": {
         "operation": "get",
         "dataTableId": {
@@ -796,32 +182,70 @@
         },
         "returnAll": true
       },
+      "id": "280ec80e-2511-42b2-8535-a7ef36cba634",
+      "name": "Get Processed For Doc",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        688,
+        324
+      ],
       "executeOnce": true,
       "alwaysOutputData": true,
       "onError": "continueRegularOutput"
     },
     {
+      "parameters": {
+        "maxItems": 5
+      },
       "id": "afe0ed92-ea95-4241-b62c-802f302c5d4f",
       "name": "Limit to 5 Documents",
       "type": "n8n-nodes-base.limit",
       "typeVersion": 1,
       "position": [
-        3152,
-        672
-      ],
+        1136,
+        420
+      ]
+    },
+    {
       "parameters": {
-        "maxItems": 5
+        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
+        "authentication": "mcpOAuth2Api",
+        "tool": {
+          "__rl": true,
+          "value": "get_category_tree",
+          "mode": "list",
+          "cachedResultName": "get_category_tree"
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "fa8c1e20-9a31-4f2b-b4c1-6d5e4f3a2b10",
+      "name": "Get Category Tree",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        688,
+        708
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "vaCQUg5NblUEOrlR",
+          "name": "EXO MIPS MCP"
+        }
       }
     },
     {
-      "id": "90e5c880-788b-4420-950e-3dcbb8c5c2ce",
-      "name": "Processing Summary",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        3600,
-        384
-      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -846,67 +270,17 @@
           ]
         },
         "options": {}
-      }
-    },
-    {
-      "id": "d4d292b3-65e6-4a11-a1d0-005cc54c1a1c",
-      "name": "Read Document Content",
-      "type": "@n8n/n8n-nodes-langchain.mcpClient",
-      "typeVersion": 1,
-      "position": [
-        3600,
-        576
-      ],
-      "parameters": {
-        "endpointUrl": "https://exo.example.com/mcp-server/mcp",
-        "authentication": "mcpOAuth2Api",
-        "tool": {
-          "__rl": true,
-          "mode": "list",
-          "value": "get_document_by_id",
-          "cachedResultName": "get_document_by_id"
-        },
-        "inputMode": "json",
-        "jsonInput": "={{ { \"document_id\": $json.id } }}",
-        "options": {
-          "timeout": 120000
-        }
-      }
-    },
-    {
-      "id": "b0fec78d-df18-47df-80ca-84cda35b7395",
-      "name": "List Categories",
-      "type": "@n8n/n8n-nodes-langchain.mcpClient",
-      "typeVersion": 1,
-      "position": [
-        3824,
-        576
-      ],
-      "parameters": {
-        "endpointUrl": "https://exo.example.com/mcp-server/mcp",
-        "authentication": "mcpOAuth2Api",
-        "tool": {
-          "__rl": true,
-          "value": "get_category_tree",
-          "mode": "list",
-          "cachedResultName": "get_category_tree"
-        },
-        "inputMode": "json",
-        "jsonInput": {},
-        "options": {
-          "timeout": 120000
-        }
-      }
-    },
-    {
-      "id": "542d2709-c45c-4075-9afd-30ca4f4304b9",
-      "name": "Prepare AI Input",
+      },
+      "id": "90e5c880-788b-4420-950e-3dcbb8c5c2ce",
+      "name": "Processing Summary",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        4048,
-        576
-      ],
+        2032,
+        324
+      ]
+    },
+    {
       "parameters": {
         "assignments": {
           "assignments": [
@@ -919,19 +293,19 @@
             {
               "id": "2",
               "name": "documentName",
-              "value": "={{ $(\"Read Document Content\").item.json.content?.[0]?.text?.name || \"\" }}",
+              "value": "={{ $(\"Read Document\").item.json.content[0].text.name }}",
               "type": "string"
             },
             {
               "id": "3",
               "name": "content",
-              "value": "={{ JSON.stringify($(\"Read Document Content\").item.json.content?.[0]?.text || {}) }}",
+              "value": "={{ JSON.stringify($(\"Read Document\").item.json.content[0].text) }}",
               "type": "string"
             },
             {
               "id": "4",
               "name": "availableCategories",
-              "value": "={{ (() => { const root = $(\"List Categories\").item.json.content?.[0]?.text; const names = []; const walk = (n) => { if (!n) return; if (Array.isArray(n)) { n.forEach(walk); return; } if (n.name) names.push(n.name); if (Array.isArray(n.sub_categories)) walk(n.sub_categories); }; walk(root?.sub_categories || root); return [...new Set(names.filter(Boolean))]; })() }}",
+              "value": "={{ $('Get Categories').all().map((i) => i.json.category_label) }}",
               "type": "array"
             },
             {
@@ -943,53 +317,53 @@
             {
               "id": "6",
               "name": "spaceName",
-              "value": "={{ $(\"Resolve Space\").item.json.spaceName }}",
+              "value": "={{ \"Festival Art2Rue - Documents\" }}",
               "type": "string"
             },
             {
               "id": "7",
               "name": "documentUrl",
-              "value": "={{ $(\"Read Document Content\").item.json.content?.[0]?.text?.url ? \"https://exo.example.com\" + $(\"Read Document Content\").item.json.content?.[0]?.text?.url : \"\" }}",
+              "value": "={{ \"https://exo.example.com\" + $(\"Read Document\").item.json.content[0].text.url }}",
               "type": "string"
             },
             {
               "id": "8",
               "name": "editorUrl",
-              "value": "={{ (() => { const docId = $(\"Read Document Content\").item.json.content?.[0]?.text?.document_id || \"\"; return docId ? \"https://exo.example.com/portal/dw/oeditor?docId=\" + encodeURIComponent(docId) : \"\"; })() }}",
+              "value": "={{ \"https://exo.example.com/portal/dw/oeditor?docId=\" + encodeURIComponent($(\"Read Document\").item.json.content[0].text.document_id) }}",
               "type": "string"
             }
           ]
         },
         "options": {}
-      }
+      },
+      "id": "542d2709-c45c-4075-9afd-30ca4f4304b9",
+      "name": "Prepare AI Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2256,
+        516
+      ]
     },
     {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze this document and provide:\n1. A concise description in 30 words or less, written in the same language as the document. If the language is uncertain, default to English.\n2. Suggest 2-3 relevant categories by copying names **exactly** from the available list (same spelling and punctuation).\n\nDocument: {{ $json.documentName }}\nContent: {{ $json.content }}\n\nAvailable categories: {{ $json.availableCategories.join(\", \") }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a document metadata expert. Return the description in the document's language; if language cannot be identified confidently, return English by default. Keep description concise (max 30 words). For suggestedCategories, each string MUST be copied verbatim from the provided available categories list—do not invent or rename categories."
+        }
+      },
       "id": "2d8454da-4761-4d1e-a57f-6f9e8495501c",
       "name": "Analyze Document",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        4272,
-        576
-      ],
-      "parameters": {
-        "promptType": "define",
-        "text": "=Analyze this document and provide:\n1. A concise description in 30 words or less, written in the same language as the document. If the language is uncertain, default to English.\n2. Suggest 2-3 relevant categories from the available list\n\nDocument: {{ $json.documentName }}\nContent: {{ $json.content }}\n\nAvailable categories: {{ $json.availableCategories.join(\", \") }}",
-        "hasOutputParser": true,
-        "options": {
-          "systemMessage": "You are a document metadata expert. Return the description in the document's language; if language cannot be identified confidently, return English by default. Keep description concise (max 30 words) and suggest categories only from the provided list."
-        }
-      }
+        2480,
+        516
+      ]
     },
     {
-      "id": "f3c65bdb-1e0c-4050-89b6-09ebd7ab2a39",
-      "name": "GPT-4o Mini Model",
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.3,
-      "position": [
-        4280,
-        800
-      ],
       "parameters": {
         "model": {
           "__rl": true,
@@ -1000,30 +374,36 @@
         "options": {
           "temperature": 0.3
         }
+      },
+      "id": "f3c65bdb-1e0c-4050-89b6-09ebd7ab2a39",
+      "name": "GPT-4o Mini Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        2488,
+        740
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "rEcL1EsPRnj2xbNt",
+          "name": "OpenAI account"
+        }
       }
     },
     {
+      "parameters": {
+        "jsonSchemaExample": "{\"description\":\"A concise 30-word description\",\"suggestedCategories\":[\"Category1\",\"Category2\"]}"
+      },
       "id": "ba5e4641-3eaa-41f8-adae-07cb0d4b87e6",
       "name": "Structured Output",
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        4408,
-        800
-      ],
-      "parameters": {
-        "jsonSchemaExample": "{\"description\":\"A concise 30-word description\",\"suggestedCategories\":[\"Category1\",\"Category2\"]}"
-      }
+        2616,
+        740
+      ]
     },
     {
-      "id": "191cc25d-1082-46c6-817f-fe6a39597913",
-      "name": "Extract Results",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        4624,
-        576
-      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -1078,19 +458,19 @@
           ]
         },
         "options": {}
-      }
+      },
+      "id": "191cc25d-1082-46c6-817f-fe6a39597913",
+      "name": "Extract Results",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2832,
+        516
+      ]
     },
     {
-      "id": "4e2c89f9-7937-4d9f-b67c-52b2315a1577",
-      "name": "Add Description",
-      "type": "@n8n/n8n-nodes-langchain.mcpClient",
-      "typeVersion": 1,
-      "position": [
-        4848,
-        576
-      ],
       "parameters": {
-        "endpointUrl": "https://exo.example.com/mcp-server/mcp",
+        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -1098,22 +478,54 @@
           "mode": "list",
           "cachedResultName": "update_document_description"
         },
-        "inputMode": "json",
-        "jsonInput": "={{ { \"document_id\": $(\"Extract Results\").item.json.documentId, \"html_description\": $(\"Extract Results\").item.json.description } }}",
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "document_id": "={{ $(\"Extract Results\").item.json.documentId }}",
+            "html_description": "={{ $(\"Extract Results\").item.json.description }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "document_id",
+              "displayName": "document_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "string"
+            },
+            {
+              "id": "html_description",
+              "displayName": "html_description",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
         "options": {
           "timeout": 120000
+        }
+      },
+      "id": "4e2c89f9-7937-4d9f-b67c-52b2315a1577",
+      "name": "Add Description",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        3056,
+        516
+      ],
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "vaCQUg5NblUEOrlR",
+          "name": "EXO MIPS MCP"
         }
       }
     },
     {
-      "id": "d5b51936-7dbd-416f-971d-2538e2f62e80",
-      "name": "IF Description MCP OK",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        5072,
-        576
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -1137,17 +549,17 @@
           "combinator": "and"
         },
         "options": {}
-      }
+      },
+      "id": "d5b51936-7dbd-416f-971d-2538e2f62e80",
+      "name": "IF Description MCP OK",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3280,
+        516
+      ]
     },
     {
-      "id": "5034eb4c-a6fa-44aa-857e-eb033a0d4165",
-      "name": "Check Description Result",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        5296,
-        672
-      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -1202,17 +614,17 @@
           ]
         },
         "options": {}
-      }
+      },
+      "id": "5034eb4c-a6fa-44aa-857e-eb033a0d4165",
+      "name": "Check Description Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3504,
+        612
+      ]
     },
     {
-      "id": "1c3b3ab2-f707-43c7-a5c5-d854f696060d",
-      "name": "IF Suggested Categories",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        5520,
-        672
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -1236,49 +648,36 @@
           "combinator": "and"
         },
         "options": {}
-      }
+      },
+      "id": "1c3b3ab2-f707-43c7-a5c5-d854f696060d",
+      "name": "IF Suggested Categories",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3728,
+        612
+      ]
     },
     {
-      "id": "2c40660f-4f89-4c7b-9454-3e15579cdaef",
-      "name": "Split Suggested Categories",
-      "type": "n8n-nodes-base.splitOut",
-      "typeVersion": 1,
-      "position": [
-        5744,
-        544
-      ],
       "parameters": {
         "fieldToSplitOut": "suggestedCategories",
         "include": "allOtherFields",
         "options": {
           "destinationFieldName": "categoryName"
         }
-      }
-    },
-    {
-      "id": "69a3fedf-08b7-4426-ba00-a06513cd7f46",
-      "name": "Prepare Category Assignments",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        5744,
-        672
-      ],
-      "parameters": {
-        "jsCode": "const normalize = (s) => String(s || '').replace(/&amp;/g, '&').replace(/\\s+/g, ' ').trim().toLowerCase();\nconst tree = $(\"List Categories\").item.json.content?.[0]?.text;\nconst map = new Map();\nconst walk = (node) => {\n  if (!node) return;\n  if (Array.isArray(node)) return node.forEach(walk);\n  if (node.name && node.category_id != null) map.set(normalize(node.name), node.category_id);\n  if (Array.isArray(node.sub_categories)) walk(node.sub_categories);\n};\nwalk(tree?.sub_categories || tree);\nconst id = map.get(normalize($json.categoryName));\nif (id == null) throw new Error('No category_id match for suggested category: ' + String($json.categoryName));\nreturn [{ json: { ...$json, category_id: id, content_id: $json.documentId, content_type: 'document' } }];"
-      }
-    },
-    {
-      "id": "f754bca6-a455-47fa-bf54-5cdb4eac826a",
-      "name": "Assign Categories",
-      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      },
+      "id": "2c40660f-4f89-4c7b-9454-3e15579cdaef",
+      "name": "Split Suggested Categories",
+      "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        5744,
-        672
-      ],
+        3952,
+        540
+      ]
+    },
+    {
       "parameters": {
-        "endpointUrl": "https://exo.example.com/mcp-server/mcp",
+        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
@@ -1286,22 +685,63 @@
           "mode": "list",
           "cachedResultName": "add_content_to_category"
         },
-        "inputMode": "json",
-        "jsonInput": "={{ { \"category_id\": $json.category_id, \"content_id\": $json.content_id, \"content_type\": $json.content_type } }}",
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "category_id": "={{ Number($json.category_id) }}",
+            "content_id": "={{ String($json.documentId).startsWith('/document:') ? String($json.documentId) : ('/document:' + String($json.documentId)) }}",
+            "content_type": "document"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "category_id",
+              "displayName": "category_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "number"
+            },
+            {
+              "id": "content_id",
+              "displayName": "content_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "string"
+            },
+            {
+              "id": "content_type",
+              "displayName": "content_type",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
         "options": {
           "timeout": 120000
+        }
+      },
+      "id": "f754bca6-a455-47fa-bf54-5cdb4eac826a",
+      "name": "Assign Categories",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        4848,
+        636
+      ],
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "vaCQUg5NblUEOrlR",
+          "name": "EXO MIPS MCP"
         }
       }
     },
     {
-      "id": "f2470787-e124-472e-8115-1348eb1408c9",
-      "name": "IF Assign MCP OK",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        5968,
-        672
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -1325,28 +765,28 @@
           "combinator": "and"
         },
         "options": {}
-      }
+      },
+      "id": "f2470787-e124-472e-8115-1348eb1408c9",
+      "name": "IF Assign MCP OK",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        5072,
+        636
+      ]
     },
     {
+      "parameters": {},
       "id": "4702a127-ef1c-4ad3-ab41-1ba6c03d9b16",
       "name": "Check Assign Result",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        6192,
-        768
-      ],
-      "parameters": {}
+        5296,
+        732
+      ]
     },
     {
-      "id": "cfbac0d1-30f1-4bdb-b6e6-b1a189899190",
-      "name": "Update Tracking",
-      "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1.1,
-      "position": [
-        6416,
-        892
-      ],
       "parameters": {
         "operation": "upsert",
         "dataTableId": {
@@ -1461,70 +901,56 @@
           "convertFieldsToString": false
         },
         "options": {}
-      }
+      },
+      "id": "cfbac0d1-30f1-4bdb-b6e6-b1a189899190",
+      "name": "Update Tracking",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        5520,
+        804
+      ]
     },
     {
+      "parameters": {
+        "options": {}
+      },
       "id": "9cd849cc-d4f0-4b87-86af-ead9a0ef3cb1",
       "name": "Process Each Document",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        3376,
-        672
-      ],
-      "parameters": {
-        "options": {}
-      }
+        1808,
+        516
+      ]
     },
     {
+      "parameters": {
+        "errorMessage": "MCP add_content_to_category: failed."
+      },
       "id": "57484694-c24f-4a82-b720-84799a0849c4",
       "name": "Stop - Category assign failed",
       "type": "n8n-nodes-base.stopAndError",
       "typeVersion": 1,
       "position": [
-        6192,
-        576
-      ],
-      "parameters": {
-        "errorMessage": "MCP add_content_to_category: failed."
-      }
+        5296,
+        540
+      ]
     },
     {
-      "id": "203a898d-fa9e-403e-84ab-7a5cb4b266c5",
-      "name": "Stop - No suggested categories",
-      "type": "n8n-nodes-base.stopAndError",
-      "typeVersion": 1,
-      "position": [
-        5520,
-        544
-      ],
       "parameters": {
-        "errorType": "errorMessage",
-        "errorMessage": "No category suggested for the document."
-      }
-    },
-    {
+        "errorMessage": "MCP update_document_description: error response."
+      },
       "id": "1d0d1d21-80cc-4759-ae63-c231e9c01390",
       "name": "Stop - Description update failed",
       "type": "n8n-nodes-base.stopAndError",
       "typeVersion": 1,
       "position": [
-        5296,
-        480
-      ],
-      "parameters": {
-        "errorMessage": "MCP update_document_description: error response."
-      }
+        3504,
+        420
+      ]
     },
     {
-      "id": "d71b9db2-b11a-4bf9-8f66-ff9c35a6db62",
-      "name": "Daily Schedule",
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.3,
-      "position": [
-        240,
-        480
-      ],
       "parameters": {
         "rule": {
           "interval": [
@@ -1533,30 +959,826 @@
             }
           ]
         }
+      },
+      "id": "d71b9db2-b11a-4bf9-8f66-ff9c35a6db62",
+      "name": "Daily Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        780
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const root = items[0].json.content?.[0]?.text;\nconst out = [];\nconst walk = (node) => {\n  if (!node) return;\n  if (Array.isArray(node)) return node.forEach(walk);\n  const id = node.category_id;\n  const label = node.name;\n  if (id != null && label != null) {\n    out.push({\n      category_id: Number(id),\n      category_label: String(label),\n    });\n  }\n  if (Array.isArray(node.sub_categories)) walk(node.sub_categories);\n};\nwalk(root?.sub_categories || root);\nreturn out.map((row) => ({ json: row }));"
+      },
+      "id": "c7e2a100-0001-4000-8000-000000000002",
+      "name": "Flatten Category Tree",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        912,
+        708
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "zm0",
+              "leftValue": "={{ Array.isArray($json.data) ? $json.data.filter((i) => i.json && i.json.category_id != null && String(i.json.category_id).trim() !== '').length : 0 }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c7e2a100-0001-4000-8000-000000000008",
+      "name": "IF Zero Category Matches",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        5296,
+        348
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "fm0",
+              "leftValue": "={{ $json.category_id != null && String($json.category_id).trim() !== \"\" }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c7e2a100-0001-4000-8000-000000000009",
+      "name": "Filter Matched Categories",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        4624,
+        636
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "exo_category_cache"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "category_label",
+              "keyValue": "={{ $json.categoryName }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "id": "c7e2a100-0001-4000-8000-000000000014",
+      "name": "Lookup Category By Label",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        4176,
+        540
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e1",
+              "name": "documentId",
+              "value": "={{ $('Split Suggested Categories').item.json.documentId }}",
+              "type": "string"
+            },
+            {
+              "id": "e2",
+              "name": "category_id",
+              "value": "={{ $json.category_id }}",
+              "type": "number"
+            },
+            {
+              "id": "e3",
+              "name": "category_label",
+              "value": "={{ $json.category_label }}",
+              "type": "string"
+            },
+            {
+              "id": "e4",
+              "name": "categoryName",
+              "value": "={{ $('Split Suggested Categories').item.json.categoryName }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c7e2a100-0001-4000-8000-000000000015",
+      "name": "Enrich Category Lookup",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4400,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "id": "c7e2a100-0001-4000-8000-000000000016",
+      "name": "Aggregate Matched Categories",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        5072,
+        348
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "operation": "create",
+        "tableName": "exo_category_cache",
+        "columns": {
+          "column": [
+            {
+              "name": "category_id",
+              "type": "number"
+            },
+            {
+              "name": "category_label"
+            }
+          ]
+        },
+        "options": {
+          "createIfNotExists": true
+        }
+      },
+      "id": "c7e2a100-0001-4000-8000-000000000001",
+      "name": "Ensure Category Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        464,
+        708
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "exo_category_cache"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "category_id",
+              "keyValue": "={{ Number($json.category_id) }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "category_id": "={{ Number($json.category_id) }}",
+            "category_label": "={{ String($json.category_label) }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "category_id",
+              "displayName": "category_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "category_label",
+              "displayName": "category_label",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "c7e2a100-0001-4000-8000-000000000003",
+      "name": "Sync Category Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1136,
+        708
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "exo_category_cache"
+        },
+        "returnAll": true
+      },
+      "id": "c7e2a100-0001-4000-8000-000000000004",
+      "name": "Get Categories",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1360,
+        708
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "id": "fa8c1e20-9a31-4f2b-b4c1-6d5e4f3a2b12",
+      "name": "Ready to Process",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1584,
+        516
+      ]
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
+        "authentication": "mcpOAuth2Api",
+        "tool": {
+          "__rl": true,
+          "mode": "list",
+          "value": "get_document_by_id",
+          "cachedResultName": "get_document_by_id"
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "document_id": "={{ $json.id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "document_id",
+              "displayName": "document_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "d4d292b3-65e6-4a11-a1d0-005cc54c1a1c",
+      "name": "Read Document",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        2032,
+        516
+      ],
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "vaCQUg5NblUEOrlR",
+          "name": "EXO MIPS MCP"
+        }
       }
     }
   ],
-  "activeVersion": null,
-  "tags": [],
-  "meta": {
-    "aiBuilderAssisted": true
+  "connections": {
+    "Manual Start": {
+      "main": [
+        [
+          {
+            "node": "List Documents",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Ensure Tracking Table",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Ensure Category Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Category Tree": {
+      "main": [
+        [
+          {
+            "node": "Flatten Category Tree",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flatten Category Tree": {
+      "main": [
+        [
+          {
+            "node": "Sync Category Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ensure Tracking Table": {
+      "main": [
+        [
+          {
+            "node": "Get Processed For Doc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Documents": {
+      "main": [
+        [
+          {
+            "node": "Split Out Documents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out Documents": {
+      "main": [
+        [
+          {
+            "node": "Merge Documents to Process",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Documents to Process": {
+      "main": [
+        [
+          {
+            "node": "Limit to 5 Documents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Processed For Doc": {
+      "main": [
+        [
+          {
+            "node": "Merge Documents to Process",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Limit to 5 Documents": {
+      "main": [
+        [
+          {
+            "node": "Ready to Process",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare AI Input": {
+      "main": [
+        [
+          {
+            "node": "Analyze Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Document": {
+      "main": [
+        [
+          {
+            "node": "Extract Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT-4o Mini Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Analyze Document",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Analyze Document",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Results": {
+      "main": [
+        [
+          {
+            "node": "Add Description",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Description": {
+      "main": [
+        [
+          {
+            "node": "IF Description MCP OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Description MCP OK": {
+      "main": [
+        [
+          {
+            "node": "Check Description Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop - Description update failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Description Result": {
+      "main": [
+        [
+          {
+            "node": "IF Suggested Categories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Suggested Categories": {
+      "main": [
+        [
+          {
+            "node": "Split Suggested Categories",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Tracking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Suggested Categories": {
+      "main": [
+        [
+          {
+            "node": "Lookup Category By Label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Zero Category Matches": {
+      "main": [
+        [
+          {
+            "node": "Update Tracking",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Filter Matched Categories": {
+      "main": [
+        [
+          {
+            "node": "Assign Categories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assign Categories": {
+      "main": [
+        [
+          {
+            "node": "IF Assign MCP OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Assign MCP OK": {
+      "main": [
+        [
+          {
+            "node": "Check Assign Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop - Category assign failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Assign Result": {
+      "main": [
+        [
+          {
+            "node": "Update Tracking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Tracking": {
+      "main": [
+        [
+          {
+            "node": "Process Each Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Each Document": {
+      "main": [
+        [
+          {
+            "node": "Processing Summary",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Read Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Schedule": {
+      "main": [
+        [
+          {
+            "node": "List Documents",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Ensure Tracking Table",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Ensure Category Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Category By Label": {
+      "main": [
+        [
+          {
+            "node": "Enrich Category Lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrich Category Lookup": {
+      "main": [
+        [
+          {
+            "node": "Filter Matched Categories",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Aggregate Matched Categories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Matched Categories": {
+      "main": [
+        [
+          {
+            "node": "IF Zero Category Matches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ensure Category Table": {
+      "main": [
+        [
+          {
+            "node": "Get Category Tree",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sync Category Table": {
+      "main": [
+        [
+          {
+            "node": "Get Categories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Categories": {
+      "main": [
+        [
+          {
+            "node": "Ready to Process",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Ready to Process": {
+      "main": [
+        [
+          {
+            "node": "Process Each Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Document": {
+      "main": [
+        [
+          {
+            "node": "Prepare AI Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
-  "parentFolderId": null,
-  "description": "Enriches eXo documents with AI while keeping custom JavaScript to a minimum.",
-  "scopes": [
-    "workflow:create",
-    "workflow:delete",
-    "workflow:execute",
-    "workflow:execute-chat",
-    "workflow:list",
-    "workflow:move",
-    "workflow:publish",
-    "workflow:read",
-    "workflow:share",
-    "workflow:unpublish",
-    "workflow:unshare",
-    "workflow:update",
-    "workflow:updateRedactionSetting"
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "7a0d59f8-ce9e-4b18-b67e-d2d3643108db",
+  "activeVersionId": null,
+  "versionCounter": 110,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-05-07T14:30:37.020Z",
+      "createdAt": "2026-05-07T14:30:37.020Z",
+      "role": "workflow:owner",
+      "workflowId": "EKgSjPqKuas3i4PM",
+      "projectId": "rzaD0nbLwUWIJxdW",
+      "project": {
+        "updatedAt": "2026-05-05T11:30:25.664Z",
+        "createdAt": "2026-04-20T14:43:55.238Z",
+        "id": "rzaD0nbLwUWIJxdW",
+        "name": "Meeds Lab  <patrice@meedslab.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "8de64810-3c63-4fd1-969c-9915f88c784a"
+      }
+    }
   ],
-  "canExecute": true
+  "tags": [],
+  "activeVersion": null
 }

@@ -21,7 +21,7 @@ Derived from **per-workflow technical specs** ([WF01](../workflows/wf01-email-di
 | `list_project_statuses` | | ✓ | | |
 | `list_users_of_space_by_role` | | ✓ | | |
 | `get_all_spaces` | | | ✓ | |
-| `get_my_spaces` | | | | ✓ |
+| `get_my_spaces` | | | | |
 | `get_note` | | | ✓ | |
 | `search_notes` | | | ✓ | |
 | `create_child_note` | | | ✓ | |
@@ -73,11 +73,12 @@ Derived from **per-workflow technical specs** ([WF01](../workflows/wf01-email-di
 
 | Requirement | MCP likely? | Notes |
 |-------------|:-------------:|-------|
-| **`EXO_SPACE_NAME`** must match existing space | Partial | **`get_my_spaces`** resolves by name—**create space in UI** if missing (or MCP if server supports it). |
+| **`WF04_SPACE_ID`** (digits) | Partial | Use **`get_my_spaces`** (or UI) once to read **`space_id`** for the target space; set in root `.env` and **`npm run generate:workflow-json`** / deploy so **List Documents** MCP **Manual** `space_id` carries a plain integer (no n8n **`$vars.WF04_SPACE_ID`**). Wrong id misroutes **`search_documents`**. |
+| **`EXO_SPACE_NAME`** (display) | Operator / root **`.env`** | Baked into **`workflow.json`** **`Prepare AI Input`** **`spaceName`** literal (not n8n **`$vars.EXO_SPACE_NAME`**); **`generate:workflow-json`** / deploy rewrite the demo string from **`.env`**. |
 | **`EXO_MCP_ENDPOINT`** | n8n-only | Align with Cursor MCP tenant via generated JSON literal (not n8n `$vars` when hardcoded). |
-| Category tree / document writes | Runtime | **`get_category_tree`**, **`update_document_description`**, **`add_content_to_category`** — categories **discovered at runtime**; no static id file required for categories. |
+| Category tree / document writes | Runtime | **`get_category_tree`** (WF04: **once per run** via **`executeOnce`**, then **`Flatten Category Tree`** + **`Sync Category Table`** + **`Get Categories`**, then **`Ready to Process`** merge), **`update_document_description`**, **`add_content_to_category`** — categories **discovered at runtime**; no static id file required for categories. For **`add_content_to_category`**, **`content_id`** must be the document path form **`/document:{id}`** with **`content_type`** **`document`** (see [WF04 SPEC.technical.md §3.3](../workflows/wf04-metadata-enrichment/SPEC.technical.md)). |
 | **`exo_processed_documents` Data Table** | **n8n auto** | Graph creates table; **no eXo bootstrap**. |
-| Optional tuning vars | No | Canonical **`config.env.example`** lists **`EXO_MCP_ENDPOINT`** + **`EXO_SPACE_NAME`** only—additional knobs belong in workflow edits or future vars. |
+| Optional tuning vars | No | Canonical **`config.env.example`** lists **`EXO_MCP_ENDPOINT`**, **`EXO_SPACE_NAME`**, **`WF04_SPACE_ID`**—see file for meanings. |
 
 **Fixture prompt:** [workflows/wf04-metadata-enrichment/fixtures/FIXTURE_BOOTSTRAP_PROMPT.md](../workflows/wf04-metadata-enrichment/fixtures/FIXTURE_BOOTSTRAP_PROMPT.md)
 

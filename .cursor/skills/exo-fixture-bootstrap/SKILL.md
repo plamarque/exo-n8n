@@ -43,6 +43,9 @@ description: >-
 
 1. **Read** `workflows/<folder>/fixtures/FIXTURE_BOOTSTRAP_PROMPT.md` end-to-end.
 2. **Read** the same folder’s **`SPEC.technical.md`** and **`config.env.example`** for exact **MCP tool names**, payload shapes, and **variable keys** (these override any drift in the prompt).
+
+   **WF04 (`wf04-metadata-enrichment`):** The fixture prompt requires a **one-time** MCP call to **`get_my_spaces`** during bootstrap only, to fill **`WF04_SPACE_ID`** and **`EXO_SPACE_NAME`** in root **`.env`**. The canonical **`workflow.json`** does **not** call **`get_my_spaces`** at runtime ([SPEC.technical.md §7](../../../workflows/wf04-metadata-enrichment/SPEC.technical.md)); discovery stays in this bootstrap path. **`npm run generate:workflow-json`** / deploy inject from **`.env`** into literals: **`EXO_SPACE_NAME`** → **`Prepare AI Input`** **`spaceName`**, **`WF04_SPACE_ID`** → **`List Documents`** MCP **Manual** **`parameters.value.space_id`**—no n8n **`$vars.EXO_SPACE_NAME`** or **`$vars.WF04_SPACE_ID`** in canonical JSON.
+
 3. Follow the prompt’s **ordered steps** using **search-then-create** (idempotent names). Call only tools the spec allows; note **gaps** where the prompt says MANUAL or n8n-only.
 4. **Output — merge into repository root `.env`** (primary):
    - Build the **bootstrap map**: one entry per key in `config.env.example` (skip comment-only lines), using discovered values or a `# MISSING: <reason>` comment if you add a placeholder line (prefer omitting unset keys unless the prompt requires a stub).

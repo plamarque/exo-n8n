@@ -35,6 +35,7 @@ The project domain is workflow automation between n8n and eXo for festival proje
 - Note: eXo note used by WF03 as a steering committee (COPIL) template or generated meeting note.
 - Agenda event: eXo calendar event used by WF03 for the weekly steering committee (COPIL) invitation.
 - Category: eXo classification term used by WF04 document enrichment.
+- Category cache row: WF04 Data Table row in **`exo_category_cache`** (`category_id`, `category_label`) synchronized from **`get_category_tree`** for lookup.
 - Processed document record: WF04 Data Table row keyed by document and last processed state.
 
 ## Observable Business Rules
@@ -44,8 +45,9 @@ The project domain is workflow automation between n8n and eXo for festival proje
 - WF02 requires two equivalent approvals before final completion.
 - WF02 treats refusal as a correction/rework path rather than a successful closure.
 - WF03 AI suggestions support the meeting; they do not replace human decisions.
-- WF04 treats missing `EXO_SPACE_NAME` as a blocking error.
+- WF04 relies on operator-configured **`space_id`** and display **`spaceName`** literals (from **`.env`** + generate/deploy); the didactic graph does not validate them with an entry IF.
 - WF04 skips unchanged documents already represented in the tracking table.
+- WF04 persists a flattened category catalogue in **`exo_category_cache`** for lookup during assignment (one small **Code** node walks **`get_category_tree`** nesting before upsert; suggested labels are resolved with Data Table **get**).
 
 ## Assumptions And Uncertainties
 

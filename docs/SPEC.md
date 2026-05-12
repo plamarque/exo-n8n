@@ -76,11 +76,12 @@ The workflow enriches eXo documents with AI-generated metadata and tracks proces
 
 Observable rules:
 
-- It requires `$vars.EXO_SPACE_NAME`.
-- It resolves an eXo space, scans documents, reads document content, and lists available categories.
+- It requires **`WF04_SPACE_ID`** (eXo `space_id` for **`search_documents`**) as a **plain integer** in **List Documents** MCP **Manual** parameters in git (demo **`1`**), rewritten from **`.env`** by **`npm run generate:workflow-json`** / deploy, and **`EXO_SPACE_NAME`** (display label) injected into a **literal** `spaceName` expression in **`workflow.json`**—**not** n8n **`$vars.EXO_SPACE_NAME`** or **`$vars.WF04_SPACE_ID`**.
+- It scans documents in that space, reads document content, and lists available categories.
 - It uses AI structured output for a short description and suggested categories.
 - It updates document descriptions and category assignments through eXo MCP.
 - It tracks processed documents in the n8n Data Table `exo_processed_documents`.
+- It refreshes category labels into the n8n Data Table `exo_category_cache` from **`get_category_tree`** each run (upsert by **`category_id`**; one **Code** node flattens nested MCP JSON before upsert) and resolves each LLM suggestion with a Data Table **get** on **`category_label`** before **`add_content_to_category`** (MCP expects **`content_id`** as **`/document:{id}`** and **`content_type`** **`document`**); non-matching labels are skipped without failing the run.
 - It limits processing to five documents per run in the current implementation.
 
 ## Boundaries

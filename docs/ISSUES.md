@@ -31,11 +31,14 @@ This document is tracking-only. It does not define expected behavior.
 
 ### WF04
 
-- `EXO_SPACE_NAME` is mandatory and missing values stop the workflow.
+- **`EXO_SPACE_NAME`** and **`WF04_SPACE_ID`** must be set correctly in root **`.env`** (or literals hand-edited in **`workflow.json`**); the canonical graph has **no** entry IF that blocks empty or wrong values.
+- Wrong **`WF04_SPACE_ID`** misroutes **`search_documents`**; there is no in-graph **`get_my_spaces`** check (didactic trade-off — see [SPEC.technical.md §7](../workflows/wf04-metadata-enrichment/SPEC.technical.md)).
+- WF04 no longer filters list rows for missing **`document_id`** before merge; operators rely on **`search_documents`** returning usable rows (see [SPEC.technical.md §5.3](../workflows/wf04-metadata-enrichment/SPEC.technical.md)).
 - MCP **`endpointUrl`** is repeated on each MCP Client node (demo literal in git until **`npm run generate:workflow-json`** rewrites from **`EXO_MCP_ENDPOINT`**).
 - Processing is capped at five documents per run.
 - There is no rollback if description update succeeds but category assignment fails.
-- One Code node remains for category assignment mapping after the native-node refactor.
+- Category suggestions are matched to **`exo_category_cache`** on **exact** string equality with **`category_label`** (Unicode/accent drift is not normalized in the two-column slice); optional evolution is a **`normalized_label`** column at sync time (see [SPEC.technical.md §5.3](../workflows/wf04-metadata-enrichment/SPEC.technical.md)).
+- **`Flatten Category Tree`** is the only **Code** node left in WF04: MCP **`get_category_tree`** returns nested **`sub_categories`**, which n8n does not flatten natively without a loop or custom tool; label → **`category_id`** resolution uses **Data Table** **get** (`Lookup Category By Label`) instead of merge/Code lookup.
 
 ## Cross-Cutting Issues
 

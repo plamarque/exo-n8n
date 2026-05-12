@@ -8,7 +8,7 @@ This document is tracking-only. It does not define expected behavior.
 - **WF01**: canonical JSON and split specs; persistent email idempotence still open (see [ISSUES](ISSUES.md)).
 - **WF02**: canonical JSON + split specs; **native refactor (2026-04-27)** plus **didactic slice (2026-05-07)** — HTML node for task description, Manual `create_task` mapping, Split Out on **`content[0].text`** for search, raw **`get_document_by_id`** (**`content[0].text`**) without UTIL (UTIL unwrap **create_task** only); **deferred** Data Table `createIfNotExists` (before first use, not on trigger); **Merge input** connects **`Get Processed Docs`** directly to **`Merge Docs to Process`** (no intermediate merge-input Code node); approval branch uses **`Approval Form`** → **`IF Valid Approval`** + **`Get Approval Rows`** and inline merge expressions (no **`Merge Decision`** Code node; plus optional guards elsewhere); unwrap via [subworkflow-dependencies.json](../workflows/wf02-document-validation/subworkflow-dependencies.json).
 - **WF03**: canonical `workflow.json` + API snapshot in `fixtures/`; **Code-node reduction** still pending (contrast: WF01/WF04 more advanced).
-- **WF04**: canonical `workflow.json` + `fixtures/workflow.export.snapshot.json`; one Code node may remain for category mapping; optional API push via `tools/push-workflow-to-n8n-api.mjs` / `npm run deploy:workflow`.
+- **WF04**: canonical `workflow.json` + `fixtures/workflow.export.snapshot.json`; didactic slice (2026-05-11) — **`WF04_SPACE_ID`** + parallel tracking ensure before merge; Manual **`add_content_to_category`**; optional API push via `tools/push-workflow-to-n8n-api.mjs` / `npm run deploy:workflow`.
 
 ## Didactic simplification slices (WF01 principles → WF02–WF04)
 
@@ -18,7 +18,7 @@ Normative checklist: [ADR 0004 — Didactic workflow simplification](ADR/0004-di
 | ----- | -------- | ------ |
 | [x] | **WF02** — Document validation | Apply ADR 0004 (2026-05-07): UTIL for **`create_task`** only; **`search_documents`** → Split Out on **`content[0].text`**; **`get_document_by_id`** inline from raw MCP item; HTML node for task body; `create_task` Manual + `removed` schema; trade-offs in [SPEC.technical.md](../workflows/wf02-document-validation/SPEC.technical.md) §7. |
 | [ ] | **WF03** — Weekly steering | Apply ADR 0004: reduce Code-only branches where native Split/Aggregate/IF suffice for teaching path; simplify expressions; align any AI output schema with downstream MCP/UI; document unwrap/split assumptions. |
-| [ ] | **WF04** — Metadata enrichment | Apply ADR 0004: trim non-essential nodes for the demo path, simplify MCP Client parameter mapping (schema/`removed` or minimal JSON), align parser enums with tools, keep Data Table story readable on the canvas. |
+| [x] | **WF04** — Metadata enrichment | Apply ADR 0004 (2026-05-11): inject **`WF04_SPACE_ID`** (no runtime **`get_my_spaces`**); parallel **Ensure Tracking Table** → **Get Processed** before merge; **Map suggested label to category_id** + Manual **`add_content_to_category`**; trade-offs in [SPEC.technical.md](../workflows/wf04-metadata-enrichment/SPEC.technical.md) §7. |
 
 Each completed slice updates canonical `workflow.json`, per-workflow `SPEC.*.md` / `README.md`, and cross-project docs when observable rules change.
 

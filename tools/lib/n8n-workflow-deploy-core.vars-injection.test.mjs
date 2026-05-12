@@ -10,10 +10,12 @@ import {
   applyWf02CreateTaskProjectIdFromEnv,
   escapeSingleQuotedJsStringLiteral,
   WF02_CANONICAL_PARENT_FOLDER_ID,
+  WF04_CANONICAL_EXO_SPACE_NAME_DEMO,
 } from "./n8n-workflow-deploy-core.mjs";
 
 const KEYS = [
   "WF01_PROJECT_ID",
+  "WF04_SPACE_ID",
   "WF02_PROJECT_ID",
   "WF02_INPROGRESS_STATUS_ID",
   "WF02_DONE_STATUS_ID",
@@ -72,6 +74,90 @@ function testIntegerAndCodeNode() {
   assert.match(nodes[0].parameters.jsCode, /\|\|\s*7\b/);
 }
 
+/** Legacy JSON-mode MCP payload: string rewrite still applies via {@link injectWf04ListDocumentsSpaceIdFromEnv}. */
+function testWf04SpaceIdFallbackOverrideLegacyJsonInputString() {
+  const nodes = [
+    {
+      parameters: {
+        jsonInput: '={{ { "offset": 0, "query": " ", "limit": 500, "space_id": 1 } }}',
+      },
+    },
+  ];
+  process.env.WF04_SPACE_ID = "4242";
+  applyN8nPortfolioVarsFallbackOverrides(nodes);
+  assert.ok(nodes[0].parameters.jsonInput.includes('"space_id": 4242'));
+}
+
+function testWf04SpaceIdFallbackOverrideManualListDocuments() {
+  const nodes = [
+    {
+      name: "List Documents",
+      parameters: {
+        tool: { value: "search_documents" },
+        parameters: {
+          value: {
+            offset: 0,
+            query: " ",
+            limit: 500,
+            space_id: 1,
+          },
+        },
+      },
+    },
+  ];
+  process.env.WF04_SPACE_ID = "4242";
+  applyN8nPortfolioVarsFallbackOverrides(nodes);
+  assert.equal(nodes[0].parameters.parameters.value.space_id, 4242);
+}
+
+function testWf04SpaceIdHardcodeLegacyJsonInputString() {
+  const prev = process.env.WF04_SPACE_ID;
+  try {
+    process.env.WF04_SPACE_ID = "99";
+    const nodes = [
+      {
+        parameters: {
+          jsonInput: '={{ { "offset": 0, "query": " ", "limit": 500, "space_id": 1 } }}',
+        },
+      },
+    ];
+    applyPortfolioHardcodeFromEnv(nodes);
+    assert.ok(nodes[0].parameters.jsonInput.includes('"space_id": 99'));
+    assert.ok(!nodes[0].parameters.jsonInput.includes("$vars"));
+  } finally {
+    if (prev === undefined) delete process.env.WF04_SPACE_ID;
+    else process.env.WF04_SPACE_ID = prev;
+  }
+}
+
+function testWf04SpaceIdHardcodeManualListDocuments() {
+  const prev = process.env.WF04_SPACE_ID;
+  try {
+    process.env.WF04_SPACE_ID = "99";
+    const nodes = [
+      {
+        name: "List Documents",
+        parameters: {
+          tool: { value: "search_documents" },
+          parameters: {
+            value: {
+              offset: 0,
+              query: " ",
+              limit: 500,
+              space_id: 1,
+            },
+          },
+        },
+      },
+    ];
+    applyPortfolioHardcodeFromEnv(nodes);
+    assert.equal(nodes[0].parameters.parameters.value.space_id, 99);
+  } finally {
+    if (prev === undefined) delete process.env.WF04_SPACE_ID;
+    else process.env.WF04_SPACE_ID = prev;
+  }
+}
+
 function testExoSpaceName() {
   const nodes = [
     {
@@ -83,6 +169,22 @@ function testExoSpaceName() {
   process.env.EXO_SPACE_NAME = 'Other " quoted';
   applyN8nPortfolioVarsFallbackOverrides(nodes);
   assert.ok(nodes[0].parameters.v.includes('Other \\" quoted'));
+}
+
+function testExoSpaceNameWf04LiteralInject() {
+  const nodes = [
+    {
+      parameters: {
+        v: `={{ "${WF04_CANONICAL_EXO_SPACE_NAME_DEMO}" }}`,
+      },
+    },
+  ];
+  process.env.EXO_SPACE_NAME = "Tenant display name";
+  applyN8nPortfolioVarsFallbackOverrides(nodes);
+  assert.ok(nodes[0].parameters.v.includes("Tenant display name"));
+  applyPortfolioHardcodeFromEnv(nodes);
+  assert.ok(nodes[0].parameters.v.includes("Tenant display name"));
+  assert.ok(!nodes[0].parameters.v.includes("$vars"));
 }
 
 function testWf03MeetingOwner() {
@@ -255,7 +357,12 @@ const prev = stashEnv();
 try {
   testEscapeSingleQuoted();
   testIntegerAndCodeNode();
+  testWf04SpaceIdFallbackOverrideLegacyJsonInputString();
+  testWf04SpaceIdFallbackOverrideManualListDocuments();
+  testWf04SpaceIdHardcodeLegacyJsonInputString();
+  testWf04SpaceIdHardcodeManualListDocuments();
   testExoSpaceName();
+  testExoSpaceNameWf04LiteralInject();
   testWf03MeetingOwner();
   testWf02ApprovalUrl();
   testWf02ParentFolder();

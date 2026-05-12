@@ -363,6 +363,64 @@ export const WF02_CANONICAL_PARENT_FOLDER_ID = "ced6e9c539805e114bd65696b26bd073
 export const WF02_CANONICAL_PROJECT_ID = 2;
 
 /**
+ * WF04 canonical demo `spaceName` on **Prepare AI Input** (no n8n **`$vars.EXO_SPACE_NAME`**).
+ * When **`EXO_SPACE_NAME`** is set in repository root `.env`, deploy and
+ * {@link applyPortfolioHardcodeFromEnv} rewrite this expression literal.
+ */
+export const WF04_CANONICAL_EXO_SPACE_NAME_DEMO = "Festival Art2Rue - Documents";
+
+/**
+ * WF04 canonical demo **`space_id`** inside **List Documents** `search_documents` manual **`parameters.value`**
+ * (plain integer in the object literal, no n8n **`$vars.WF04_SPACE_ID`**).
+ * When **`WF04_SPACE_ID`** is set in repository root `.env`, deploy and
+ * {@link applyPortfolioHardcodeFromEnv} rewrite the **`space_id`** digit in **List Documents** MCP parameters.
+ */
+export const WF04_CANONICAL_SPACE_ID_DEMO = 1;
+
+/**
+ * Rewrite WF04 **List Documents** MCP parameter payload when **`WF04_SPACE_ID`** is set in `.env`.
+ * Matches the didactic `search_documents` envelope: `"limit": 500` then `"space_id": <digits>`.
+ *
+ * @param {string} str
+ * @returns {string}
+ */
+function injectWf04ListDocumentsSpaceIdFromEnv(str) {
+  const raw = (process.env.WF04_SPACE_ID || "").trim();
+  if (!raw || !/^\d+$/.test(raw)) return str;
+  return str.replace(/("limit"\s*:\s*500,\s*"space_id"\s*:\s*)\d+/g, `$1${raw}`);
+}
+
+/**
+ * When **`WF04_SPACE_ID`** is set, set numeric **`space_id`** on WF04 **List Documents** MCP Client
+ * **Manual** `parameters.value` (string-based {@link injectWf04ListDocumentsSpaceIdFromEnv} does not visit JSON numbers).
+ *
+ * @param {unknown[] | undefined} nodes
+ * @returns {number} nodes mutated
+ */
+export function applyWf04ListDocumentsManualSpaceIdFromEnv(nodes) {
+  if (!Array.isArray(nodes)) return 0;
+  const raw = (process.env.WF04_SPACE_ID || "").trim();
+  if (!raw || !/^\d+$/.test(raw)) return 0;
+  const idNum = Number(raw);
+  let touched = 0;
+  for (const node of nodes) {
+    if (!node || typeof node !== "object") continue;
+    if (/** @type {{ name?: string }} */ (node).name !== "List Documents") continue;
+    const pl =
+      /** @type {{ parameters?: { tool?: { value?: unknown }; parameters?: { value?: Record<string, unknown> } } }} */ (
+        node
+      ).parameters;
+    if (pl?.tool?.value !== "search_documents") continue;
+    const v = pl?.parameters?.value;
+    if (!v || typeof v !== "object") continue;
+    if (!Object.prototype.hasOwnProperty.call(v, "space_id")) continue;
+    /** @type {Record<string, unknown>} */ (v).space_id = idNum;
+    touched++;
+  }
+  return touched;
+}
+
+/**
  * True when this node is WF02's **`MCP Create Task`** (WF01 uses AI Router on `title`; WF02 uses **`Merge Docs to Process`**).
  * @param {unknown} node
  */
@@ -482,6 +540,8 @@ export function applyN8nPortfolioVarsFallbackOverrides(nodes) {
       out = out.replace(re, `$1${raw}`);
     }
 
+    out = injectWf04ListDocumentsSpaceIdFromEnv(out);
+
     const folderRaw = (process.env.WF02_PARENT_FOLDER_ID || "").trim();
     if (folderRaw) {
       if (!/^[a-f0-9]+$/i.test(folderRaw)) {
@@ -534,6 +594,11 @@ export function applyN8nPortfolioVarsFallbackOverrides(nodes) {
         /(\$vars\.EXO_SPACE_NAME\s*\|\|\s*")(?:[^"\\]|\\.)*(")/g,
         `$1${escaped}$2`,
       );
+      const wf04DemoEsc = WF04_CANONICAL_EXO_SPACE_NAME_DEMO.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      out = out.replace(
+        new RegExp(`=\\{\\{\\s*"${wf04DemoEsc}"\\s*\\}\\}`, "g"),
+        `={{ "${escaped}" }}`,
+      );
     }
 
     return out;
@@ -546,6 +611,8 @@ export function applyN8nPortfolioVarsFallbackOverrides(nodes) {
     mapDeepStringsInPlace(node, applyRules);
     if (JSON.stringify(node) !== before) touched++;
   }
+
+  touched += applyWf04ListDocumentsManualSpaceIdFromEnv(nodes);
 
   if (touched > 0) {
     console.log(
@@ -601,6 +668,8 @@ export function applyPortfolioHardcodeFromEnv(nodes, opts = {}) {
       out = out.replace(re, `Number(${raw})`);
     }
 
+    out = injectWf04ListDocumentsSpaceIdFromEnv(out);
+
     const folderRaw = (process.env.WF02_PARENT_FOLDER_ID || "").trim();
     if (folderRaw && /^[a-f0-9]+$/i.test(folderRaw)) {
       out = out.replace(
@@ -642,6 +711,11 @@ export function applyPortfolioHardcodeFromEnv(nodes, opts = {}) {
       const escaped = escapeN8nExpressionStringLiteral(spaceRaw);
       out = out.replace(/\$vars\.EXO_SPACE_NAME\s*\|\|\s*"(?:[^"\\]|\\.)*"/g, `"${escaped}"`);
       out = out.replace(/\$vars\.EXO_SPACE_NAME\b/g, `"${escaped}"`);
+      const wf04DemoEsc = WF04_CANONICAL_EXO_SPACE_NAME_DEMO.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      out = out.replace(
+        new RegExp(`=\\{\\{\\s*"${wf04DemoEsc}"\\s*\\}\\}`, "g"),
+        `={{ "${escaped}" }}`,
+      );
     }
 
     return out;
@@ -656,6 +730,8 @@ export function applyPortfolioHardcodeFromEnv(nodes, opts = {}) {
     mapDeepStringsInPlace(node, hardcode);
     if (JSON.stringify(node) !== before) stringNodes++;
   }
+
+  stringNodes += applyWf04ListDocumentsManualSpaceIdFromEnv(nodes);
 
   if (opts.silent !== true && (mcpNodes > 0 || stringNodes > 0)) {
     console.log(

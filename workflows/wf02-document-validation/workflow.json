@@ -323,10 +323,28 @@
           "mode": "id",
           "value": "get_document_by_id"
         },
-        "inputMode": "json",
-        "jsonInput": "={{ { document_id: $json.id } }}",
+        "inputMode": "manual",
         "options": {
           "timeout": 60000
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "document_id": "={{ $json.id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "document_id",
+              "displayName": "document_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         }
       },
       "id": "d06c3f8f-61ff-47f8-84ee-2481db4c5fe7",
@@ -560,10 +578,37 @@
           "mode": "id",
           "value": "add_task_comment"
         },
-        "inputMode": "json",
-        "jsonInput": "={{ (() => { const tid = Number($('MCP Create Task').item.json.content[0].text.task_id); const cyc = encodeURIComponent(String($('Merge Docs to Process').item.json.id) + ':' + String($('Merge Docs to Process').item.json.updatedDate)); const base = 'https://meeds.app.n8n.cloud/form/wf02-doc-validation/approve?cycle_id=' + cyc; const artistic = base + '&task_id=' + tid + '&role=artistic&actor=nadia'; const technical = base + '&task_id=' + tid + '&role=technical&actor=etienne'; const html = '<p><strong>Stamp links</strong> (task id included)</p><p><a href=\"' + artistic + '\" target=\"_blank\" rel=\"noopener noreferrer\">Artistic stamp (Nadia)</a></p><p><a href=\"' + technical + '\" target=\"_blank\" rel=\"noopener noreferrer\">Technical stamp (Etienne)</a></p>'; return { task_id: tid, text: html }; })() }}",
+        "inputMode": "manual",
         "options": {
           "timeout": 60000
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "task_id": "={{ Number($('MCP Create Task').item.json.content[0].text.task_id) }}",
+            "text": "={{ (() => { const tid = Number($('MCP Create Task').item.json.content[0].text.task_id); const cyc = encodeURIComponent(String($('Merge Docs to Process').item.json.id) + ':' + String($('Merge Docs to Process').item.json.updatedDate)); const base = 'https://meeds.app.n8n.cloud/form/wf02-doc-validation/approve?cycle_id=' + cyc; const artistic = base + '&task_id=' + tid + '&role=artistic&actor=nadia'; const technical = base + '&task_id=' + tid + '&role=technical&actor=etienne'; return '<p><strong>Stamp links</strong> (task id included)</p><p><a href=\"' + artistic + '\" target=\"_blank\" rel=\"noopener noreferrer\">Artistic stamp (Nadia)</a></p><p><a href=\"' + technical + '\" target=\"_blank\" rel=\"noopener noreferrer\">Technical stamp (Etienne)</a></p>'; })() }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "task_id",
+              "displayName": "task_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "number"
+            },
+            {
+              "id": "text",
+              "displayName": "text",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         }
       },
       "id": "b7e2a91c-3d44-4f8a-9c01-a4f5e8d2c103",
@@ -1253,10 +1298,37 @@
           "mode": "id",
           "value": "update_task_status"
         },
-        "inputMode": "json",
-        "jsonInput": "={{ { task_id: $json.task_id, status_id: Number($vars.WF02_DONE_STATUS_ID || 8) } }}",
+        "inputMode": "manual",
         "options": {
           "timeout": 60000
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "task_id": "={{ Number($json.task_id) }}",
+            "status_id": "={{ Number($vars.WF02_DONE_STATUS_ID || 8) }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "task_id",
+              "displayName": "task_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "number"
+            },
+            {
+              "id": "status_id",
+              "displayName": "status_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "number"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         }
       },
       "id": "8cc03abf-a07f-41b3-b4b9-9a985320131e",
@@ -1283,10 +1355,37 @@
           "mode": "id",
           "value": "add_task_comment"
         },
-        "inputMode": "json",
-        "jsonInput": "={{ { task_id: Number(($('Approval Form').first().json.task_id ?? $('Approval Form').first().json.query?.task_id) || ($('Get Approval Rows').first().json || {}).task_id || 0), text: \"Both stamps received. Task approved and closed.\" } }}",
+        "inputMode": "manual",
         "options": {
           "timeout": 60000
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "task_id": "={{ Number(($('Approval Form').first().json.task_id ?? $('Approval Form').first().json.query?.task_id) || ($('Get Approval Rows').first().json || {}).task_id || 0) }}",
+            "text": "Both stamps received. Task approved and closed."
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "task_id",
+              "displayName": "task_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "number"
+            },
+            {
+              "id": "text",
+              "displayName": "text",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         }
       },
       "id": "df49998f-6dc6-4961-abd7-7784dca492ee",
@@ -1386,10 +1485,37 @@
           "mode": "id",
           "value": "add_task_comment"
         },
-        "inputMode": "json",
-        "jsonInput": "={{ { task_id: Number(($('Approval Form').first().json.task_id ?? $('Approval Form').first().json.query?.task_id) || ($('Get Approval Rows').first().json || {}).task_id || 0), text: \"Validation incomplete or rejected. Please fix the document and resubmit.\" } }}",
+        "inputMode": "manual",
         "options": {
           "timeout": 60000
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "task_id": "={{ Number(($('Approval Form').first().json.task_id ?? $('Approval Form').first().json.query?.task_id) || ($('Get Approval Rows').first().json || {}).task_id || 0) }}",
+            "text": "Validation incomplete or rejected. Please fix the document and resubmit."
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "task_id",
+              "displayName": "task_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "number"
+            },
+            {
+              "id": "text",
+              "displayName": "text",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         }
       },
       "id": "f878b670-aa9f-4551-b4c9-bd5d170d5d2b",
@@ -2196,10 +2322,28 @@
             "mode": "id",
             "value": "get_document_by_id"
           },
-          "inputMode": "json",
-          "jsonInput": "={{ { document_id: $json.id } }}",
+          "inputMode": "manual",
           "options": {
             "timeout": 60000
+          },
+          "parameters": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "document_id": "={{ $json.id }}"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "document_id",
+                "displayName": "document_id",
+                "defaultMatch": false,
+                "required": true,
+                "display": true,
+                "type": "string"
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
           }
         },
         "id": "d06c3f8f-61ff-47f8-84ee-2481db4c5fe7",
@@ -2433,10 +2577,37 @@
             "mode": "id",
             "value": "add_task_comment"
           },
-          "inputMode": "json",
-          "jsonInput": "={{ (() => { const tid = Number($('MCP Create Task').item.json.content[0].text.task_id); const cyc = encodeURIComponent(String($('Merge Docs to Process').item.json.id) + ':' + String($('Merge Docs to Process').item.json.updatedDate)); const base = 'https://meeds.app.n8n.cloud/form/wf02-doc-validation/approve?cycle_id=' + cyc; const artistic = base + '&task_id=' + tid + '&role=artistic&actor=nadia'; const technical = base + '&task_id=' + tid + '&role=technical&actor=etienne'; const html = '<p><strong>Stamp links</strong> (task id included)</p><p><a href=\"' + artistic + '\" target=\"_blank\" rel=\"noopener noreferrer\">Artistic stamp (Nadia)</a></p><p><a href=\"' + technical + '\" target=\"_blank\" rel=\"noopener noreferrer\">Technical stamp (Etienne)</a></p>'; return { task_id: tid, text: html }; })() }}",
+          "inputMode": "manual",
           "options": {
             "timeout": 60000
+          },
+          "parameters": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "task_id": "={{ Number($('MCP Create Task').item.json.content[0].text.task_id) }}",
+              "text": "={{ (() => { const tid = Number($('MCP Create Task').item.json.content[0].text.task_id); const cyc = encodeURIComponent(String($('Merge Docs to Process').item.json.id) + ':' + String($('Merge Docs to Process').item.json.updatedDate)); const base = 'https://meeds.app.n8n.cloud/form/wf02-doc-validation/approve?cycle_id=' + cyc; const artistic = base + '&task_id=' + tid + '&role=artistic&actor=nadia'; const technical = base + '&task_id=' + tid + '&role=technical&actor=etienne'; return '<p><strong>Stamp links</strong> (task id included)</p><p><a href=\"' + artistic + '\" target=\"_blank\" rel=\"noopener noreferrer\">Artistic stamp (Nadia)</a></p><p><a href=\"' + technical + '\" target=\"_blank\" rel=\"noopener noreferrer\">Technical stamp (Etienne)</a></p>'; })() }}"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "task_id",
+                "displayName": "task_id",
+                "defaultMatch": false,
+                "required": true,
+                "display": true,
+                "type": "number"
+              },
+              {
+                "id": "text",
+                "displayName": "text",
+                "defaultMatch": false,
+                "required": true,
+                "display": true,
+                "type": "string"
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
           }
         },
         "id": "b7e2a91c-3d44-4f8a-9c01-a4f5e8d2c103",
@@ -3126,10 +3297,37 @@
             "mode": "id",
             "value": "update_task_status"
           },
-          "inputMode": "json",
-          "jsonInput": "={{ { task_id: $json.task_id, status_id: Number($vars.WF02_DONE_STATUS_ID || 8) } }}",
+          "inputMode": "manual",
           "options": {
             "timeout": 60000
+          },
+          "parameters": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "task_id": "={{ Number($json.task_id) }}",
+              "status_id": "={{ Number($vars.WF02_DONE_STATUS_ID || 8) }}"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "task_id",
+                "displayName": "task_id",
+                "defaultMatch": false,
+                "required": true,
+                "display": true,
+                "type": "number"
+              },
+              {
+                "id": "status_id",
+                "displayName": "status_id",
+                "defaultMatch": false,
+                "required": true,
+                "display": true,
+                "type": "number"
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
           }
         },
         "id": "8cc03abf-a07f-41b3-b4b9-9a985320131e",
@@ -3156,10 +3354,37 @@
             "mode": "id",
             "value": "add_task_comment"
           },
-          "inputMode": "json",
-          "jsonInput": "={{ { task_id: Number(($('Approval Form').first().json.task_id ?? $('Approval Form').first().json.query?.task_id) || ($('Get Approval Rows').first().json || {}).task_id || 0), text: \"Both stamps received. Task approved and closed.\" } }}",
+          "inputMode": "manual",
           "options": {
             "timeout": 60000
+          },
+          "parameters": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "task_id": "={{ Number(($('Approval Form').first().json.task_id ?? $('Approval Form').first().json.query?.task_id) || ($('Get Approval Rows').first().json || {}).task_id || 0) }}",
+              "text": "Both stamps received. Task approved and closed."
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "task_id",
+                "displayName": "task_id",
+                "defaultMatch": false,
+                "required": true,
+                "display": true,
+                "type": "number"
+              },
+              {
+                "id": "text",
+                "displayName": "text",
+                "defaultMatch": false,
+                "required": true,
+                "display": true,
+                "type": "string"
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
           }
         },
         "id": "df49998f-6dc6-4961-abd7-7784dca492ee",
@@ -3259,10 +3484,37 @@
             "mode": "id",
             "value": "add_task_comment"
           },
-          "inputMode": "json",
-          "jsonInput": "={{ { task_id: Number(($('Approval Form').first().json.task_id ?? $('Approval Form').first().json.query?.task_id) || ($('Get Approval Rows').first().json || {}).task_id || 0), text: \"Validation incomplete or rejected. Please fix the document and resubmit.\" } }}",
+          "inputMode": "manual",
           "options": {
             "timeout": 60000
+          },
+          "parameters": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "task_id": "={{ Number(($('Approval Form').first().json.task_id ?? $('Approval Form').first().json.query?.task_id) || ($('Get Approval Rows').first().json || {}).task_id || 0) }}",
+              "text": "Validation incomplete or rejected. Please fix the document and resubmit."
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "task_id",
+                "displayName": "task_id",
+                "defaultMatch": false,
+                "required": true,
+                "display": true,
+                "type": "number"
+              },
+              {
+                "id": "text",
+                "displayName": "text",
+                "defaultMatch": false,
+                "required": true,
+                "display": true,
+                "type": "string"
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
           }
         },
         "id": "f878b670-aa9f-4551-b4c9-bd5d170d5d2b",
