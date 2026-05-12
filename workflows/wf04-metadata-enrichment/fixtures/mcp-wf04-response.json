@@ -689,8 +689,8 @@
           "parameters": {
             "mappingMode": "defineBelow",
             "value": {
-              "category_id": "={{ Number($json.category_id) }}",
-              "content_id": "={{ String($json.documentId).startsWith('/document:') ? String($json.documentId) : ('/document:' + String($json.documentId)) }}",
+              "category_id": "={{ $json.category_id }}",
+              "content_id": "={{ '/document:' + $json.documentId }}",
               "content_type": "document"
             },
             "matchingColumns": [],
@@ -1101,12 +1101,6 @@
                 "name": "category_label",
                 "value": "={{ $json.category_label }}",
                 "type": "string"
-              },
-              {
-                "id": "e4",
-                "name": "categoryName",
-                "value": "={{ $('Split Suggested Categories').item.json.categoryName }}",
-                "type": "string"
               }
             ]
           },
@@ -1178,14 +1172,14 @@
             "conditions": [
               {
                 "keyName": "category_id",
-                "keyValue": "={{ Number($json.category_id) }}"
+                "keyValue": "={{ $json.category_id }}"
               }
             ]
           },
           "columns": {
             "mappingMode": "defineBelow",
             "value": {
-              "category_id": "={{ Number($json.category_id) }}",
+              "category_id": "={{ $json.category_id }}",
               "category_label": "={{ String($json.category_label) }}"
             },
             "matchingColumns": [],
