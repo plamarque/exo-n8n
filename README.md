@@ -84,9 +84,9 @@ Together they enable:
 
 ### WF02 — Richer document validation: two parallel approvals
 
-**Tutorial:** [workflows/wf02-document-validation/README.md](workflows/wf02-document-validation/README.md)
+**Tutorial:** [workflows/wf02-document-validation/README.md](workflows/wf02-document-validation/README.md) · **Video:** [Loom — WF02](https://www.loom.com/share/f3b4f53bad3f486b870f171d74ade4d2)
 
-**Idea:** Some programs need **two independent approvers** (e.g. artistic vs technical) with **equal weight** and a clear join point. That is often **more** than a single-step DMS rule. n8n models **split / join**, **webhook returns** for decisions, and **comments** for an audit trail in the task.
+**Idea:** Some programs need **two independent approvers** (e.g. artistic vs technical) with **equal weight** and a clear join point. That is often **more** than a single-step DMS rule. n8n models **Form-based** decisions, **Data Table** state across runs, and **task comments** for an audit trail.
 
 **Typical trigger:** new or updated documents in a **watched folder** (intake on a schedule or manual start).
 

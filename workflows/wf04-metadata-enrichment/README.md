@@ -4,9 +4,11 @@
 
 ## Video walkthrough
 
-Prefer a short screencast before the long read? Replace the placeholder with your published URL (or embed) when ready.
+Prefer a short screencast before the long read?
 
-**Short video:** *TBD*
+**Short video (FR voice-over):** [Loom — WF04 metadata enrichment](https://www.loom.com/share/fe21624ca7a94363b33d21f2e3a66815)
+
+French tutorial copy aligned with that recording: [README.fr.md](README.fr.md).
 
 ## n8n canvas (overview)
 

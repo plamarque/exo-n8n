@@ -1,18 +1,20 @@
 # WF02 — Document validation (parallel approvals / split–join)
 
-**TL;DR** — Watch a **programming folder** for new documents, **create one validation task per file**, route **two parallel approvals** (artistic vs technical) through **webhook callbacks**, and **join** results so the task closes **only** when **both** sides approve. Demonstrates a richer pattern than a single-step native GED workflow.
+**TL;DR** — Watch a **programming folder** for new documents, **create one validation task per file**, collect **two parallel approvals** (artistic vs technical) via **n8n Form** submissions, and **join** state in Data Tables so the task closes **only** when **both** sides approve. Demonstrates a richer pattern than a single-step native GED workflow. **No OpenAI** credential is required for this graph.
 
 ## Video walkthrough
 
-Prefer a short screencast before the long read? Replace the placeholder with your published URL (or embed) when ready.
+Prefer a short screencast before the long read?
 
-**Short video:** *TBD*
+**Short video (FR voice-over):** [Loom — WF02 document validation](https://www.loom.com/share/f3b4f53bad3f486b870f171d74ade4d2)
+
+French tutorial copy aligned with that recording: [README.fr.md](README.fr.md).
 
 ## n8n canvas (overview)
 
 ![WF02 — Document validation workflow in the n8n editor](wf02.png)
 
-Folder sweep → dedup/merge → task with approval **Form** links → **split** for two reviewers → **join** on both decisions → task status and comments. For the exact sequence and wiring, open [`workflow.json`](workflow.json) in n8n or read [SPEC.technical.md](SPEC.technical.md) (sections 11–12).
+Folder sweep → dedup/merge → task with approval **Form** links → **Form trigger** branch per submission → **Switch** on persisted approval row → task status and comments. For the exact sequence and wiring, open [`workflow.json`](workflow.json) in n8n or read [SPEC.technical.md](SPEC.technical.md) (sections 11–12).
 
 ---
 
@@ -24,8 +26,8 @@ For festival programming (and similar programs), **editorial fit** and **operati
 
 - Detect **candidate documents** in a configured folder (`search_documents`).
 - **Deduplicate / incremental processing** so the same unchanged file does not spawn duplicate tasks without cause (Data Table + merge logic; see technical spec).
-- **Create** an eXo task with description containing document link and **approval deep links**.
-- Run **two parallel validation branches** (stamp A / stamp B); wait for **both** webhook outcomes (**split / join**).
+- **Create** an eXo task with description containing document link and **approval deep links** (hosted **Form** URLs with query parameters).
+- **Form trigger** branch records each submission; **join** logic (Switch + Data Table state) decides when **both** stamps are **APPROVED** vs partial / pending.
 - Mirror decisions as **task comments** and drive **status** transitions (`update_task_status`) per product rules.
 - On success across both branches, move to **Done** and record closure commentary as specified.
 
@@ -48,6 +50,7 @@ Create or locate the following **on eXo**, then copy identifiers into n8n **vari
 | Prerequisite | Why |
 |--------------|-----|
 | **MCP Client** + tenant MCP URL (`npm run generate:workflow-json` or edit nodes) | All eXo mutations and reads use MCP. |
+| **No OpenAI** | This portfolio workflow does not use LLM nodes; only MCP + Forms + Data Tables. |
 | **Public approval / form base URL** — **`WF02_APPROVAL_BASE_URL`** | Must be the hosted **Form** URL (e.g. `.../form/...`), **not** a raw webhook path, so approvers get the n8n Form UI ([config.env.example](config.env.example) comment, [SPEC.technical.md](SPEC.technical.md) if referenced). |
 | **Data Tables** `wf02_processed_documents` / `wf02_approvals` | Created on first run by the graph (`createIfNotExists`); **no manual SQL** required. |
 | **Unwrap** sub-workflow id for deploy | **`N8N_WORKFLOW_ID_UNWRAP`** + [subworkflow-dependencies.json](subworkflow-dependencies.json). |
@@ -74,8 +77,8 @@ Use `config.env.example` as a naming/meaning template. Copy values into **n8n Va
 3. **Approvals persistence** — **`wf02_approvals`** is ensured **just before** the first seed (intake) or **just before** reading rows (form branch); same idempotent `createIfNotExists` pattern.
 4. **Load document** — `get_document_by_id` on the raw MCP envelope (**`content[0].text`**); **HTML** description plus **`create_task_in_project`** fields pull from that node with **`Merge Docs to Process`** fallbacks (no intermediate unwrap/build Set nodes).
 5. **Create task** — `create_task_in_project` (**UTIL unwrap** on the response), then move to **In progress**; add the first **comment** with instructions and approval URLs for **nadia** / **etienne** (demo actors).
-6. **Split** — two branches await HTTP callbacks carrying approve/reject payloads until **both** complete (**merge**).
-7. **Join & finalize** — if **both APPROVED**, transition to **Done** and final comment; otherwise stay in progress / rework path with rejection notes.
+6. **Form branch** — **`Approval Form`** receives `task_id`, `cycle_id`, role, decision, reason; MCP comments + status updates mirror each submission.
+7. **Join & finalize** — **`Switch Approval Outcome`** after upsert: **both APPROVED** → **Done** + final comment; mixed approve/reject → stay **In progress** with explanation; otherwise **pending** until more submissions.
 
 ## n8n design choices (not a node-by-node list)
 
@@ -83,7 +86,7 @@ Use `config.env.example` as a naming/meaning template. Copy values into **n8n Va
 | Area          | Choice                                                 | Why                                                                                                                                                       |
 | ------------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Intake        | **Schedule + manual**                                  | Triggers start **two branches**: MCP folder search + **Ensure Tracking Table** → processed-doc read in parallel; **Merge** joins them. Approvals table is still ensured **just before** seed / form read.                                                                                     |
-| Parallelism   | **Split + wait for webhooks + merge**                  | Models two **independent** human decisions; **join** encodes the business rule.                                                                           |
+| Parallelism   | **Form submissions + approval table + Switch**         | Two **independent** human decisions over time; persisted rows encode **join** / partial-reject rules.                                                      |
 | Idempotency   | **Data Table + Merge (SQL-style combine)**             | Same pattern as WF04: **skip** unchanged docs; avoid accidental duplicate tasks when rerunning intake.                                                    |
 | MCP envelopes | **UTIL** for **create** only; **Split Out** for search; raw **`get_document`** | **`create_task_in_project`** uses **`Unwrap MCP JSON`**; **`search_documents`** splits **`content[0].text`** like WF04; **`get_document_by_id`** reads **`content[0].text`** directly ([SPEC.technical.md](SPEC.technical.md) §3.2–§3.3). |
 | Code surface  | **HTML node** for task body (approval branch: **`Approval Form`** → **`IF Valid Approval`** → **Get Approval Rows** + MCP / Data Table expressions; **`Set Effective Decisions`** after **Upsert Approval Row** then **`Switch Approval Outcome`** — 3-way expression Switch on **`effectiveArtistic`** / **`effectiveTechnical`**) | Intake **`combineBySql`** Merge reads **`Get Processed Docs`** directly (**input 2**); **`alwaysOutputData`** on that Data Table node supports empty-table runs. |
@@ -97,7 +100,7 @@ Typical tools in this graph (see [SPEC.technical.md](SPEC.technical.md) §3):
 - **Context** — optional `list_projects`, `**list_project_statuses`** (resolve status ids per tenant), `list_users_of_space_by_role`
 - **Mutate task** — `create_task_in_project`, `assign_task`, `add_task_comment`, `update_task_status`, `get_task_by_id`, `list_tasks`
 
-Webhook payloads drive approval branches; MCP carries **authoritative task updates** back into eXo.
+Form submissions drive the approval branch; MCP carries **authoritative task updates** back into eXo.
 
 ## Operational considerations
 
