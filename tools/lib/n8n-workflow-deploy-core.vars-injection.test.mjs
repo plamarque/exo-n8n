@@ -29,6 +29,7 @@ const KEYS = [
   "WF03_AGENDA_PARENT_EVENT_ID",
   "WF03_ATTENDEE_USERNAMES",
   "WF03_MEETING_OWNER",
+  "WF03_LANGUAGE",
   "WF03_STAGNATION_DAYS",
   "WF03_BLOCKED_DAYS",
   "WF03_OVERLOAD_THRESHOLD",
@@ -202,6 +203,7 @@ function buildWf03PrepareSteeringConfigNode() {
           { id: "bd9dc430", name: "reports_parent_note_id", value: 6, type: "number" },
           { id: "ccdc8611", name: "agenda_parent_event_id", value: 13, type: "number" },
           { id: "0d5f6a25", name: "meeting_owner", value: "Project team", type: "string" },
+          { id: "3b91c704", name: "language", value: "English", type: "string" },
           {
             id: "b8d348f1",
             name: "attendee_usernames",
@@ -251,6 +253,23 @@ function testWf03PrepareSteeringConfigMeetingOwnerAndAttendees() {
     a.find((x) => x.name === "attendee_usernames").value,
     "={{ ['alice', 'bob', 'carol'] }}",
   );
+}
+
+function testWf03PrepareSteeringConfigLanguageOverride() {
+  const nodes = [buildWf03PrepareSteeringConfigNode()];
+  process.env.WF03_LANGUAGE = "Français";
+  const touched = applyWf03PrepareSteeringConfigFromEnv(nodes);
+  assert.equal(touched, 1);
+  const a = nodes[0].parameters.assignments.assignments;
+  assert.equal(a.find((x) => x.name === "language").value, "Français");
+}
+
+function testWf03PrepareSteeringConfigLanguageEmptyKeepsDefault() {
+  const nodes = [buildWf03PrepareSteeringConfigNode()];
+  process.env.WF03_LANGUAGE = "   ";
+  applyWf03PrepareSteeringConfigFromEnv(nodes);
+  const a = nodes[0].parameters.assignments.assignments;
+  assert.equal(a.find((x) => x.name === "language").value, "English");
 }
 
 function testWf03PrepareSteeringConfigInvalidIntegerSkips() {
@@ -471,6 +490,8 @@ try {
   testExoSpaceNameWf04LiteralInject();
   testWf03PrepareSteeringConfigIntegerOverrides();
   testWf03PrepareSteeringConfigMeetingOwnerAndAttendees();
+  testWf03PrepareSteeringConfigLanguageOverride();
+  testWf03PrepareSteeringConfigLanguageEmptyKeepsDefault();
   testWf03PrepareSteeringConfigInvalidIntegerSkips();
   testWf03PrepareSteeringConfigSkipsForeignNode();
   testWf03PrepareSteeringConfigPipelineCallsThroughFallback();

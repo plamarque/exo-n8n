@@ -62,9 +62,9 @@ Same LLM call also suggests an agenda and a short list of watch items: blocked u
 
 ### 5.4 Language adaptation
 
-The eXo template note may be written in any natural language (French, English, …). The LLM call receives the template body, detects its language, and produces every generated string in that same language: the agenda items, the progress narrative (including its subsection headings), the watch items, the summary, and the three localized labels rendered in the agenda event description. No static translation table lives in the workflow.
+The output language is **set via `WF03_LANGUAGE` configuration** (root `.env`, free-form value such as `English`, `Français`, `Español`, …; default `English`). The agent receives it as a mandatory instruction and produces every generated string in that language: the agenda items, the progress narrative (including its subsection headings), the watch items (titles, context, decision labels), the summary, and the three localized labels rendered in the agenda event description. No static translation table lives in the workflow, and the template body is no longer used for runtime language detection.
 
-### 5.4 Calendar holder
+### 5.5 Calendar holder
 
 A weekly occurrence with title, 10:00, weekly recurrence, standing attendees, and in the event body a link to the prepared note of that week.
 
@@ -77,12 +77,11 @@ Default: Thursday 10:00. The run should land **before** the slot so the pack is 
 1. Find which steering committee occurrence to prepare and set the date used in the title.
 2. Read the template note from eXo.
 3. List project tasks.
-4. Run a single LLM call (structured output) on the template body, the task list, and the meeting context. It detects the template language and returns, all in that language: a suggested agenda, an HTML progress narrative, short watch items, a summary, and three short labels used for the agenda event description.
-5. Build the AI agenda, AI watch items, and useful-links sections (each rendered by a small HTML node).
-6. Compose the final note HTML by patching the template tokens with the dynamic sections (single short Code node): the AI HTML progress narrative goes into the progress report block, the AI lists into the agenda and watch-item blocks.
-7. Search for the existing weekly note by title, then update it (if found) or create a new child note.
-8. Build the agenda event description that links to the saved note (plus the AI agenda), then update the recurring agenda and refresh the invitee list.
-9. Stakeholders open the same invite and note every week with fresh content.
+4. Run a single LLM call (structured output) on the task list, the meeting context, and the configured output language (`WF03_LANGUAGE`). It returns, all in that language: a suggested agenda, an HTML progress narrative, short watch items, a summary, and three short labels used for the agenda event description.
+5. **Branch A — agenda event (early):** post the weekly summary on the recurring agenda event (`Weekly steering - YYYY-MM-DD`) and refresh the invitee list.
+6. **Branch B — meeting note:** read the template note, build the AI agenda, AI watch items, and useful-links sections (each rendered by a small HTML node); compose the final note HTML by patching the template tokens with the dynamic sections (single short Code node); search the existing weekly note by title, then update it (if found) or create a new child note; capture the resulting note URL and id.
+7. **Merge both branches** and post the final agenda event description: localized link to the meeting-support note + AI agenda + localized outro.
+8. Stakeholders open the same invite and note every week with fresh content.
 
 ## 8) Business rules
 

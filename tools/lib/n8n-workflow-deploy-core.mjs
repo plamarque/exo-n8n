@@ -399,6 +399,7 @@ function injectWf04ListDocumentsSpaceIdFromEnv(str) {
  *
  * - Integer assignments (`space_id`, `project_id`, …) — see {@link WF03_PREPARE_STEERING_CONFIG_INTEGER_MAP}
  * - `meeting_owner` — replaced with the **`WF03_MEETING_OWNER`** env value (plain string)
+ * - `language` — replaced with the **`WF03_LANGUAGE`** env value (plain string, e.g. `"English"`, `"Français"`)
  * - `attendee_usernames` — replaced with a comma-separated **`WF03_ATTENDEE_USERNAMES`** env value parsed
  *   into a trimmed, non-empty array literal rendered as an n8n expression (`={{ [ 'x', 'y' ] }}`)
  *
@@ -445,6 +446,16 @@ export function applyWf03PrepareSteeringConfigFromEnv(nodes) {
       for (const a of assignments) {
         if (a && a.name === "meeting_owner" && a.value !== ownerRaw) {
           a.value = ownerRaw;
+          changed = true;
+        }
+      }
+    }
+
+    const langRaw = (process.env.WF03_LANGUAGE || "").trim();
+    if (langRaw) {
+      for (const a of assignments) {
+        if (a && a.name === "language" && a.value !== langRaw) {
+          a.value = langRaw;
           changed = true;
         }
       }
