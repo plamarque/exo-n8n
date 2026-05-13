@@ -1,6 +1,6 @@
 # WF03 — Weekly steering preparation (recurring collaboration ritual)
 
-**TL;DR** — Automate the **weekly steering committee prep pack**: load a **note template**, embed a **task-based progress table**, add **LLM-suggested** agenda and watch items, and keep a **recurring calendar** entry pointing at the right **note for the week**. COPIL-style meeting habit, without the copy-paste.
+**TL;DR** — Automate the **weekly steering committee prep pack**: load a **note template**, ask an LLM for an **HTML progress narrative** plus a **suggested agenda** and **watch items** grounded in project tasks, and keep a **recurring calendar** entry pointing at the right **note for the week**. COPIL-style meeting habit, without the copy-paste.
 
 ## Video walkthrough
 
@@ -12,7 +12,7 @@ Prefer a short screencast before the long read? Replace the placeholder with you
 
 ![WF03 — Weekly steering preparation workflow in the n8n editor](wf03.png)
 
-Triggers → notes/templates → task list for table → **Execute Workflow** UTILs (report + HTML) → LLM nudges → note upsert and agenda link. For tool-level detail, open [`workflow.json`](workflow.json) and [SPEC.technical.md](SPEC.technical.md).
+Triggers → **Prepare Steering Config** (Set) → **MCP Get Template Note** → **MCP List Project Tasks** → **Analyze Steering Signals** (AI Agent: returns agenda + HTML progress narrative + watch items + summary) → **HTML Build AI Agenda / Watch / Annexes** → **Compose Steering Note HTML** (Code) → **MCP Search Existing Note** → **IF Note Exists** → branch to **MCP Update / Create Steering Note** → **HTML Build Agenda Description** → **MCP Update Agenda** → **MCP Invite Participants**. Self-contained graph: no sub-workflow dependencies. For tool-level detail, open [`workflow.json`](workflow.json) and [SPEC.technical.md](SPEC.technical.md).
 
 **Terminology:** **COPIL** is French project shorthand for a **steering committee** (*comité de pilotage*). In English, *steering committee* (or *steering group*) is the clearest wording. This workflow’s export still uses `COPIL` in several **node names** to match the demo environment; the portfolio workflow title uses English *steering*.
 
@@ -26,9 +26,8 @@ Governance meetings repeat on a **fixed cadence**, but preparation is often **ma
 
 - Determine **which occurrence** to prepare and the **meeting date** for titles.
 - **Read** the template note and **create or update** the child note for that week.
-- **List project tasks** and render a **tabular HTML** snapshot for the note body.
-- Run an **LLM** on a compact task payload to propose **agenda nudges** and **risk / watch** items (non-binding, grounded in data).
-- **Create or update** the standing **agenda / calendar** object so participants open the **same invite** with the **correct note link**.
+- **List project tasks** and pass them to an **LLM** that returns at once: an HTML **progress narrative** (notable items, stalled work), a **suggested agenda**, short **watch items**, and a one-sentence summary — all grounded in data.
+- **Create or update** the standing **agenda / calendar** object so participants open the **same invite** with the **correct note link** and the AI-suggested agenda.
 
 ## Prerequisites (eXo tenant and n8n)
 
@@ -41,7 +40,7 @@ WF03 binds to **specific eXo objects** (space, notes, project, agenda). On a **n
 | **Space** for festival / program | **`WF03_SPACE_ID`** | Scopes notes, tasks, and events. |
 | **Template note** the workflow reads to seed content | **`WF03_TEMPLATE_NOTE_ID`** | Source for the weekly handout structure. |
 | **Parent note** under which **weekly child notes** are created | **`WF03_REPORTS_PARENT_NOTE_ID`** | Anchors generated notes in the tree. |
-| **Task project** for the **HTML progress table** | **`WF03_PROJECT_ID`** | `list_tasks` / project task list for the report. |
+| **Task project** for the **AI progress report** | **`WF03_PROJECT_ID`** | `list_tasks` / project task list fed to the LLM. |
 | **Agenda / parent event** for the **recurring meeting** link | **`WF03_AGENDA_PARENT_EVENT_ID`** | Calendar object updated to point at the current week’s note. |
 | **Meeting owner label** (string) | **`WF03_MEETING_OWNER`** | Display / context in generated content. |
 | **Attendee usernames** (comma-separated) | **`WF03_ATTENDEE_USERNAMES`** | Must **exist** on the tenant (`claire`, `etienne`, … per [SPEC.functional.md](SPEC.functional.md) §4). |
@@ -53,47 +52,48 @@ WF03 binds to **specific eXo objects** (space, notes, project, agenda). On a **n
 |--------------|-----|
 | **MCP OAuth** + tenant MCP URL (`npm run generate:workflow-json` or edit nodes) | Notes, tasks, agenda calls. |
 | **OpenAI** (or equivalent) for LLM nodes | Agenda / watch suggestions. |
-| **Three sub-workflows** deployed: Unwrap + **WF03 build report** + **WF03 compose** | Parent **Execute Workflow** references; set **`N8N_WORKFLOW_ID_UNWRAP`**, **`N8N_WORKFLOW_ID_WF03_BUILD_REPORT`**, **`N8N_WORKFLOW_ID_WF03_COMPOSE`** for REST deploy ([subworkflow-dependencies.json](subworkflow-dependencies.json), [Import and deploy](#import-and-deploy)). |
+| **No sub-workflow dependencies** (didactic slice) | WF03 is self-contained; only `N8N_WORKFLOW_ID_WF03` is required in root `.env`. The previous Unwrap / build-report / compose UTILs were inlined into the parent graph (ADR 0004). |
 
 If any id is wrong, **create/upsert** paths in the technical spec may **fail** or link the **wrong** object — verify ids after a tenant copy.
 
 ## Runtime variables (what they mean, and where to set them)
 
-Set these in **n8n Variables** (or equivalent instance env mapping), because WF03 resolves them at runtime via `$vars.*`.
+Set these in **repository root `.env`** (no n8n Variables / `$vars` needed for this didactic slice). REST deploy (`./tools/deploy.sh wf03`) and **`npm run generate:workflow-json`** rewrite the **`Prepare Steering Config`** Set node assignments in-memory / on disk via the helper **`applyWf03PrepareSteeringConfigFromEnv`** ([`tools/lib/n8n-workflow-deploy-core.mjs`](../../tools/lib/n8n-workflow-deploy-core.mjs)).
 
 | Variable | Meaning | Where to set |
 |----------|---------|--------------|
-| `EXO_MCP_ENDPOINT` | MCP endpoint for notes/tasks/agenda calls. | Root `.env` → **`npm run generate:workflow-json`**. |
-| `WF03_SPACE_ID` | eXo space id used by the workflow scope. | n8n Variables. |
-| `WF03_PROJECT_ID` | eXo project id used for the progress report table. | n8n Variables. |
-| `WF03_TEMPLATE_NOTE_ID` | Template note id used as source content. | n8n Variables. |
-| `WF03_REPORTS_PARENT_NOTE_ID` | Parent note id where weekly notes are created/updated. | n8n Variables. |
-| `WF03_AGENDA_PARENT_EVENT_ID` | Stable agenda event id updated with the note link. | n8n Variables. |
-| `WF03_MEETING_OWNER` | Label used in generated meeting content. | n8n Variables. |
-| `WF03_ATTENDEE_USERNAMES` | Comma-separated attendee usernames for agenda updates. | n8n Variables. |
-| `WF03_STAGNATION_DAYS`, `WF03_BLOCKED_DAYS`, `WF03_OVERLOAD_THRESHOLD` | LLM/watch-list thresholds. | n8n Variables. |
+| `EXO_MCP_ENDPOINT` | MCP endpoint for notes/tasks/agenda calls. | Root `.env` → **`npm run generate:workflow-json`** or in-memory before REST deploy. |
+| `WF03_SPACE_ID` | eXo space id used by the workflow scope. | Root `.env`. |
+| `WF03_PROJECT_ID` | eXo project id used for the progress report table. | Root `.env`. |
+| `WF03_TEMPLATE_NOTE_ID` | Template note id used as source content. | Root `.env`. |
+| `WF03_REPORTS_PARENT_NOTE_ID` | Parent note id where weekly notes are created/updated. | Root `.env`. |
+| `WF03_AGENDA_PARENT_EVENT_ID` | Stable agenda event id updated with the note link. | Root `.env`. |
+| `WF03_MEETING_OWNER` | Label used in generated meeting content. | Root `.env`. |
+| `WF03_ATTENDEE_USERNAMES` | Comma-separated attendee usernames for agenda updates. | Root `.env`. |
+| `WF03_STAGNATION_DAYS`, `WF03_BLOCKED_DAYS`, `WF03_OVERLOAD_THRESHOLD` | LLM/watch-list thresholds. | Root `.env`. |
 
-Deploy-time ids (`N8N_WORKFLOW_ID_*`) belong to root `.env` for repository tooling, not to runtime `$vars` resolution.
+Deploy-time id (`N8N_WORKFLOW_ID_WF03`) belongs to root `.env` for repository tooling.
 
 ## High-level flow (conceptual)
 
 1. **Trigger** — scheduled prep before the meeting slot (implementation detail in `workflow.json`).
-2. **Resolve time / week** — set the date used in the note title and routing.
-3. **Template & note** — fetch template content; **upsert** weekly child note under the configured parent.
-4. **Task report** — pull tasks for the target project; build **HTML** table (delegated to a UTIL sub-workflow).
-5. **LLM assist** — short structured suggestions for agenda + watch list from task facts.
-6. **Compose body** — merge template sections, table, and AI blocks (UTIL sub-workflow).
-7. **Publish** — update note in eXo; **link** the recurring calendar / agenda entry to the weekly note.
+2. **Resolve time / week** — `Prepare Steering Config` (Set) emits the meeting date, related dates, the note title, ids, roster, thresholds, and the eXo URL building blocks.
+3. **Template & tasks** — fetch template content (`MCP Get Template Note`) and list project tasks (`MCP List Project Tasks`).
+4. **LLM assist (single call)** — `Analyze Steering Signals` receives the template body, the task list, and the meeting context. It returns structured `{ suggested_agenda, progress_report (HTML), vigilances, summary, agenda_label_support, agenda_label_agenda, agenda_outro_text }` with all strings in the **template language** (auto-detected). Two HTML nodes render the AI agenda and watch lists; the three short labels feed the agenda event description.
+5. **Compose body** — `HTML Build Annexes Links` + one short `Compose Steering Note HTML` Code node patches the template tokens with the four section blocks (`[SUGGESTED_AGENDA_*]`, `[REPORT_AVANCEMENT_*]` ← `progress_report`, `[POINTS_A_DISCUTER_*]`, `[ANNEXES_LIENS_*]`).
+6. **Publish** — `MCP Search Existing Note` + `IF Note Exists` decide between `MCP Update / Create Steering Note`; each branch then builds the agenda description (HTML node), updates the agenda (`update_agenda_event`), and refreshes the invitee list (`invite_users_to_agenda_event`).
 
 ## n8n design choices (not a node-by-node list)
 
-
-| Area               | Choice                                                                                  | Why                                                                                                                                                        |
-| ------------------ | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Readability        | **UTIL sub-workflows** for **build report context** and **compose HTML**                | Keeps the parent graph a **sequence of decisions**; heavy string work is isolated.                                                                         |
-| MCP parsing        | **Execute Workflow → [Unwrap MCP JSON](../unwrap-mcp-json/)**       | Same envelope problem as other flows; shared UTIL avoids drift.                                                                                            |
-| Native vs Code     | **Set + Execute Workflow** preferred; **one small Code** for upsert decision if present | Aligns with native-first layout described in [docs/ISSUES.md](../../docs/ISSUES.md) and this README. |
-| Technical contract | Single **SPEC.technical.md** for this workflow                                       | Keeps one source of truth for payloads, sequence, and operations.                                                                    |
+| Area               | Choice                                                                                                | Why                                                                                                                                                          |
+| ------------------ | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Readability        | **Self-contained parent graph** (no sub-workflows)                                                    | Tutorial-oriented (ADR 0004 didactic slice): every step on the canvas maps to one clear idea.                                                                |
+| Progress report    | **AI narrative** (HTML emitted by the LLM via `progress_report`), no static HTML table                | Tabular projection duplicated information already legible inside eXo Tasks; a narrative surfaces notable items and stalled work more clearly for a steering meeting. Removed: `Split Out Tasks`, `HTML Render Task Row`, `Aggregate Task Rows`, `HTML Build Progress Table`. |
+| Language           | LLM **detects the template language** and produces every string field (note sections + agenda event description labels) in that language | Avoids hard-coding a target locale; one tenant in French and another in English work without code changes. Replaces the previous static English labels and the deferred French→English translation hardening. |
+| MCP parsing        | Direct **`content[0].text.<field>`** expressions                                                      | Same trust-the-data pattern as WF02; no Unwrap UTIL hops.                                                                                                    |
+| Native vs Code     | **HTML node** for every fixed-layout block; **one short Code** for template token surgery             | Aligns with ADR 0004: prefer native nodes, reserve Code for logic that is genuinely shorter or safer in script.                                              |
+| Configuration      | **Plain literals** in `workflow.json`; deploy rewrites from root `.env`                               | No n8n Variables / `$vars.*` (avoids Cloud-tenant inconsistencies). See [config.env.example](config.env.example) and `applyWf03PrepareSteeringConfigFromEnv`. |
+| Technical contract | Single **SPEC.technical.md** for this workflow                                                        | Keeps one source of truth for payloads, sequence, and operations.                                                                                            |
 
 
 ## MCP eXo interaction model
@@ -102,53 +102,37 @@ WF03 is the **broadest** demo: it touches **Notes**, **Tasks**, and **Agenda / c
 
 ## Operational considerations
 
-- **Variables and ids** — space, template parent, project, note, and agenda references are **demo-specific**; align to your tenant or adjust n8n **$vars** as documented in [config.env.example](config.env.example) and the technical specs.
+- **Variables and ids** — space, template parent, project, note, and agenda references are **demo-specific**; align to your tenant by setting `WF03_*` in repository root `.env` (no n8n Variables / `$vars` for this didactic slice). See [config.env.example](config.env.example) and the technical specs.
 - **OAuth / OpenAI** — MCP and the LLM nodes must be **authorized** on the target n8n instance.
-- **Node names** — expect legacy **COPIL** labels inside the graph; behavior is described in English in [SPEC.functional.md](SPEC.functional.md).
+- **Trust the data** — MCP envelopes are read directly as `content[0].text.<field>`. A tenant that wraps responses differently will surface as a downstream expression error rather than a silent fallback (see [SPEC.technical.md](SPEC.technical.md) §3.2, §7).
 
 ## References
-
 
 | Artifact                                                                   | Role                                                                                       |
 | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | [workflow.json](workflow.json)                                             | Canonical n8n export (see [ADR 0002](../../docs/ADR/0002-repository-layout-workflows.md)). |
 | [SPEC.functional.md](SPEC.functional.md)                                   | Goals, actors, note shape, business rules.                                                 |
-| [SPEC.technical.md](SPEC.technical.md)                                   | MCP technical contract (notes, projects, agenda, sequence, operations).                     |
-
+| [SPEC.technical.md](SPEC.technical.md)                                     | MCP technical contract (notes, projects, agenda, sequence, operations).                    |
 | [fixtures/steering-template-note.md](fixtures/steering-template-note.md)   | Editorial note template reference.                                                         |
 | [fixtures/api-response.snapshot.json](fixtures/api-response.snapshot.json) | Raw API response snapshot (traceability).                                                  |
-| [config.env.example](config.env.example)                                   | Example n8n variables.                                                                     |
-| [subworkflow-dependencies.json](subworkflow-dependencies.json)             | Deploy order: Unwrap + WF03 UTILs.                                                         |
-| [subworkflows/](subworkflows/)                                             | WF03-only UTIL exports (report + HTML).                                                    |
+| [config.env.example](config.env.example)                                   | Example `.env` keys (injected as canonical literals by deploy).                            |
 
 ---
 
 ## Repository file map
 
-
-| File                                                                         | Role                                                                                               |
-| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `[workflow.json](workflow.json)`                                             | Canonical n8n export (see [ADR 0002](../../docs/ADR/0002-repository-layout-workflows.md)).         |
-| `[fixtures/api-response.snapshot.json](fixtures/api-response.snapshot.json)` | Raw API response (workflow + `triggerInfo`) kept for traceability.                                 |
-| `[SPEC.functional.md](SPEC.functional.md)`                                   | Goals, rules, and acceptance criteria.                                                             |
-| `[SPEC.technical.md](SPEC.technical.md)`                                   | MCP technical contract (notes, projects, agenda, sequence, operations).                             |
-
-| `[fixtures/steering-template-note.md](fixtures/steering-template-note.md)`   | Note template (editorial reference).                                                               |
-| `[config.env.example](config.env.example)`                                   | Example n8n variables.                                                                             |
-| `[subworkflows/](subworkflows/)`                                             | WF03-only UTIL exports (build report + compose HTML); not shared across other portfolio workflows. |
-
+| File                                                                         | Role                                                                                       |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| [`workflow.json`](workflow.json)                                             | Canonical n8n export (see [ADR 0002](../../docs/ADR/0002-repository-layout-workflows.md)). |
+| [`fixtures/api-response.snapshot.json`](fixtures/api-response.snapshot.json) | Raw API response (workflow + `triggerInfo`) kept for traceability.                         |
+| [`SPEC.functional.md`](SPEC.functional.md)                                   | Goals, rules, and acceptance criteria.                                                     |
+| [`SPEC.technical.md`](SPEC.technical.md)                                     | MCP technical contract (notes, projects, agenda, sequence, operations).                    |
+| [`fixtures/steering-template-note.md`](fixtures/steering-template-note.md)   | Note template (editorial reference).                                                       |
+| [`config.env.example`](config.env.example)                                   | Example `.env` keys.                                                                       |
 
 ## Sub-workflows
 
-**Unwrap** is a root workflow under `[../unwrap-mcp-json/](../unwrap-mcp-json/README.md)`; the two UTIL graphs live only under this workflow directory. For **REST deploy from git**, use `./tools/deploy.sh wf03` from the repository root: [subworkflow-dependencies.json](subworkflow-dependencies.json) lists unwrap plus the two UTILs in order. Each dependency’s remote id is resolved from `.env` (`N8N_WORKFLOW_ID_UNWRAP`, `N8N_WORKFLOW_ID_WF03_BUILD_REPORT`, `N8N_WORKFLOW_ID_WF03_COMPOSE`); when unset, deploy POST-creates the dependency on n8n and writes the new id back into `.env` (see [docs/DEVELOPMENT.md — Deploy bootstrap](../../docs/DEVELOPMENT.md#deploy-bootstrap-env-driven)). The matching parent **Execute Workflow** node parameters are then injected in memory before the parent push.
-
-
-| UTIL                            | Repo path                                                                                      | Reference remote id (demo export in parent `workflow.json`) |
-| ------------------------------- | ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| Unwrap MCP JSON                 | [../unwrap-mcp-json/](../unwrap-mcp-json/)             | `E4OAThogWRG93MUG`                                          |
-| WF03 build report context       | [subworkflows/wf03-build-report-context/](subworkflows/wf03-build-report-context/)             | `KBsZj9ClCJX2wNFH`                                          |
-| WF03 compose steering note HTML | [subworkflows/wf03-compose-steering-note-html/](subworkflows/wf03-compose-steering-note-html/) | `dDeDXkNJkWxxqxPb`                                          |
-
+**None.** The didactic slice (ADR 0004) inlined the former WF03 UTILs (`UTIL - WF03 build report context`, `UTIL - WF03 compose steering note HTML`) and all `Unwrap MCP JSON` hops into the parent graph. There is no `subworkflow-dependencies.json` for this workflow; only the parent id `N8N_WORKFLOW_ID_WF03` matters in root `.env`. See [SPEC.technical.md §7](SPEC.technical.md#7-didactic-simplification-slice-adr-0004) for deferred hardening (reintroduce unwrap UTILs only if a tenant's MCP envelopes diverge from `content[0].text.<field>`).
 
 ## Identifiers (from spec)
 
@@ -156,10 +140,10 @@ WF03 is the **broadest** demo: it touches **Notes**, **Tasks**, and **Agenda / c
 
 ## Code vs native
 
-WF03’s main graph favors **Set**, **Execute Workflow** (shared unwrap + two WF03 UTILs), and a single small **Decide Note Upsert** Code node; HTML/report composition lives in UTIL sub-workflows. See [docs/ISSUES.md](../../docs/ISSUES.md) for optional further native-only tweaks.
+WF03's main graph favors **Set**, **HTML**, and **IF** native nodes around the **AI Agent** + **Structured Output** core, with one short **`Compose Steering Note HTML`** Code node (template token surgery). See [docs/ISSUES.md](../../docs/ISSUES.md) for any optional further tweaks.
 
 ## Import and deploy
 
-**REST (recommended):** From the repo root, `./tools/deploy.sh wf03` (see [docs/DEVELOPMENT.md](../../docs/DEVELOPMENT.md#portfolio-deploy-dependencies-manifest)). On a fresh tenant, leave `N8N_WORKFLOW_ID_UNWRAP`, `N8N_WORKFLOW_ID_WF03_BUILD_REPORT`, `N8N_WORKFLOW_ID_WF03_COMPOSE`, `N8N_WORKFLOW_ID_WF03` empty in `.env`: deploy POST-creates each missing dependency and the parent, then writes the new ids back automatically (see [Deploy bootstrap](../../docs/DEVELOPMENT.md#deploy-bootstrap-env-driven)). Use `./tools/deploy.sh wf03 --dry-run` once ids are set to preview PUT targets (deps under dry-run fail-fast when their id is still unset). Use `./tools/deploy.sh wf03 --no-deps` only if you intentionally skip the manifest.
+**REST (recommended):** From the repo root, `./tools/deploy.sh wf03` (see [docs/DEVELOPMENT.md](../../docs/DEVELOPMENT.md#portfolio-deploy-dependencies-manifest)). On a fresh tenant, leave `N8N_WORKFLOW_ID_WF03` empty in `.env`: deploy POST-creates the workflow and writes the new id back automatically (see [Deploy bootstrap](../../docs/DEVELOPMENT.md#deploy-bootstrap-env-driven)). Use `./tools/deploy.sh wf03 --dry-run` once the id is set to preview the PUT target.
 
-**Manual UI:** Import [UTIL - Unwrap MCP JSON](../unwrap-mcp-json/workflow.json), [UTIL - WF03 build report context](subworkflows/wf03-build-report-context/workflow.json), and [UTIL - WF03 compose steering note HTML](subworkflows/wf03-compose-steering-note-html/workflow.json); align **Execute Workflow** ids in `workflow.json` if your instance assigned different ids. Then import `workflow.json` (or MCP `validate_workflow` / `update_workflow`). Use **`npm run generate:workflow-json`** (root `.env`) or n8n Variables so MCP **`endpointUrl`** and `WF03_*` match your tenant; verify MCP OAuth and OpenAI on the target instance.
+**Manual UI:** Import `workflow.json` (or MCP `validate_workflow` / `update_workflow`). Use **`npm run generate:workflow-json`** (root `.env`) so MCP **`endpointUrl`** and `WF03_*` literals match your tenant; verify MCP OAuth and OpenAI on the target instance.

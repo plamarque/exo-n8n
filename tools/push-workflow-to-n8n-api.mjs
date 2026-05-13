@@ -53,7 +53,7 @@ Environment (from process env or repo root .env):
   N8N_API_KEY        API key (header X-N8N-API-KEY)
   EXO_MCP_ENDPOINT, WF01_PROJECT_ID, WF02_* … EXO_SPACE_NAME  optional; applied in memory before each POST/PUT (MCP URLs + $vars fallback literals). Run npm run generate:workflow-json to persist them into workflow.json on disk (see docs/DEVELOPMENT.md)
   N8N_WORKFLOW_ID_<SHORTID> for each root workflow (e.g. N8N_WORKFLOW_ID_WF01, N8N_WORKFLOW_ID_UNWRAP); leave unset to bootstrap
-  Plus any N8N_WORKFLOW_ID_* keys listed in subworkflow-dependencies.json (e.g. N8N_WORKFLOW_ID_WF03_BUILD_REPORT)
+  Plus any N8N_WORKFLOW_ID_* keys listed in subworkflow-dependencies.json (when a workflow declares dependencies)
   N8N_MCP_CREDENTIAL_ID              optional; when set, forces mcpOAuth2Api on all MCP Client (OAuth2) nodes
   N8N_MCP_CREDENTIAL_NAME            with ID: optional {name} in workflow JSON; without ID: exact n8n credential display name for lookup (forces apply when unique match)
   N8N_OPENAI_CREDENTIAL_ID           optional override for lmChatOpenAi nodes still missing credentials after merge

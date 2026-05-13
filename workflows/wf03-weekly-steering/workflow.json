@@ -1,318 +1,11 @@
 {
-  "id": "1suyxKutB174p7b4",
+  "updatedAt": "2026-05-13T05:30:19.815Z",
+  "createdAt": "2026-05-07T14:30:36.333Z",
+  "id": "DMM9Q7t3znVOUwnk",
   "name": "WF03 - Weekly steering preparation",
+  "description": null,
   "active": false,
   "isArchived": false,
-  "versionId": "c3c416c7-5624-4f45-a4c6-3e5d4ce348a7",
-  "activeVersionId": null,
-  "triggerCount": 0,
-  "createdAt": "2026-04-24T11:51:27.817Z",
-  "updatedAt": "2026-04-24T13:14:54.997Z",
-  "settings": {
-    "executionOrder": "v1",
-    "availableInMCP": true,
-    "binaryMode": "separate"
-  },
-  "connections": {
-    "Manual Start": {
-      "main": [
-        [
-          {
-            "node": "Prepare COPIL Config",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Weekly Preparation (Thu 08:00)": {
-      "main": [
-        [
-          {
-            "node": "Prepare COPIL Config",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Prepare COPIL Config": {
-      "main": [
-        [
-          {
-            "node": "MCP Get Template Note",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "MCP Get Template Note": {
-      "main": [
-        [
-          {
-            "node": "Unwrap MCP Get Template Note",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Unwrap MCP Get Template Note": {
-      "main": [
-        [
-          {
-            "node": "MCP List Project Tasks",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "MCP List Project Tasks": {
-      "main": [
-        [
-          {
-            "node": "Unwrap MCP List Project Tasks",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Unwrap MCP List Project Tasks": {
-      "main": [
-        [
-          {
-            "node": "Bundle Inputs For Build Report",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Bundle Inputs For Build Report": {
-      "main": [
-        [
-          {
-            "node": "Execute WF03 Build Report Context",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Execute WF03 Build Report Context": {
-      "main": [
-        [
-          {
-            "node": "Analyze COPIL Signals",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Analyze COPIL Signals": {
-      "main": [
-        [
-          {
-            "node": "Bundle Inputs For Compose",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Bundle Inputs For Compose": {
-      "main": [
-        [
-          {
-            "node": "Execute WF03 Compose Steering Note",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Execute WF03 Compose Steering Note": {
-      "main": [
-        [
-          {
-            "node": "MCP Search Existing COPIL Note",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "MCP Search Existing COPIL Note": {
-      "main": [
-        [
-          {
-            "node": "Unwrap MCP Search Notes",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Unwrap MCP Search Notes": {
-      "main": [
-        [
-          {
-            "node": "Decide Note Upsert",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Decide Note Upsert": {
-      "main": [
-        [
-          {
-            "node": "IF COPIL Note Exists",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "IF COPIL Note Exists": {
-      "main": [
-        [
-          {
-            "node": "MCP Update COPIL Note",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "MCP Create COPIL Note",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "MCP Update COPIL Note": {
-      "main": [
-        [
-          {
-            "node": "Unwrap MCP Save Note Update",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Unwrap MCP Save Note Update": {
-      "main": [
-        [
-          {
-            "node": "Set Agenda After Note Update",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Set Agenda After Note Update": {
-      "main": [
-        [
-          {
-            "node": "MCP Update Agenda After Update",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "MCP Update Agenda After Update": {
-      "main": [
-        [
-          {
-            "node": "MCP Invite Participants After Update",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "MCP Create COPIL Note": {
-      "main": [
-        [
-          {
-            "node": "Unwrap MCP Save Note Create",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Unwrap MCP Save Note Create": {
-      "main": [
-        [
-          {
-            "node": "Set Agenda After Note Create",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Set Agenda After Note Create": {
-      "main": [
-        [
-          {
-            "node": "MCP Update Agenda After Create",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "MCP Update Agenda After Create": {
-      "main": [
-        [
-          {
-            "node": "MCP Invite Participants After Create",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "OpenAI COPIL Model": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Analyze COPIL Signals",
-            "type": "ai_languageModel",
-            "index": 0
-          },
-          {
-            "node": "COPIL Structured Output",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "COPIL Structured Output": {
-      "ai_outputParser": [
-        [
-          {
-            "node": "Analyze COPIL Signals",
-            "type": "ai_outputParser",
-            "index": 0
-          }
-        ]
-      ]
-    }
-  },
   "nodes": [
     {
       "parameters": {},
@@ -322,7 +15,7 @@
       "typeVersion": 1,
       "position": [
         160,
-        160
+        128
       ]
     },
     {
@@ -345,114 +38,113 @@
       "typeVersion": 1.3,
       "position": [
         160,
-        352
+        320
       ]
     },
     {
       "parameters": {
-        "mode": "manual",
         "assignments": {
           "assignments": [
             {
               "id": "f695bdae",
               "name": "space_id",
-              "value": "={{ Number($vars.WF03_SPACE_ID || 1) }}",
+              "value": 1,
               "type": "number"
             },
             {
               "id": "6f7850f6",
               "name": "project_id",
-              "value": "={{ Number($vars.WF03_PROJECT_ID || 3) }}",
+              "value": 3,
               "type": "number"
             },
             {
               "id": "6a5fd473",
               "name": "template_note_id",
-              "value": "={{ Number($vars.WF03_TEMPLATE_NOTE_ID || 25) }}",
+              "value": 25,
               "type": "number"
             },
             {
               "id": "bd9dc430",
               "name": "reports_parent_note_id",
-              "value": "={{ Number($vars.WF03_REPORTS_PARENT_NOTE_ID || 6) }}",
+              "value": 6,
               "type": "number"
             },
             {
               "id": "ccdc8611",
               "name": "agenda_parent_event_id",
-              "value": "={{ Number($vars.WF03_AGENDA_PARENT_EVENT_ID || 13) }}",
+              "value": 13,
               "type": "number"
-            },
-            {
-              "id": "b8d348f1",
-              "name": "attendee_usernames",
-              "value": "={{ String($vars.WF03_ATTENDEE_USERNAMES || 'claire,etienne,louis,nadia,antoine,emma').split(',').map(s => s.trim()).filter(Boolean) }}",
-              "type": "array"
             },
             {
               "id": "0d5f6a25",
               "name": "meeting_owner",
-              "value": "={{ String($vars.WF03_MEETING_OWNER || 'Project team') }}",
+              "value": "Project team",
+              "type": "string"
+            },
+            {
+              "id": "b8d348f1",
+              "name": "attendee_usernames",
+              "value": "={{ ['claire', 'etienne', 'louis', 'nadia', 'antoine', 'emma'] }}",
+              "type": "array"
+            },
+            {
+              "id": "ae31c771",
+              "name": "space_slug",
+              "value": "festival_art2rue",
+              "type": "string"
+            },
+            {
+              "id": "f0c9d2ee",
+              "name": "exo_base_url",
+              "value": "https://exo.example.com",
               "type": "string"
             },
             {
               "id": "e1576562",
               "name": "meeting_date",
-              "value": "={ $now.setZone('Europe/Paris').startOf('day').plus({ days: (4 - $now.setZone('Europe/Paris').weekday + 7) % 7 }).set({ hour: 10, minute: 0, second: 0, millisecond: 0 }).toFormat('yyyy-MM-dd') }",
+              "value": "={{ $now.setZone('Europe/Paris').startOf('day').plus({ days: (4 - $now.setZone('Europe/Paris').weekday + 7) % 7 }).toFormat('yyyy-MM-dd') }}",
               "type": "string"
             },
             {
               "id": "bb80bc77",
               "name": "next_meeting_date",
-              "value": "={ $now.setZone('Europe/Paris').startOf('day').plus({ days: (4 - $now.setZone('Europe/Paris').weekday + 7) % 7 }).set({ hour: 10, minute: 0, second: 0, millisecond: 0 }).plus({ days: 7 }).toFormat('yyyy-MM-dd') }",
+              "value": "={{ $now.setZone('Europe/Paris').startOf('day').plus({ days: (4 - $now.setZone('Europe/Paris').weekday + 7) % 7 + 7 }).toFormat('yyyy-MM-dd') }}",
               "type": "string"
             },
             {
               "id": "176184d3",
               "name": "meeting_date_plus_2",
-              "value": "={ $now.setZone('Europe/Paris').startOf('day').plus({ days: (4 - $now.setZone('Europe/Paris').weekday + 7) % 7 }).set({ hour: 10, minute: 0, second: 0, millisecond: 0 }).plus({ days: 14 }).toFormat('yyyy-MM-dd') }",
+              "value": "={{ $now.setZone('Europe/Paris').startOf('day').plus({ days: (4 - $now.setZone('Europe/Paris').weekday + 7) % 7 + 14 }).toFormat('yyyy-MM-dd') }}",
               "type": "string"
             },
             {
               "id": "078f79c5",
-              "name": "meeting_start",
-              "value": "={ $now.setZone('Europe/Paris').startOf('day').plus({ days: (4 - $now.setZone('Europe/Paris').weekday + 7) % 7 }).set({ hour: 10, minute: 0, second: 0, millisecond: 0 }).toFormat(\"yyyy-MM-dd\") + \"T10:00:00+02:00\" }",
-              "type": "string"
-            },
-            {
-              "id": "0872d39b",
-              "name": "meeting_end",
-              "value": "={ $now.setZone('Europe/Paris').startOf('day').plus({ days: (4 - $now.setZone('Europe/Paris').weekday + 7) % 7 }).set({ hour: 10, minute: 0, second: 0, millisecond: 0 }).toFormat(\"yyyy-MM-dd\") + \"T11:30:00+02:00\" }",
+              "name": "meeting_start_iso",
+              "value": "={{ $now.setZone('Europe/Paris').startOf('day').plus({ days: (4 - $now.setZone('Europe/Paris').weekday + 7) % 7 }).set({ hour: 10 }).toISO() }}",
               "type": "string"
             },
             {
               "id": "1eaefd3c",
               "name": "note_title",
-              "value": "={ 'Festival Art2Rue — Weekly steering — ' + $now.setZone('Europe/Paris').startOf('day').plus({ days: (4 - $now.setZone('Europe/Paris').weekday + 7) % 7 }).set({ hour: 10, minute: 0, second: 0, millisecond: 0 }).toFormat('yyyy-MM-dd') }",
-              "type": "string"
-            },
-            {
-              "id": "53bfc51a",
-              "name": "search_query",
-              "value": "={ 'Festival Art2Rue — Weekly steering — ' + $now.setZone('Europe/Paris').startOf('day').plus({ days: (4 - $now.setZone('Europe/Paris').weekday + 7) % 7 }).set({ hour: 10, minute: 0, second: 0, millisecond: 0 }).toFormat('yyyy-MM-dd') }",
+              "value": "={{ 'Festival Art2Rue - Weekly steering - ' + $now.setZone('Europe/Paris').startOf('day').plus({ days: (4 - $now.setZone('Europe/Paris').weekday + 7) % 7 }).toFormat('yyyy-MM-dd') }}",
               "type": "string"
             },
             {
               "id": "a65e3459",
               "name": "stagnation_days",
-              "value": "={{ Number($vars.WF03_STAGNATION_DAYS || 3) }}",
+              "value": 3,
               "type": "number"
             },
             {
               "id": "313d3a07",
               "name": "blocked_days",
-              "value": "={{ Number($vars.WF03_BLOCKED_DAYS || 5) }}",
+              "value": 5,
               "type": "number"
             },
             {
               "id": "d25d464f",
               "name": "overload_threshold",
-              "value": "={{ Number($vars.WF03_OVERLOAD_THRESHOLD || 5) }}",
+              "value": 5,
               "type": "number"
             }
           ]
@@ -460,31 +152,27 @@
         "options": {}
       },
       "id": "0981a2c4-3cb5-4664-81d4-cddf77e7c5dd",
-      "name": "Prepare COPIL Config",
+      "name": "Prepare Steering Config",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        448,
-        256
+        384,
+        224
       ]
     },
     {
       "parameters": {
-        "endpointUrl": "https://exo.example.com/mcp-server/mcp",
+        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
           "mode": "id",
           "value": "get_note"
         },
-        "inputMode": "manual",
-        "options": {
-          "timeout": 60000
-        },
         "parameters": {
           "mappingMode": "defineBelow",
           "value": {
-            "note_id": "={{ $json.template_note_id }}"
+            "note_id": "={{ $('Prepare Steering Config').item.json.template_note_id }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -499,6 +187,9 @@
           ],
           "attemptToConvertTypes": false,
           "convertFieldsToString": false
+        },
+        "options": {
+          "timeout": 60000
         }
       },
       "id": "98e14ac9-23ba-4258-8149-4b7217373ed1",
@@ -506,44 +197,32 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        720,
-        256
-      ]
+        608,
+        224
+      ],
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "vaCQUg5NblUEOrlR",
+          "name": "EXO MIPS MCP"
+        }
+      }
     },
     {
       "parameters": {
-        "workflowId": "E4OAThogWRG93MUG",
-        "options": {}
-      },
-      "id": "344ae670-3f6b-45e8-80b1-ff41d1b961c5",
-      "name": "Unwrap MCP Get Template Note",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1,
-      "position": [
-        880,
-        256
-      ]
-    },
-    {
-      "parameters": {
-        "endpointUrl": "https://exo.example.com/mcp-server/mcp",
+        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
           "mode": "id",
           "value": "list_tasks"
         },
-        "inputMode": "manual",
-        "options": {
-          "timeout": 60000
-        },
         "parameters": {
           "mappingMode": "defineBelow",
           "value": {
-            "project_id": "={{ $(\"Prepare COPIL Config\").item.json.project_id }}",
+            "project_id": "={{ $('Prepare Steering Config').item.json.project_id }}",
             "limit": 100,
             "offset": 0,
-            "hide_completed_tasks": false,
+            "hide_completed_tasks": true,
             "include_change_log": false
           },
           "matchingColumns": [],
@@ -591,6 +270,9 @@
           ],
           "attemptToConvertTypes": false,
           "convertFieldsToString": false
+        },
+        "options": {
+          "timeout": 60000
         }
       },
       "id": "08eef67e-01e2-47c2-9fe8-d9784270d806",
@@ -598,194 +280,148 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        1008,
-        256
-      ]
-    },
-    {
-      "parameters": {
-        "workflowId": "E4OAThogWRG93MUG",
-        "options": {}
-      },
-      "id": "7c9514d0-81f4-4d42-a25b-187f4adef3f1",
-      "name": "Unwrap MCP List Project Tasks",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1,
-      "position": [
-        1168,
-        256
-      ]
-    },
-    {
-      "parameters": {
-        "mode": "manual",
-        "assignments": {
-          "assignments": [
-            {
-              "id": "13c32634",
-              "name": "config",
-              "value": "={{ $('Prepare COPIL Config').item.json }}",
-              "type": "object"
-            },
-            {
-              "id": "072b6404",
-              "name": "template_payload",
-              "value": "={{ $('Unwrap MCP Get Template Note').first().json.payload }}",
-              "type": "object"
-            },
-            {
-              "id": "4bb5e426",
-              "name": "tasks_payload",
-              "value": "={{ $('Unwrap MCP List Project Tasks').first().json.payload }}",
-              "type": "object"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "939b11bf-7d64-43fa-a573-19968ec75792",
-      "name": "Bundle Inputs For Build Report",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        1280,
-        256
-      ]
-    },
-    {
-      "parameters": {
-        "workflowId": "KBsZj9ClCJX2wNFH",
-        "options": {}
-      },
-      "id": "e09e272a-e87c-4931-8b6f-23f5a22995fc",
-      "name": "Execute WF03 Build Report Context",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1,
-      "position": [
-        1424,
-        256
-      ]
+        832,
+        224
+      ],
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "vaCQUg5NblUEOrlR",
+          "name": "EXO MIPS MCP"
+        }
+      }
     },
     {
       "parameters": {
         "promptType": "define",
-        "text": "=Analyze these tasks to prepare a weekly steering committee meeting. Return only the requested structured fields in English. To cite a task, use /task:task_id. For an owner, use @username. Data: {{ $json.ai_prompt_payload }}",
+        "text": "=Analyze these tasks to prepare a weekly steering committee meeting. Return only the requested structured fields. DETECT the language of the meeting note template provided below and produce EVERY string field of the output in that same language (do not switch to English if the template is French, Spanish, etc.). Use the same wording register as the template for section headings (e.g. if the template uses 'Faits marquants', use that as the subsection heading rather than 'Notable items'). To cite a task, use /task:task_id. For an owner, use @username. Meeting date: {{ $('Prepare Steering Config').item.json.meeting_date }}. Project id: {{ $('Prepare Steering Config').item.json.project_id }}. Thresholds - stagnation: {{ $('Prepare Steering Config').item.json.stagnation_days }} days, blocked/waiting: {{ $('Prepare Steering Config').item.json.blocked_days }} days, column overload: {{ $('Prepare Steering Config').item.json.overload_threshold }}. Field roles: 'suggested_agenda' is a short, ordered list of discussion topics (3-6 items). 'progress_report' is an HTML string ready to inject in the meeting note. Keep it SCANNABLE - readers should glance at it in seconds. One opener paragraph of 1-2 sentences setting the weekly mood, then 2-3 <h4> subsections (always a 'notable items' equivalent in the template language; conditionally a 'stalled or blocked' and/or 'recent moves' equivalent). Each subsection contains AT MOST 3-4 <li> items (never more, prefer fewer). Format each <li> on TWO lines separated by a <br/>: line 1 is the header '<strong>/task:ID Title</strong> - @username - <em>PRIORITY - STATUS</em>' (omit @username when unassigned; omit a segment entirely rather than printing 'undefined', 'null', 'NONE' or empty placeholders), line 2 is ONE short sentence explaining WHY this task matters this week - the reason only (blocker, deadline, dependency, stagnation, recent change). Do NOT dump date histories; cite a date only when it IS the point (e.g. 'stalled since Apr 24'). A task must appear in AT MOST ONE subsection - never repeat the same /task:ID across subsections. Cite tasks with /task:ID and people with @username; avoid generic advice. 'vigilances' is 3-5 discussion items for the meeting (no overlap with progress_report content). Each item is itself an HTML string with this exact shape: '<strong>Short title</strong><br/>Context paragraph explaining the issue, stakes, or trade-off (1-2 sentences). When a decision is needed, append after the context: '<em>Decision to take:</em> short framing of what must be decided.' (translate both the bold pattern and the 'Decision to take' label to the template language). Skip the decision sentence when the item is purely informational. Never produce a bare one-line bullet - each item MUST carry both a bold title and explanatory context. 'summary' is one short opener sentence. 'agenda_label_support' is the short localized label preceding the link to the meeting support note in the agenda event description (e.g. 'Meeting support' in English, 'Support de réunion' in French). 'agenda_label_agenda' is the short localized heading for the suggested-agenda subsection of the agenda event description (e.g. 'Suggested agenda' in English, 'Ordre du jour suggéré' in French). 'agenda_outro_text' is one short localized sentence stating the description was prepared automatically from the project tasks, mentioning the project id verbatim (e.g. 'Prepared automatically from project 3 tasks.' / 'Préparé automatiquement à partir des tâches du projet 3.'). Template body (use to detect language): {{ JSON.stringify($('MCP Get Template Note').item.json.content[0].text.html_content) }}. Tasks: {{ JSON.stringify($('MCP List Project Tasks').item.json.content[0].text.tasks) }}",
         "hasOutputParser": true,
         "options": {
-          "systemMessage": "You help a project team prepare a weekly steering committee meeting. Produce short, factual, non-prescriptive suggestions grounded in task data. Use clear English. Use /task:task_id and @username when relevant. Do not decide on behalf of the meeting.",
+          "systemMessage": "You help a project team prepare a weekly steering committee meeting. Produce short, factual, non-prescriptive content grounded in task data. Detect the language of the meeting note template provided in the prompt and produce ALL output fields in that same language - never default to English when the template is in another language. Use /task:task_id and @username when relevant. Do not decide on behalf of the meeting. For 'progress_report' return HTML directly usable inside an eXo note (paragraphs, <h4> subsections, <ul><li>) with subsection headings translated to the template language. For 'vigilances' return 3-5 discussion items as HTML strings, each composed of a bold title (<strong>), a <br/>, then 1-2 sentences of context, and an optional 'Decision to take:' sentence in the template language - never a bare one-line bullet. Items must not repeat progress_report content. Labels and outro for the agenda event description ('agenda_label_support', 'agenda_label_agenda', 'agenda_outro_text') must be in the same template language and remain short.",
           "maxIterations": 3,
           "enableStreaming": false
         }
       },
       "id": "52969102-355f-40ac-92e0-26026d899a92",
-      "name": "Analyze COPIL Signals",
+      "name": "Analyze Steering Signals",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        1568,
-        256
+        1056,
+        224
       ]
     },
     {
-      "id": "fe0c5844-de00-4c85-a50f-9681e4a64cb8",
-      "name": "OpenAI COPIL Model",
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.3,
-      "position": [
-        1536,
-        528
-      ],
       "parameters": {
         "model": {
           "__rl": true,
           "mode": "list",
           "value": "gpt-5-mini"
         },
+        "builtInTools": {},
         "options": {
           "reasoningEffort": "low",
           "timeout": 90000,
           "maxRetries": 2
         }
+      },
+      "id": "fe0c5844-de00-4c85-a50f-9681e4a64cb8",
+      "name": "OpenAI Steering Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1128,
+        656
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "rEcL1EsPRnj2xbNt",
+          "name": "OpenAI account"
+        }
       }
     },
     {
       "parameters": {
-        "jsonSchemaExample": "{\"suggested_agenda\":[\"Short, actionable point\"],\"vigilances\":[\"Watch item grounded in task data\"],\"summary\":\"Short opener for the meeting\"}",
+        "jsonSchemaExample": "{\"suggested_agenda\":[\"Short, actionable point\"],\"progress_report\":\"<p>Concise opener paragraph (1-2 sentences) setting the weekly mood.</p><h4>Notable items</h4><ul><li><strong>/task:123 Sample title</strong> - @owner - <em>HIGH - In Progress</em><br/>One short sentence explaining why this matters this week.</li></ul><h4>Stalled or blocked</h4><ul><li><strong>/task:456 Other title</strong> - @owner - <em>NORMAL - Waiting On</em><br/>Awaiting external validation since Apr 24.</li></ul>\",\"vigilances\":[\"<strong>Short title</strong><br/>One or two sentences of context and stakes. <em>Decision to take:</em> what the meeting must decide.\"],\"summary\":\"Short opener for the meeting\",\"agenda_label_support\":\"Meeting support\",\"agenda_label_agenda\":\"Suggested agenda\",\"agenda_outro_text\":\"Prepared automatically from project 3 tasks.\"}",
         "autoFix": true
       },
       "id": "2553cabd-625e-4e26-8876-4ef8cb4452af",
-      "name": "COPIL Structured Output",
+      "name": "Steering Structured Output",
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        1776,
-        528
+        1132,
+        448
       ]
     },
     {
       "parameters": {
-        "mode": "manual",
-        "assignments": {
-          "assignments": [
-            {
-              "id": "6b4da656",
-              "name": "context",
-              "value": "={{ $('Execute WF03 Build Report Context').item.json }}",
-              "type": "object"
-            },
-            {
-              "id": "655d9029",
-              "name": "aiOutput",
-              "value": "={{ $json }}",
-              "type": "object"
-            }
-          ]
-        },
-        "options": {}
+        "html": "<ul>{{ $json.output.suggested_agenda.map(s => '<li>' + s + '</li>').join('') }}</ul>"
       },
-      "id": "d6709139-3ad9-4319-a2d0-715078ec1d88",
-      "name": "Bundle Inputs For Compose",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        1712,
-        256
-      ]
-    },
-    {
-      "parameters": {
-        "workflowId": "dDeDXkNJkWxxqxPb",
-        "options": {}
-      },
-      "id": "965ce7b0-a84d-4156-9c10-6ee4dd6e3307",
-      "name": "Execute WF03 Compose Steering Note",
-      "type": "n8n-nodes-base.executeWorkflow",
+      "id": "c2a100a1-0001-4000-8000-000000000005",
+      "name": "HTML Build AI Agenda",
+      "type": "n8n-nodes-base.html",
       "typeVersion": 1,
       "position": [
-        1840,
-        256
+        1500,
+        224
       ]
     },
     {
       "parameters": {
-        "endpointUrl": "https://exo.example.com/mcp-server/mcp",
+        "html": "<ul>{{ $('Analyze Steering Signals').item.json.output.vigilances.map(v => '<li>' + v + '</li>').join('') }}</ul>"
+      },
+      "id": "c2a100a1-0001-4000-8000-000000000006",
+      "name": "HTML Build AI Watch Items",
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1,
+      "position": [
+        1724,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "html": "<p><strong>Useful links</strong></p><ul><li><a href=\"{{ $('Prepare Steering Config').item.json.exo_base_url }}/portal/g/:spaces:{{ $('Prepare Steering Config').item.json.space_slug }}/home/tasks/projectDetail/{{ $('Prepare Steering Config').item.json.project_id }}\" target=\"_blank\" rel=\"noopener noreferrer\">Project - task board</a></li><li><a href=\"{{ $('Prepare Steering Config').item.json.exo_base_url }}/portal/g/:spaces:{{ $('Prepare Steering Config').item.json.space_slug }}/home/agenda?parentId={{ $('Prepare Steering Config').item.json.agenda_parent_event_id }}&occurrenceId={{ encodeURIComponent($('Prepare Steering Config').item.json.meeting_start_iso) }}\" target=\"_blank\" rel=\"noopener noreferrer\">Agenda - meeting occurrence</a></li></ul>"
+      },
+      "id": "c2a100a1-0001-4000-8000-000000000007",
+      "name": "HTML Build Annexes Links",
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1,
+      "position": [
+        1948,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const cfg = $('Prepare Steering Config').item.json;\nlet html = $('MCP Get Template Note').item.json.content[0].text.html_content;\n\nhtml = html\n  .replaceAll('[[NOTE_TITLE]]', cfg.note_title)\n  .replaceAll('[[MEETING_DATE]]', cfg.meeting_date)\n  .replaceAll('[[MEETING_OWNER]]', cfg.meeting_owner)\n  .replaceAll('[[NEXT_MEETING_DATE]]', cfg.next_meeting_date)\n  .replaceAll('[[MEETING_DATE_PLUS_2]]', cfg.meeting_date_plus_2);\n\nfunction wrap(start, end, inner) {\n  const a = html.indexOf(start);\n  const b = html.indexOf(end);\n  if (a === -1 || b === -1) return;\n  html = html.slice(0, a) + inner + html.slice(b + end.length);\n}\n\nwrap('[SUGGESTED_AGENDA_START]', '[SUGGESTED_AGENDA_END]', $('HTML Build AI Agenda').item.json.html);\nwrap('[REPORT_AVANCEMENT_START]', '[REPORT_AVANCEMENT_END]', $('Analyze Steering Signals').item.json.output.progress_report);\nwrap('[POINTS_A_DISCUTER_START]', '[POINTS_A_DISCUTER_END]', $('HTML Build AI Watch Items').item.json.html);\nwrap('[ANNEXES_LIENS_START]', '[ANNEXES_LIENS_END]', $('HTML Build Annexes Links').item.json.html);\n\nreturn { json: { html_content: html, note_title: cfg.note_title } };\n"
+      },
+      "id": "c2a100a1-0001-4000-8000-000000000008",
+      "name": "Compose Steering Note HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2172,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
           "mode": "id",
           "value": "search_notes"
         },
-        "inputMode": "manual",
-        "options": {
-          "timeout": 60000
-        },
         "parameters": {
           "mappingMode": "defineBelow",
           "value": {
-            "query": "={{ $json.searchNotesInput.query }}",
-            "space_id": "={{ $json.searchNotesInput.space_id }}",
-            "limit": "={{ $json.searchNotesInput.limit }}",
-            "offset": "={{ $json.searchNotesInput.offset }}"
+            "query": "={{ $('Prepare Steering Config').item.json.note_title }}",
+            "space_id": "={{ $('Prepare Steering Config').item.json.space_id }}",
+            "limit": 20,
+            "offset": 0
           },
           "matchingColumns": [],
           "schema": [
@@ -824,44 +460,25 @@
           ],
           "attemptToConvertTypes": false,
           "convertFieldsToString": false
+        },
+        "options": {
+          "timeout": 60000
         }
       },
       "id": "368f7e34-8e85-4dde-bbce-363dbaf25017",
-      "name": "MCP Search Existing COPIL Note",
+      "name": "MCP Search Existing Note",
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        2128,
-        256
-      ]
-    },
-    {
-      "parameters": {
-        "workflowId": "E4OAThogWRG93MUG",
-        "options": {}
-      },
-      "id": "50134558-768a-4430-a7a8-5478764db0bc",
-      "name": "Unwrap MCP Search Notes",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1,
-      "position": [
-        2288,
-        256
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "const note = $('Execute WF03 Compose Steering Note').item.json;\nconst p = $json.payload;\nconst notes = Array.isArray(p) ? p : (p?.notes || p?.results || []);\nconst existing = notes.find(n => String(n.title || '').trim() === note.note_title);\nconst existingNoteId = Number(existing?.note_id || existing?.id || 0);\nreturn {\n  json: {\n    ...note,\n    existing_note_id: existingNoteId,\n    should_update_note: existingNoteId > 0,\n    updateNoteInput: {\n      note_id: existingNoteId,\n      title: note.note_title,\n      html_content: note.html_content\n    }\n  }\n};",
-        "mode": "runOnceForEachItem"
-      },
-      "id": "04bbb101-f817-4f75-aa8b-80250e300219",
-      "name": "Decide Note Upsert",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        2400,
-        256
-      ]
+        2396,
+        224
+      ],
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "vaCQUg5NblUEOrlR",
+          "name": "EXO MIPS MCP"
+        }
+      }
     },
     {
       "parameters": {
@@ -875,7 +492,7 @@
           "conditions": [
             {
               "id": "note_exists",
-              "leftValue": "={{$json.should_update_note}}",
+              "leftValue": "={{ $('MCP Search Existing Note').item.json.content[0].text.filter(n => n.title.trim() === $('Prepare Steering Config').item.json.note_title).length > 0 }}",
               "rightValue": true,
               "operator": {
                 "type": "boolean",
@@ -889,33 +506,29 @@
         "options": {}
       },
       "id": "d01e9397-f9d4-4599-8217-d1310d293550",
-      "name": "IF COPIL Note Exists",
+      "name": "IF Note Exists",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        2672,
-        256
+        2620,
+        224
       ]
     },
     {
       "parameters": {
-        "endpointUrl": "https://exo.example.com/mcp-server/mcp",
+        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
           "mode": "id",
           "value": "update_note"
         },
-        "inputMode": "manual",
-        "options": {
-          "timeout": 90000
-        },
         "parameters": {
           "mappingMode": "defineBelow",
           "value": {
-            "note_id": "={{ $json.updateNoteInput.note_id }}",
-            "title": "={{ $json.updateNoteInput.title }}",
-            "html_content": "={{ $json.updateNoteInput.html_content }}"
+            "note_id": "={{ $('MCP Search Existing Note').item.json.content[0].text.find(n => n.title.trim() === $('Prepare Steering Config').item.json.note_title).note_id }}",
+            "title": "={{ $('Compose Steering Note HTML').item.json.note_title }}",
+            "html_content": "={{ $('Compose Steering Note HTML').item.json.html_content }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -946,86 +559,54 @@
           ],
           "attemptToConvertTypes": false,
           "convertFieldsToString": false
+        },
+        "options": {
+          "timeout": 90000
         }
       },
       "id": "1cad418a-005b-4352-8333-7f14146a62d5",
-      "name": "MCP Update COPIL Note",
+      "name": "MCP Update Steering Note",
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        2928,
+        2844,
         128
-      ]
+      ],
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "vaCQUg5NblUEOrlR",
+          "name": "EXO MIPS MCP"
+        }
+      }
     },
     {
       "parameters": {
-        "workflowId": "E4OAThogWRG93MUG",
-        "options": {}
+        "html": "<p>{{ $('Analyze Steering Signals').item.json.output.agenda_label_support }}: <a href=\"{{ $json.content[0].text.url }}\" target=\"_blank\" rel=\"noopener noreferrer\">{{ $('Compose Steering Note HTML').item.json.note_title }}</a></p><h4>{{ $('Analyze Steering Signals').item.json.output.agenda_label_agenda }}</h4>{{ $('HTML Build AI Agenda').item.json.html }}<p>{{ $('Analyze Steering Signals').item.json.output.agenda_outro_text }}</p>"
       },
-      "id": "39fbc908-3811-4040-b23b-839420cebd98",
-      "name": "Unwrap MCP Save Note Update",
-      "type": "n8n-nodes-base.executeWorkflow",
+      "id": "c2a100a1-0001-4000-8000-000000000010",
+      "name": "HTML Build Agenda Description (Update)",
+      "type": "n8n-nodes-base.html",
       "typeVersion": 1,
       "position": [
-        3088,
+        3068,
         128
       ]
     },
     {
       "parameters": {
-        "mode": "manual",
-        "assignments": {
-          "assignments": [
-            {
-              "id": "d8086224",
-              "name": "saved_note",
-              "value": "={{ $json.payload }}",
-              "type": "object"
-            },
-            {
-              "id": "18362b02",
-              "name": "note_url",
-              "value": "={{ $json.payload?.url || $json.payload?.link || ('https://exo.example.com/portal/dw/notes/' + String($json.payload?.note_id || $('Decide Note Upsert').item.json.existing_note_id || '')) }}",
-              "type": "string"
-            },
-            {
-              "id": "42ced4e6",
-              "name": "agendaUpdateInput",
-              "value": "={{\n  ({\n    event_id: $('Decide Note Upsert').item.json.agenda_parent_event_id,\n    summary: 'Weekly steering - ' + $('Decide Note Upsert').item.json.meeting_date,\n    description: '<p>Meeting support: <a href=\"' + ($json.payload?.url || $json.payload?.link || ('https://exo.example.com/portal/dw/notes/' + String($json.payload?.note_id || $('Decide Note Upsert').item.json.existing_note_id || ''))) + '\" target=\"_blank\" rel=\"noopener noreferrer\">' + $('Decide Note Upsert').item.json.note_title + '</a></p><p>Prepared automatically from project ' + String($('Decide Note Upsert').item.json.project_id) + ' tasks.</p>'\n  })\n}}",
-              "type": "object"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "e18f90a0-62c9-4bb6-af01-45f9e6422120",
-      "name": "Set Agenda After Note Update",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        3360,
-        128
-      ]
-    },
-    {
-      "parameters": {
-        "endpointUrl": "https://exo.example.com/mcp-server/mcp",
+        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
           "mode": "id",
           "value": "update_agenda_event"
         },
-        "inputMode": "manual",
-        "options": {
-          "timeout": 60000
-        },
         "parameters": {
           "mappingMode": "defineBelow",
           "value": {
-            "event_id": "={{ $json.agendaUpdateInput.event_id }}",
-            "summary": "={{ $json.agendaUpdateInput.summary }}",
-            "description": "={{ $json.agendaUpdateInput.description }}"
+            "event_id": "={{ $('Prepare Steering Config').item.json.agenda_parent_event_id }}",
+            "summary": "={{ 'Weekly steering - ' + $('Prepare Steering Config').item.json.meeting_date }}",
+            "description": "={{ $json.html }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -1056,6 +637,9 @@
           ],
           "attemptToConvertTypes": false,
           "convertFieldsToString": false
+        },
+        "options": {
+          "timeout": 60000
         }
       },
       "id": "f6f0d324-c022-48d0-a227-489eec82f787",
@@ -1063,28 +647,30 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        3488,
+        3292,
         128
-      ]
+      ],
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "vaCQUg5NblUEOrlR",
+          "name": "EXO MIPS MCP"
+        }
+      }
     },
     {
       "parameters": {
-        "endpointUrl": "https://exo.example.com/mcp-server/mcp",
+        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
           "mode": "id",
           "value": "invite_users_to_agenda_event"
         },
-        "inputMode": "manual",
-        "options": {
-          "timeout": 60000
-        },
         "parameters": {
           "mappingMode": "defineBelow",
           "value": {
-            "event_id": "={{ $('Decide Note Upsert').item.json.agenda_parent_event_id }}",
-            "attendee_usernames": "={{ $('Decide Note Upsert').item.json.attendee_usernames }}"
+            "event_id": "={{ $('Prepare Steering Config').item.json.agenda_parent_event_id }}",
+            "attendee_usernames": "={{ $('Prepare Steering Config').item.json.attendee_usernames }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -1107,6 +693,9 @@
           ],
           "attemptToConvertTypes": false,
           "convertFieldsToString": false
+        },
+        "options": {
+          "timeout": 60000
         }
       },
       "id": "d1e9384b-98f2-43fc-b019-ec150f3c7faa",
@@ -1114,30 +703,32 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        3760,
+        3516,
         128
-      ]
+      ],
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "vaCQUg5NblUEOrlR",
+          "name": "EXO MIPS MCP"
+        }
+      }
     },
     {
       "parameters": {
-        "endpointUrl": "https://exo.example.com/mcp-server/mcp",
+        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
           "mode": "id",
           "value": "create_child_note"
         },
-        "inputMode": "manual",
-        "options": {
-          "timeout": 90000
-        },
         "parameters": {
           "mappingMode": "defineBelow",
           "value": {
-            "parent_note_id": "={{ $json.createNoteInput.parent_note_id }}",
-            "title": "={{ $json.createNoteInput.title }}",
-            "html_content": "={{ $json.createNoteInput.html_content }}",
-            "summary": "={{ $json.createNoteInput.summary }}"
+            "parent_note_id": "={{ $('Prepare Steering Config').item.json.reports_parent_note_id }}",
+            "title": "={{ $('Compose Steering Note HTML').item.json.note_title }}",
+            "html_content": "={{ $('Compose Steering Note HTML').item.json.html_content }}",
+            "summary": "Weekly steering auto-prepared"
           },
           "matchingColumns": [],
           "schema": [
@@ -1176,86 +767,54 @@
           ],
           "attemptToConvertTypes": false,
           "convertFieldsToString": false
+        },
+        "options": {
+          "timeout": 90000
         }
       },
       "id": "b56fb862-4a27-4cfd-a7f0-b11a7898a57d",
-      "name": "MCP Create COPIL Note",
+      "name": "MCP Create Steering Note",
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        2928,
-        384
-      ]
+        2844,
+        320
+      ],
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "vaCQUg5NblUEOrlR",
+          "name": "EXO MIPS MCP"
+        }
+      }
     },
     {
       "parameters": {
-        "workflowId": "E4OAThogWRG93MUG",
-        "options": {}
+        "html": "<p>{{ $('Analyze Steering Signals').item.json.output.agenda_label_support }}: <a href=\"{{ $json.content[0].text.url }}\" target=\"_blank\" rel=\"noopener noreferrer\">{{ $('Compose Steering Note HTML').item.json.note_title }}</a></p><h4>{{ $('Analyze Steering Signals').item.json.output.agenda_label_agenda }}</h4>{{ $('HTML Build AI Agenda').item.json.html }}<p>{{ $('Analyze Steering Signals').item.json.output.agenda_outro_text }}</p>"
       },
-      "id": "3172c682-f7a7-4ff3-9c11-358b5b919a43",
-      "name": "Unwrap MCP Save Note Create",
-      "type": "n8n-nodes-base.executeWorkflow",
+      "id": "c2a100a1-0001-4000-8000-000000000011",
+      "name": "HTML Build Agenda Description (Create)",
+      "type": "n8n-nodes-base.html",
       "typeVersion": 1,
       "position": [
-        3088,
-        384
+        3068,
+        320
       ]
     },
     {
       "parameters": {
-        "mode": "manual",
-        "assignments": {
-          "assignments": [
-            {
-              "id": "0ad97ddc",
-              "name": "saved_note",
-              "value": "={{ $json.payload }}",
-              "type": "object"
-            },
-            {
-              "id": "ea3c98dd",
-              "name": "note_url",
-              "value": "={{ $json.payload?.url || $json.payload?.link || ('https://exo.example.com/portal/dw/notes/' + String($json.payload?.note_id || $('Decide Note Upsert').item.json.existing_note_id || '')) }}",
-              "type": "string"
-            },
-            {
-              "id": "41628d04",
-              "name": "agendaUpdateInput",
-              "value": "={{\n  ({\n    event_id: $('Decide Note Upsert').item.json.agenda_parent_event_id,\n    summary: 'Weekly steering - ' + $('Decide Note Upsert').item.json.meeting_date,\n    description: '<p>Meeting support: <a href=\"' + ($json.payload?.url || $json.payload?.link || ('https://exo.example.com/portal/dw/notes/' + String($json.payload?.note_id || $('Decide Note Upsert').item.json.existing_note_id || ''))) + '\" target=\"_blank\" rel=\"noopener noreferrer\">' + $('Decide Note Upsert').item.json.note_title + '</a></p><p>Prepared automatically from project ' + String($('Decide Note Upsert').item.json.project_id) + ' tasks.</p>'\n  })\n}}",
-              "type": "object"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "362c2f13-a004-4770-ac24-9058560aa89d",
-      "name": "Set Agenda After Note Create",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        3360,
-        384
-      ]
-    },
-    {
-      "parameters": {
-        "endpointUrl": "https://exo.example.com/mcp-server/mcp",
+        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
           "mode": "id",
           "value": "update_agenda_event"
         },
-        "inputMode": "manual",
-        "options": {
-          "timeout": 60000
-        },
         "parameters": {
           "mappingMode": "defineBelow",
           "value": {
-            "event_id": "={{ $json.agendaUpdateInput.event_id }}",
-            "summary": "={{ $json.agendaUpdateInput.summary }}",
-            "description": "={{ $json.agendaUpdateInput.description }}"
+            "event_id": "={{ $('Prepare Steering Config').item.json.agenda_parent_event_id }}",
+            "summary": "={{ 'Weekly steering - ' + $('Prepare Steering Config').item.json.meeting_date }}",
+            "description": "={{ $json.html }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -1286,6 +845,9 @@
           ],
           "attemptToConvertTypes": false,
           "convertFieldsToString": false
+        },
+        "options": {
+          "timeout": 60000
         }
       },
       "id": "3d06a019-0df0-4769-a882-fc8af8843a5b",
@@ -1293,28 +855,30 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        3488,
-        384
-      ]
+        3292,
+        320
+      ],
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "vaCQUg5NblUEOrlR",
+          "name": "EXO MIPS MCP"
+        }
+      }
     },
     {
       "parameters": {
-        "endpointUrl": "https://exo.example.com/mcp-server/mcp",
+        "endpointUrl": "https://exo-mips-ft.meeds.io/mcp-server/mcp",
         "authentication": "mcpOAuth2Api",
         "tool": {
           "__rl": true,
           "mode": "id",
           "value": "invite_users_to_agenda_event"
         },
-        "inputMode": "manual",
-        "options": {
-          "timeout": 60000
-        },
         "parameters": {
           "mappingMode": "defineBelow",
           "value": {
-            "event_id": "={{ $('Decide Note Upsert').item.json.agenda_parent_event_id }}",
-            "attendee_usernames": "={{ $('Decide Note Upsert').item.json.attendee_usernames }}"
+            "event_id": "={{ $('Prepare Steering Config').item.json.agenda_parent_event_id }}",
+            "attendee_usernames": "={{ $('Prepare Steering Config').item.json.attendee_usernames }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -1337,6 +901,9 @@
           ],
           "attemptToConvertTypes": false,
           "convertFieldsToString": false
+        },
+        "options": {
+          "timeout": 60000
         }
       },
       "id": "d8164145-f997-4080-a325-1acdce098f68",
@@ -1344,32 +911,281 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        3760,
-        384
-      ]
+        3516,
+        320
+      ],
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "vaCQUg5NblUEOrlR",
+          "name": "EXO MIPS MCP"
+        }
+      }
     }
   ],
-  "activeVersion": null,
-  "tags": [],
-  "meta": {
-    "aiBuilderAssisted": true
+  "connections": {
+    "Manual Start": {
+      "main": [
+        [
+          {
+            "node": "Prepare Steering Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weekly Preparation (Thu 08:00)": {
+      "main": [
+        [
+          {
+            "node": "Prepare Steering Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Steering Config": {
+      "main": [
+        [
+          {
+            "node": "MCP Get Template Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Get Template Note": {
+      "main": [
+        [
+          {
+            "node": "MCP List Project Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP List Project Tasks": {
+      "main": [
+        [
+          {
+            "node": "Analyze Steering Signals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Steering Signals": {
+      "main": [
+        [
+          {
+            "node": "HTML Build AI Agenda",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML Build AI Agenda": {
+      "main": [
+        [
+          {
+            "node": "HTML Build AI Watch Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML Build AI Watch Items": {
+      "main": [
+        [
+          {
+            "node": "HTML Build Annexes Links",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML Build Annexes Links": {
+      "main": [
+        [
+          {
+            "node": "Compose Steering Note HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compose Steering Note HTML": {
+      "main": [
+        [
+          {
+            "node": "MCP Search Existing Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Search Existing Note": {
+      "main": [
+        [
+          {
+            "node": "IF Note Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Note Exists": {
+      "main": [
+        [
+          {
+            "node": "MCP Update Steering Note",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "MCP Create Steering Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Update Steering Note": {
+      "main": [
+        [
+          {
+            "node": "HTML Build Agenda Description (Update)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML Build Agenda Description (Update)": {
+      "main": [
+        [
+          {
+            "node": "MCP Update Agenda After Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Update Agenda After Update": {
+      "main": [
+        [
+          {
+            "node": "MCP Invite Participants After Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Create Steering Note": {
+      "main": [
+        [
+          {
+            "node": "HTML Build Agenda Description (Create)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML Build Agenda Description (Create)": {
+      "main": [
+        [
+          {
+            "node": "MCP Update Agenda After Create",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Update Agenda After Create": {
+      "main": [
+        [
+          {
+            "node": "MCP Invite Participants After Create",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Steering Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Analyze Steering Signals",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Steering Structured Output",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Steering Structured Output": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Analyze Steering Signals",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
-  "parentFolderId": null,
-  "description": "Prepares the weekly GraphFlow/eXo steering committee pack: loads the template and tasks, generates AI signals, creates or updates the note, then syncs the calendar.",
-  "scopes": [
-    "workflow:create",
-    "workflow:delete",
-    "workflow:execute",
-    "workflow:execute-chat",
-    "workflow:list",
-    "workflow:move",
-    "workflow:publish",
-    "workflow:read",
-    "workflow:share",
-    "workflow:unpublish",
-    "workflow:unshare",
-    "workflow:update",
-    "workflow:updateRedactionSetting"
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "d6d6e06e-ff3e-4d69-b1d4-774f80ca320d",
+  "activeVersionId": null,
+  "versionCounter": 26,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-05-07T14:30:36.336Z",
+      "createdAt": "2026-05-07T14:30:36.336Z",
+      "role": "workflow:owner",
+      "workflowId": "DMM9Q7t3znVOUwnk",
+      "projectId": "rzaD0nbLwUWIJxdW",
+      "project": {
+        "updatedAt": "2026-05-05T11:30:25.664Z",
+        "createdAt": "2026-04-20T14:43:55.238Z",
+        "id": "rzaD0nbLwUWIJxdW",
+        "name": "Meeds Lab  <patrice@meedslab.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "8de64810-3c63-4fd1-969c-9915f88c784a"
+      }
+    }
   ],
-  "canExecute": true
+  "tags": [],
+  "activeVersion": null
 }

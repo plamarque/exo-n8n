@@ -26,7 +26,13 @@ This document is tracking-only. It does not define expected behavior.
 
 ### WF03
 
-- **WF03**: heavy HTML/report logic lives in portfolio-local UTIL exports under `workflows/wf03-weekly-steering/subworkflows/`; main graph uses **Set**, **Execute Workflow** (unwrap + report + compose), and one small **Decide Note Upsert** Code node. REST deploy from git uses `./tools/deploy.sh wf03` with [subworkflow-dependencies.json](../workflows/wf03-weekly-steering/subworkflow-dependencies.json) (see [README](../workflows/wf03-weekly-steering/README.md)). Further native-only tweaks (Split Out / Aggregate for tasks) remain optional; see this document and the workflow README.
+- **WF03 didactic slice (2026-05-13)**: the parent graph is now self-contained — the two WF03 UTIL exports (`wf03-build-report-context`, `wf03-compose-steering-note-html`) and every `Unwrap MCP JSON` Execute Workflow hop were removed; the report table, AI agenda/watch lists, and annexes links are produced by native **Split Out** + **Aggregate** + **HTML** nodes, with one short **`Compose Steering Note HTML`** Code node for template token surgery. REST deploy uses `./tools/deploy.sh wf03` (no `subworkflow-dependencies.json`); see [README](../workflows/wf03-weekly-steering/README.md) and [SPEC.technical.md §7](../workflows/wf03-weekly-steering/SPEC.technical.md#7-didactic-simplification-slice-adr-0004).
+- **WF03 deferred hardening (tutorial trade-offs)** — reintroduce only when a tenant requires it:
+  - MCP envelope variance: the graph trusts `content[0].text.<field>` for every MCP response (template body, task list, search results, note url). Tenants that wrap responses differently must re-add `unwrap-mcp-json` Execute Workflow hops upstream of each affected node.
+  - Task shape variance: the progress table HTML and the LLM payload trust each task to carry `task_id`, `title`, `assignee.username`, `status.status`, `due_date`, `priority`, and `description`. Missing fields render as `undefined`.
+  - Template language: French→English heading translation and HTML entity decoding (previously in the compose UTIL) are gone. If a tenant ships a legacy French template, restore the translation map inside `Compose Steering Note HTML` or update the template note in eXo to English.
+  - Upsert concurrency: `IF Note Exists` keys on exact title-match only (last write wins on concurrent reruns of the same meeting slot).
+  - URL building: `space_slug` and `exo_base_url` are static literals inside `Prepare Steering Config`; not externalized to root `.env`.
 - [UNCERTAIN] Activation status and latest successful execution evidence are not documented in the same style as WF01.
 
 ### WF04

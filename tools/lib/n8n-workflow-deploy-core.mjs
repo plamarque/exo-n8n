@@ -391,6 +391,88 @@ function injectWf04ListDocumentsSpaceIdFromEnv(str) {
 }
 
 /**
+ * Rewrite literal values inside the WF03 **`Prepare Steering Config`** Set node from repository root `.env`.
+ *
+ * Canonical JSON holds **plain literals** (no n8n `$vars.*`) for the didactic slice (ADR 0004); this helper
+ * walks the Set node `assignments` array and overwrites the value of each entry whose `name` matches the
+ * env-driven mapping below when the corresponding env var is set:
+ *
+ * - Integer assignments (`space_id`, `project_id`, …) — see {@link WF03_PREPARE_STEERING_CONFIG_INTEGER_MAP}
+ * - `meeting_owner` — replaced with the **`WF03_MEETING_OWNER`** env value (plain string)
+ * - `attendee_usernames` — replaced with a comma-separated **`WF03_ATTENDEE_USERNAMES`** env value parsed
+ *   into a trimmed, non-empty array literal rendered as an n8n expression (`={{ [ 'x', 'y' ] }}`)
+ *
+ * Safe across portfolios: only nodes named **`Prepare Steering Config`** (`n8n-nodes-base.set`) are touched.
+ *
+ * @param {unknown[] | undefined} nodes
+ * @returns {number} nodes mutated
+ */
+export function applyWf03PrepareSteeringConfigFromEnv(nodes) {
+  if (!Array.isArray(nodes)) return 0;
+  let touched = 0;
+  for (const node of nodes) {
+    if (!node || typeof node !== "object") continue;
+    const named = /** @type {{ name?: string; type?: string }} */ (node);
+    if (named.name !== "Prepare Steering Config") continue;
+    if (named.type !== "n8n-nodes-base.set") continue;
+    const assignments =
+      /** @type {{ parameters?: { assignments?: { assignments?: Array<{ name?: string; value?: unknown }> } } }} */ (
+        node
+      ).parameters?.assignments?.assignments;
+    if (!Array.isArray(assignments)) continue;
+
+    let changed = false;
+    for (const [envKey, assignmentName] of Object.entries(WF03_PREPARE_STEERING_CONFIG_INTEGER_MAP)) {
+      const raw = (process.env[envKey] || "").trim();
+      if (!raw) continue;
+      if (!/^\d+$/.test(raw)) {
+        console.warn(
+          `${envKey} is set but invalid (expected digits only); skipping WF03 Prepare Steering Config injection.`,
+        );
+        continue;
+      }
+      const num = Number(raw);
+      for (const a of assignments) {
+        if (a && a.name === assignmentName && a.value !== num) {
+          a.value = num;
+          changed = true;
+        }
+      }
+    }
+
+    const ownerRaw = (process.env.WF03_MEETING_OWNER || "").trim();
+    if (ownerRaw) {
+      for (const a of assignments) {
+        if (a && a.name === "meeting_owner" && a.value !== ownerRaw) {
+          a.value = ownerRaw;
+          changed = true;
+        }
+      }
+    }
+
+    const attendeeRaw = (process.env.WF03_ATTENDEE_USERNAMES || "").trim();
+    if (attendeeRaw) {
+      const items = attendeeRaw
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (items.length) {
+        const literal = `={{ [${items.map((s) => `'${escapeSingleQuotedJsStringLiteral(s)}'`).join(", ")}] }}`;
+        for (const a of assignments) {
+          if (a && a.name === "attendee_usernames" && a.value !== literal) {
+            a.value = literal;
+            changed = true;
+          }
+        }
+      }
+    }
+
+    if (changed) touched++;
+  }
+  return touched;
+}
+
+/**
  * When **`WF04_SPACE_ID`** is set, set numeric **`space_id`** on WF04 **List Documents** MCP Client
  * **Manual** `parameters.value` (string-based {@link injectWf04ListDocumentsSpaceIdFromEnv} does not visit JSON numbers).
  *
@@ -467,15 +549,23 @@ export const PORTFOLIO_INTEGER_VAR_KEYS = [
   "WF02_PROJECT_ID",
   "WF02_INPROGRESS_STATUS_ID",
   "WF02_DONE_STATUS_ID",
-  "WF03_SPACE_ID",
-  "WF03_PROJECT_ID",
-  "WF03_TEMPLATE_NOTE_ID",
-  "WF03_REPORTS_PARENT_NOTE_ID",
-  "WF03_AGENDA_PARENT_EVENT_ID",
-  "WF03_STAGNATION_DAYS",
-  "WF03_BLOCKED_DAYS",
-  "WF03_OVERLOAD_THRESHOLD",
 ];
+
+/**
+ * Mapping from `WF03_*` env var names to **`Prepare Steering Config`** Set assignment names
+ * (didactic slice — canonical JSON holds plain integer literals; deploy rewrites them in-memory
+ * via {@link applyWf03PrepareSteeringConfigFromEnv}).
+ */
+export const WF03_PREPARE_STEERING_CONFIG_INTEGER_MAP = /** @type {const} */ ({
+  WF03_SPACE_ID: "space_id",
+  WF03_PROJECT_ID: "project_id",
+  WF03_TEMPLATE_NOTE_ID: "template_note_id",
+  WF03_REPORTS_PARENT_NOTE_ID: "reports_parent_note_id",
+  WF03_AGENDA_PARENT_EVENT_ID: "agenda_parent_event_id",
+  WF03_STAGNATION_DAYS: "stagnation_days",
+  WF03_BLOCKED_DAYS: "blocked_days",
+  WF03_OVERLOAD_THRESHOLD: "overload_threshold",
+});
 
 /**
  * Escape `value` for use inside a JavaScript single-quoted literal embedded in an n8n expression.
@@ -569,24 +659,6 @@ export function applyN8nPortfolioVarsFallbackOverrides(nodes) {
       }
     }
 
-    const attendeeRaw = (process.env.WF03_ATTENDEE_USERNAMES || "").trim();
-    if (attendeeRaw) {
-      const esc = escapeSingleQuotedJsStringLiteral(attendeeRaw);
-      out = out.replace(
-        /(\$vars\.WF03_ATTENDEE_USERNAMES\s*\|\|\s*')([^'\\]|\\.)*(')/g,
-        `$1${esc}$3`,
-      );
-    }
-
-    const ownerRaw = (process.env.WF03_MEETING_OWNER || "").trim();
-    if (ownerRaw) {
-      const esc = escapeSingleQuotedJsStringLiteral(ownerRaw);
-      out = out.replace(
-        /(\$vars\.WF03_MEETING_OWNER\s*\|\|\s*')([^'\\]|\\.)*(')/g,
-        `$1${esc}$3`,
-      );
-    }
-
     const spaceRaw = (process.env.EXO_SPACE_NAME || "").trim();
     if (spaceRaw) {
       const escaped = escapeN8nExpressionStringLiteral(spaceRaw);
@@ -613,6 +685,7 @@ export function applyN8nPortfolioVarsFallbackOverrides(nodes) {
   }
 
   touched += applyWf04ListDocumentsManualSpaceIdFromEnv(nodes);
+  touched += applyWf03PrepareSteeringConfigFromEnv(nodes);
 
   if (touched > 0) {
     console.log(
@@ -688,24 +761,6 @@ export function applyPortfolioHardcodeFromEnv(nodes, opts = {}) {
       );
     }
 
-    const attendeeRaw = (process.env.WF03_ATTENDEE_USERNAMES || "").trim();
-    if (attendeeRaw) {
-      const esc = escapeSingleQuotedJsStringLiteral(attendeeRaw);
-      out = out.replace(
-        /String\(\$vars\.WF03_ATTENDEE_USERNAMES\s*\|\|\s*'(?:[^'\\]|\\.)*'\)/g,
-        `String('${esc}')`,
-      );
-    }
-
-    const ownerRaw = (process.env.WF03_MEETING_OWNER || "").trim();
-    if (ownerRaw) {
-      const esc = escapeSingleQuotedJsStringLiteral(ownerRaw);
-      out = out.replace(
-        /String\(\$vars\.WF03_MEETING_OWNER\s*\|\|\s*'(?:[^'\\]|\\.)*'\)/g,
-        `String('${esc}')`,
-      );
-    }
-
     const spaceRaw = (process.env.EXO_SPACE_NAME || "").trim();
     if (spaceRaw) {
       const escaped = escapeN8nExpressionStringLiteral(spaceRaw);
@@ -732,6 +787,7 @@ export function applyPortfolioHardcodeFromEnv(nodes, opts = {}) {
   }
 
   stringNodes += applyWf04ListDocumentsManualSpaceIdFromEnv(nodes);
+  stringNodes += applyWf03PrepareSteeringConfigFromEnv(nodes);
 
   if (opts.silent !== true && (mcpNodes > 0 || stringNodes > 0)) {
     console.log(

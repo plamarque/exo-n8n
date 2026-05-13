@@ -8,6 +8,7 @@ import {
   applyN8nPortfolioVarsFallbackOverrides,
   applyPortfolioHardcodeFromEnv,
   applyWf02CreateTaskProjectIdFromEnv,
+  applyWf03PrepareSteeringConfigFromEnv,
   escapeSingleQuotedJsStringLiteral,
   WF02_CANONICAL_PARENT_FOLDER_ID,
   WF04_CANONICAL_EXO_SPACE_NAME_DEMO,
@@ -187,17 +188,122 @@ function testExoSpaceNameWf04LiteralInject() {
   assert.ok(!nodes[0].parameters.v.includes("$vars"));
 }
 
-function testWf03MeetingOwner() {
+/** Canonical WF03 `Prepare Steering Config` Set node fixture (didactic slice, no `$vars`). */
+function buildWf03PrepareSteeringConfigNode() {
+  return {
+    name: "Prepare Steering Config",
+    type: "n8n-nodes-base.set",
+    parameters: {
+      assignments: {
+        assignments: [
+          { id: "f695bdae", name: "space_id", value: 1, type: "number" },
+          { id: "6f7850f6", name: "project_id", value: 3, type: "number" },
+          { id: "6a5fd473", name: "template_note_id", value: 25, type: "number" },
+          { id: "bd9dc430", name: "reports_parent_note_id", value: 6, type: "number" },
+          { id: "ccdc8611", name: "agenda_parent_event_id", value: 13, type: "number" },
+          { id: "0d5f6a25", name: "meeting_owner", value: "Project team", type: "string" },
+          {
+            id: "b8d348f1",
+            name: "attendee_usernames",
+            value: "={{ ['claire', 'etienne', 'louis', 'nadia', 'antoine', 'emma'] }}",
+            type: "array",
+          },
+          { id: "a65e3459", name: "stagnation_days", value: 3, type: "number" },
+          { id: "313d3a07", name: "blocked_days", value: 5, type: "number" },
+          { id: "d25d464f", name: "overload_threshold", value: 5, type: "number" },
+        ],
+      },
+    },
+  };
+}
+
+function testWf03PrepareSteeringConfigIntegerOverrides() {
+  const nodes = [buildWf03PrepareSteeringConfigNode()];
+  process.env.WF03_SPACE_ID = "42";
+  process.env.WF03_PROJECT_ID = "99";
+  process.env.WF03_TEMPLATE_NOTE_ID = "111";
+  process.env.WF03_REPORTS_PARENT_NOTE_ID = "222";
+  process.env.WF03_AGENDA_PARENT_EVENT_ID = "333";
+  process.env.WF03_STAGNATION_DAYS = "7";
+  process.env.WF03_BLOCKED_DAYS = "9";
+  process.env.WF03_OVERLOAD_THRESHOLD = "11";
+  const touched = applyWf03PrepareSteeringConfigFromEnv(nodes);
+  assert.equal(touched, 1);
+  const a = nodes[0].parameters.assignments.assignments;
+  assert.equal(a.find((x) => x.name === "space_id").value, 42);
+  assert.equal(a.find((x) => x.name === "project_id").value, 99);
+  assert.equal(a.find((x) => x.name === "template_note_id").value, 111);
+  assert.equal(a.find((x) => x.name === "reports_parent_note_id").value, 222);
+  assert.equal(a.find((x) => x.name === "agenda_parent_event_id").value, 333);
+  assert.equal(a.find((x) => x.name === "stagnation_days").value, 7);
+  assert.equal(a.find((x) => x.name === "blocked_days").value, 9);
+  assert.equal(a.find((x) => x.name === "overload_threshold").value, 11);
+}
+
+function testWf03PrepareSteeringConfigMeetingOwnerAndAttendees() {
+  const nodes = [buildWf03PrepareSteeringConfigNode()];
+  process.env.WF03_MEETING_OWNER = "Team O'Brien";
+  process.env.WF03_ATTENDEE_USERNAMES = "alice, bob ,carol";
+  applyWf03PrepareSteeringConfigFromEnv(nodes);
+  const a = nodes[0].parameters.assignments.assignments;
+  assert.equal(a.find((x) => x.name === "meeting_owner").value, "Team O'Brien");
+  assert.equal(
+    a.find((x) => x.name === "attendee_usernames").value,
+    "={{ ['alice', 'bob', 'carol'] }}",
+  );
+}
+
+function testWf03PrepareSteeringConfigInvalidIntegerSkips() {
+  const nodes = [buildWf03PrepareSteeringConfigNode()];
+  process.env.WF03_PROJECT_ID = "not-a-number";
+  applyWf03PrepareSteeringConfigFromEnv(nodes);
+  assert.equal(
+    nodes[0].parameters.assignments.assignments.find((x) => x.name === "project_id").value,
+    3,
+  );
+}
+
+function testWf03PrepareSteeringConfigSkipsForeignNode() {
   const nodes = [
     {
+      name: "Some Other Set",
+      type: "n8n-nodes-base.set",
       parameters: {
-        v: "={{ String($vars.WF03_MEETING_OWNER || 'Project team') }}",
+        assignments: {
+          assignments: [{ name: "space_id", value: 0, type: "number" }],
+        },
       },
     },
   ];
-  process.env.WF03_MEETING_OWNER = "Team O'Brien";
+  process.env.WF03_SPACE_ID = "7";
+  const touched = applyWf03PrepareSteeringConfigFromEnv(nodes);
+  assert.equal(touched, 0);
+  assert.equal(nodes[0].parameters.assignments.assignments[0].value, 0);
+}
+
+function testWf03PrepareSteeringConfigPipelineCallsThroughFallback() {
+  const nodes = [buildWf03PrepareSteeringConfigNode()];
+  process.env.WF03_SPACE_ID = "55";
+  process.env.WF03_MEETING_OWNER = "Festival ops";
   applyN8nPortfolioVarsFallbackOverrides(nodes);
-  assert.ok(nodes[0].parameters.v.includes("Team O\\'Brien"));
+  const a = nodes[0].parameters.assignments.assignments;
+  assert.equal(a.find((x) => x.name === "space_id").value, 55);
+  assert.equal(a.find((x) => x.name === "meeting_owner").value, "Festival ops");
+}
+
+function testWf03PrepareSteeringConfigPipelineCallsThroughHardcode() {
+  const nodes = [buildWf03PrepareSteeringConfigNode()];
+  process.env.WF03_AGENDA_PARENT_EVENT_ID = "999";
+  process.env.WF03_ATTENDEE_USERNAMES = "x,y";
+  applyPortfolioHardcodeFromEnv(nodes);
+  const a = nodes[0].parameters.assignments.assignments;
+  assert.equal(a.find((x) => x.name === "agenda_parent_event_id").value, 999);
+  assert.equal(
+    a.find((x) => x.name === "attendee_usernames").value,
+    "={{ ['x', 'y'] }}",
+  );
+  const serialized = JSON.stringify(nodes[0]);
+  assert.ok(!serialized.includes("$vars"));
 }
 
 function testWf02ApprovalUrl() {
@@ -363,7 +469,12 @@ try {
   testWf04SpaceIdHardcodeManualListDocuments();
   testExoSpaceName();
   testExoSpaceNameWf04LiteralInject();
-  testWf03MeetingOwner();
+  testWf03PrepareSteeringConfigIntegerOverrides();
+  testWf03PrepareSteeringConfigMeetingOwnerAndAttendees();
+  testWf03PrepareSteeringConfigInvalidIntegerSkips();
+  testWf03PrepareSteeringConfigSkipsForeignNode();
+  testWf03PrepareSteeringConfigPipelineCallsThroughFallback();
+  testWf03PrepareSteeringConfigPipelineCallsThroughHardcode();
   testWf02ApprovalUrl();
   testWf02ParentFolder();
   testWf02ParentFolderManualMcpValue();

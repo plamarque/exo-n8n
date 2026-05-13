@@ -7,7 +7,7 @@
 Prepare the weekly project steering committee (COPIL) meeting in advance with:
 
 - A meeting note bootstrapped from a template
-- A tabular progress report embedded in the note
+- An AI-generated progress narrative (notable items, stalled work) grounded in the project task list
 - A suggested agenda from an LLM reading the task list
 - A standing calendar event pointing to the note for the week
 
@@ -50,15 +50,19 @@ Created in eXo **Notes** from a template. Fixed references for this build:
 - Project for the task table: `3`
 - Recurring meeting: every Thursday 10:00
 
-Minimum in the body: title with the meeting date, standard sections, a progress block, AI-suggested agenda, watch list, section for decisions/actions to fill live.
+Minimum in the body: title with the meeting date, standard sections, an AI progress narrative, AI-suggested agenda, AI watch list, section for decisions/actions to fill live.
 
-### 5.2 Tabular progress
+### 5.2 AI progress report
 
-Built from all tasks in project `3`. Columns: reference/title, owner, status, due, priority, blocker/comment when present. Read before the meeting, updated verbally during the steering committee (COPIL in the demo habit).
+Built from all tasks in project `3` via a single LLM call. The model returns an HTML narrative (opener paragraph + 2-3 subsections such as "Notable items", "Stalled or blocked", "Recent moves") that highlights what matters this week: priorities, stagnation, blockers, recent movement. Read before the meeting, updated verbally during the steering committee (COPIL in the demo habit). The report is grounded in task data, not invented, and cites `/task:ID` and `@username` for traceability.
 
 ### 5.3 LLM layer (non binding)
 
-Suggests watching items: blocked urgent work, stagnation, pile-ups in a column, atypical load. Output must stay short, factual, and non-decisional. Thresholds (tunable in workflow): stagnation 3d, stuck/waiting 5d, 5+ tasks in one column.
+Same LLM call also suggests an agenda and a short list of watch items: blocked urgent work, stagnation, pile-ups in a column, atypical load. Output must stay short, factual, and non-decisional. Thresholds (tunable in workflow): stagnation 3d, stuck/waiting 5d, 5+ tasks in one column. Watch items must not duplicate the progress narrative.
+
+### 5.4 Language adaptation
+
+The eXo template note may be written in any natural language (French, English, …). The LLM call receives the template body, detects its language, and produces every generated string in that same language: the agenda items, the progress narrative (including its subsection headings), the watch items, the summary, and the three localized labels rendered in the agenda event description. No static translation table lives in the workflow.
 
 ### 5.4 Calendar holder
 
@@ -70,21 +74,21 @@ Default: Thursday 10:00. The run should land **before** the slot so the pack is 
 
 ## 7) High-level step list
 
-1. Find which steering committee occurrence to prepare.  
-2. Set the date used in the title.  
-3. Read template note.  
-4. Create or update the child note for that week.  
-5. List tasks, build the HTML table.  
-6. Run the LLM on a compact task payload.  
-7. Render HTML into the template, insert the table, inject AI text.  
-8. Search/update or create the note, then point the parent agenda’s description at the new note.  
+1. Find which steering committee occurrence to prepare and set the date used in the title.
+2. Read the template note from eXo.
+3. List project tasks.
+4. Run a single LLM call (structured output) on the template body, the task list, and the meeting context. It detects the template language and returns, all in that language: a suggested agenda, an HTML progress narrative, short watch items, a summary, and three short labels used for the agenda event description.
+5. Build the AI agenda, AI watch items, and useful-links sections (each rendered by a small HTML node).
+6. Compose the final note HTML by patching the template tokens with the dynamic sections (single short Code node): the AI HTML progress narrative goes into the progress report block, the AI lists into the agenda and watch-item blocks.
+7. Search for the existing weekly note by title, then update it (if found) or create a new child note.
+8. Build the agenda event description that links to the saved note (plus the AI agenda), then update the recurring agenda and refresh the invitee list.
 9. Stakeholders open the same invite and note every week with fresh content.
 
 ## 8) Business rules
 
 **Note** — one note per occurrence, dated title, always from the same root template, children of `6`, AI blocks clearly labeled as suggestions, progress section clearly marked.
 
-**Table** — only project `3` in scope, snapshot “as of prep time”.
+**Progress report** — only project `3` in scope, snapshot "as of prep time", produced by the LLM directly as HTML, grounded in task data (cites `/task:ID` and `@username`).
 
 **LLM** — grounded in task data, no fake facts, participants decide in meeting.
 
@@ -103,7 +107,8 @@ Default: Thursday 10:00. The run should land **before** the slot so the pack is 
 - Next due dates
 
 ## Progress report
-[table inserted by workflow]
+[AI narrative inserted by workflow: opener paragraph + 2-3 subsections like
+ "Notable items", "Stalled or blocked", with bullets citing /task:ID and @username]
 
 ## Suggested watch items
 [LLM list]
@@ -117,7 +122,7 @@ Default: Thursday 10:00. The run should land **before** the slot so the pack is 
 ## 10) Acceptance (functional)
 
 1. Each run produces one note and one updated agenda description with the right link.  
-2. The report reflects tasks on project `3` at run time.  
+2. The progress narrative reflects the actual state of tasks on project `3` at run time (cites real `task_id`s and assignees).  
 3. Suggested agenda and watch list are non-binding and labeled.  
 4. Invitees match the defined list.  
 5. A Thursday slot at 10:00 is the reference rhythm.
