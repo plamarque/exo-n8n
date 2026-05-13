@@ -4,9 +4,11 @@
 
 ## Video walkthrough
 
-Prefer a short screencast before the long read? Replace the placeholder with your published URL (or embed) when ready.
+Prefer a short screencast before the long read?
 
-**Short video:** *TBD*
+**Short video (FR voice-over):** [Loom — WF03 weekly steering preparation](https://www.loom.com/share/aeb338dd0ef54d678ef9752370db64b2)
+
+French partner article aligned with that recording (wf03 section): [docs/ARTICLE-FR-partenaires-eXo.md](../../docs/ARTICLE-FR-partenaires-eXo.md).
 
 ## n8n canvas (overview)
 
@@ -118,6 +120,7 @@ WF03 is the **broadest** demo: it touches **Notes**, **Tasks**, and **Agenda / c
 
 | Artifact                                                                   | Role                                                                                       |
 | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| [../../docs/ARTICLE-FR-partenaires-eXo.md](../../docs/ARTICLE-FR-partenaires-eXo.md) | French partner article (wf03 section: Loom, screenshots, solution summary).              |
 | [workflow.json](workflow.json)                                             | Canonical n8n export (see [ADR 0002](../../docs/ADR/0002-repository-layout-workflows.md)). |
 | [SPEC.functional.md](SPEC.functional.md)                                   | Goals, actors, note shape, business rules.                                                 |
 | [SPEC.technical.md](SPEC.technical.md)                                     | MCP technical contract (notes, projects, agenda, sequence, operations).                    |
