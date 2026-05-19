@@ -64,7 +64,7 @@ Together they enable:
 
 **Cross-cutting docs:** [docs/SPEC.md](docs/SPEC.md) (portfolio summary), [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) (setup, deploy, validation), [AGENTS.md](AGENTS.md) (contribution rules for this repo).
 
-**Shared sub-workflow:** several flows call **Unwrap MCP JSON** to normalize MCP responses—see [workflows/unwrap-mcp-json/README.md](workflows/unwrap-mcp-json/README.md).
+**Shared sub-workflow:** WF01 and other flows that need it call **Unwrap MCP JSON** to normalize MCP responses — see [workflows/unwrap-mcp-json/README.md](workflows/unwrap-mcp-json/README.md). **WF03** is self-contained and reads MCP fields directly.
 
 ---
 
@@ -94,15 +94,15 @@ Together they enable:
 
 ---
 
-### WF03 — Recurring collaboration: the weekly steering pack
+### WF03 — Weekly steering preparation
 
-**Tutorial:** [workflows/wf03-weekly-steering/README.md](workflows/wf03-weekly-steering/README.md)
+**Tutorial:** [workflows/wf03-weekly-steering/README.md](workflows/wf03-weekly-steering/README.md) · **Video:** [Loom — WF03](https://www.loom.com/share/aeb338dd0ef54d678ef9752370db64b2)
 
-**Idea:** Fixed rituals (steering committee) benefit from **one automated “meeting pack”**: template note, **task-derived** progress table, **LLM-suggested** watch items, and a **standing calendar** entry pointing to the right note for the week.
+**Idea:** Automate the **weekly steering prep pack** on a **self-contained** graph: list open tasks, one **LLM** call for progress narrative + agenda + watch items, **create or update** the meeting note from a template, and refresh the **recurring calendar** invite with the correct link and description.
 
-**Typical trigger:** schedule (prep before the meeting slot).
+**Typical trigger:** **Weekly Preparation (Thu 08:00)** or manual start.
 
-**Outcome:** Less copy-paste, one place in eXo for read-ahead, **notes + tasks + calendar** kept consistent.
+**Outcome:** Less copy-paste; **notes + tasks + calendar** stay aligned for the steering ritual.
 
 ---
 
@@ -123,11 +123,11 @@ Together they enable:
 These patterns appear across the portfolio; they are **intentional** for maintainability and demos.
 
 1. **MCP-first** — Business operations go through eXo MCP tools; there is no parallel REST “escape hatch” in these exports.
-2. **Unwrap once, reuse** — MCP responses are often **envelopes** (e.g. text parts with JSON). A **shared sub-workflow** normalizes that so the main graph works on **plain JSON** (see Unwrap MCP JSON).
+2. **Unwrap once, reuse** — Where needed (e.g. WF01), MCP **envelope** responses are normalized via the shared [Unwrap MCP JSON](workflows/unwrap-mcp-json/README.md) sub-workflow. WF02 and WF03 read `content[0].text.<field>` directly on the parent graph.
 3. **Prefer native n8n for control flow** — **Set**, **IF**, **Split Out**, **Merge**, **Execute Workflow**, and **Data Table** carry most of the logic; **Code** nodes are **small** and focused (e.g. HTML snippets, edge cases for merge inputs).
 4. **Guardrails before side effects** — LLM output is **parsed and filtered** (WF01); **empty search** results end the run **without error** (WF02 intake); **strict variables** fail fast when misconfigured (WF04).
 5. **Idempotency where it matters** — **Data Table** tracks processed **document** keys and **changed** timestamps (WF02, WF04) so reruns are safe and incremental.
-6. **Sub-workflows for clarity** — WF03 **factorizes** report building and HTML composition into **UTIL** graphs so the parent workflow reads as a **sequence of decisions**, not a tangle of nodes.
+6. **Self-contained when it teaches better** — WF03 keeps report, HTML, and note composition on **one canvas** (native HTML nodes + one short Code node, ADR 0004) instead of UTIL sub-workflows.
 
 ---
 
