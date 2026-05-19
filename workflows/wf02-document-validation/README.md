@@ -1,16 +1,8 @@
-# WF02 — Document validation (parallel approvals / split–join)
+# WF02 — Document validation
 
 **TL;DR** — Watch a **programming folder** for new documents, **create one validation task per file**, collect **two parallel approvals** (artistic vs technical) via **n8n Form** submissions, and **join** state in Data Tables so the task closes **only** when **both** sides approve. Demonstrates a richer pattern than a single-step native GED workflow. **No OpenAI** credential is required for this graph.
 
-## Video walkthrough
-
-Prefer a short screencast before the long read?
-
-**Short video (FR voice-over):** [Loom — WF02 document validation](https://www.loom.com/share/f3b4f53bad3f486b870f171d74ade4d2)
-
-French tutorial copy aligned with that recording: [README.fr.md](README.fr.md).
-
-## n8n canvas (overview)
+## n8n canvas
 
 ![WF02 — Document validation workflow in the n8n editor](wf02.png)
 
@@ -31,7 +23,7 @@ For festival programming (and similar programs), **editorial fit** and **operati
 - Mirror decisions as **task comments** and drive **status** transitions (`update_task_status`) per product rules.
 - On success across both branches, move to **Done** and record closure commentary as specified.
 
-## Prerequisites (eXo tenant and n8n)
+## Prerequisites
 
 Create or locate the following **on eXo**, then copy identifiers into n8n **variables** (see [config.env.example](config.env.example) and [SPEC.functional.md](SPEC.functional.md) §9, [SPEC.technical.md](SPEC.technical.md) §11–12).
 
@@ -55,7 +47,7 @@ Create or locate the following **on eXo**, then copy identifiers into n8n **vari
 | **Data Tables** `wf02_processed_documents` / `wf02_approvals` | Created on first run by the graph (`createIfNotExists`); **no manual SQL** required. |
 | **Unwrap** sub-workflow id for deploy | **`N8N_WORKFLOW_ID_UNWRAP`** + [subworkflow-dependencies.json](subworkflow-dependencies.json). |
 
-## Runtime variables (what they mean, and where to set them)
+## Runtime variables
 
 Set these in **n8n Variables** (or equivalent instance env mapping), because WF02 resolves them at runtime via `$vars.*`.
 
@@ -70,7 +62,7 @@ Set these in **n8n Variables** (or equivalent instance env mapping), because WF0
 
 Use `config.env.example` as a naming/meaning template. Copy values into **n8n Variables** and/or root **`.env`**, then run **`npm run generate:workflow-json`** to hardcode matching expressions ([docs/DEVELOPMENT.md](../../docs/DEVELOPMENT.md)).
 
-## High-level flow (conceptual)
+## High-level flow
 
 1. **Intake** — manual start or scheduled run.
 2. **Parallel reads** — branch A: `search_documents` → **Split Out** on **`content[0].text`**; branch B (same trigger): **Ensure Tracking Table** → **Get Processed Docs**. **Merge** (SQL) computes the differential so only **new or changed** files continue.
@@ -80,7 +72,7 @@ Use `config.env.example` as a naming/meaning template. Copy values into **n8n Va
 6. **Form branch** — **`Approval Form`** receives `task_id`, `cycle_id`, role, decision, reason; MCP comments + status updates mirror each submission.
 7. **Join & finalize** — **`Switch Approval Outcome`** after upsert: **both APPROVED** → **Done** + final comment; mixed approve/reject → stay **In progress** with explanation; otherwise **pending** until more submissions.
 
-## n8n design choices (not a node-by-node list)
+## n8n design choices
 
 
 | Area          | Choice                                                 | Why                                                                                                                                                       |
