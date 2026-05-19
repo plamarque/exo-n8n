@@ -1,12 +1,24 @@
 # WF04 — Metadata enrichment
 
-**TL;DR** — On a **schedule** or **manual** run, use a configured eXo **`space_id`** (**`WF04_SPACE_ID`**) to **scan** documents, and for each **new or changed** file (within a **per-run cap**) call **structured LLM output** to propose a **short description** and **categories**, then **write back** through MCP and **record state** in an n8n **Data Table** so reruns stay incremental. **`EXO_SPACE_NAME`** labels tracking and LLM context.
+**TL;DR** — On a **schedule** or **manual** run, scan a configured eXo document **space**, process each **new or changed** file (within a **per-run cap**) with **structured LLM output** to propose a **short description** and **categories**, write back through MCP, and **record state** in n8n **Data Tables** so reruns stay incremental.
 
 ## n8n canvas
 
 ![WF04 — Metadata enrichment workflow in the n8n editor](wf04.png)
 
-**Manual Start** or **Daily Schedule (02:00)** fan out to **List Documents** (MCP), **Ensure Tracking Table**, and **Ensure Category Table** in parallel → merge/filter → rendezvous at **Ready to Process** (**Merge**, **chooseBranch**: wait for **`Limit to 5 Documents`** + **`Get Categories`**, output documents only) so the category table is refreshed before **`Process Each Document`** → per-item **`Read Document`** + structured LLM → Data Table category lookup → MCP updates → tracking upsert. For the exact sequence, open [`workflow.json`](workflow.json) or read [SPEC.technical.md](SPEC.technical.md) (sections 3–4).
+**Manual Start** or **Daily Schedule (02:00)** fan out to **three parallel branches**:
+
+- **Document selection** — **List Documents** → **Split Out Documents**; **Ensure Tracking Table** → **Get Processed For Doc** → **Merge Documents to Process** (new/changed only) → **Limit to 5 Documents**.
+- **Category read** — **Ensure Category Table** → **Get Category Tree** → **Flatten Category Tree** → **Sync Category Table** → **Get Categories**.
+- **Gate** — **Ready to Process** (**Merge**, **chooseBranch**: waits for capped documents + refreshed **Get Categories**, outputs document items only) → **Process Each Document**.
+
+**Per document** (analysis, description, categories):
+
+- **Read Document** → **Prepare AI Input** → **Analyze Document** with **GPT-4o Mini Model** and **Structured Output** → **Extract Results** → **Add Description** → **IF Description MCP OK** → **Check Description Result** (failure → **Stop - Description update failed**).
+- **IF Suggested Categories** → **Split Suggested Categories** → **Lookup Category By Label** → **Enrich Category Lookup** → **Filter Matched Categories** / **Aggregate Matched Categories** → **IF Zero Category Matches** → **Assign Categories** → **IF Assign MCP OK** → **Check Assign Result** (failure → **Stop - Category assign failed**); no suggestions or no matches → **Update Tracking** directly.
+- Loop ends with **Update Tracking**; when the batch finishes → **Processing Summary**.
+
+Self-contained graph on one canvas. For tool names and payloads, see [`workflow.json`](workflow.json) and [SPEC.technical.md](SPEC.technical.md).
 
 ---
 
@@ -16,43 +28,41 @@ Without steady upkeep, document libraries accumulate **weak titles**, **missing 
 
 ## Automation objective
 
-- **List** space documents via **`search_documents`** using **`space_id`** from **List Documents** MCP **Manual** parameters (demo **`1`** in git; root **`.env`** **`WF04_SPACE_ID`** via **`npm run generate:workflow-json`** / deploy).
-- **Ensure** tracking and category Data Tables on **parallel branches** before reads and merges (same idempotency pattern as WF02).
-- **Split** the MCP payload into one item per document and **merge** with tracking so only **new or changed** files continue, then apply a **per-run cap** (**`Limit to 5 Documents`**).
-- **Warm** **`exo_category_cache`** from **`get_category_tree`** before the document loop; assign categories only when **`Lookup Category By Label`** resolves an exact **`category_label`**.
-- For each selected item: **read** full document context, run **structured** LLM analysis, **update description**, **assign categories** via MCP, **upsert** tracking, and emit a short **processing summary**.
+- **List** documents in a target space via MCP **`search_documents`** using **`WF04_SPACE_ID`** baked into **List Documents** (demo literal in git; rewritten from root **`.env`**).
+- **Skip** unchanged files using **`exo_processed_documents`** and SQL merge logic (same idempotency pattern as WF02).
+- **Refresh** **`exo_category_cache`** from **`get_category_tree`** once per run before the document loop.
+- For each capped item: **structured** LLM analysis, **`update_document_description`**, **`add_content_to_category`** only when a suggested label matches the cache **exactly**.
+- **Upsert** tracking rows and emit **Processing Summary** counts.
 
-There is **no** in-graph guard on empty **`EXO_SPACE_NAME`** or invalid **`space_id`** (didactic trade-off — see [SPEC.technical.md](SPEC.technical.md) §7).
+The graph does **not** call **`get_my_spaces`** at runtime or block on misconfigured space ids in-graph (didactic trade-off — [SPEC.technical.md §7](SPEC.technical.md#7-didactic-simplification-adr-0004)).
 
 ## Prerequisites
 
-WF04 needs a **document space**, a **category tree** with usable labels, and MCP write permissions. On a new tenant, discover **`space_id`** once during bootstrap, then align root `.env` with [config.env.example](config.env.example). Details: [SPEC.technical.md](SPEC.technical.md) §2.
+WF04 needs a **document space**, a **category tree** with usable labels, and MCP write permissions. On a **new tenant**, discover **`space_id`** once during bootstrap, then align root `.env` with [config.env.example](config.env.example). Details: [SPEC.technical.md](SPEC.technical.md) §2.
 
 **eXo**
 
-| Prerequisite | Typical setup | Why |
-|--------------|---------------|-----|
-| **Space** | **`WF04_SPACE_ID`** (digits) + **`EXO_SPACE_NAME`** (display label) | The graph does **not** call **`get_my_spaces`** at runtime — use [fixtures/FIXTURE_BOOTSTRAP_PROMPT.md](fixtures/FIXTURE_BOOTSTRAP_PROMPT.md). Wrong **`WF04_SPACE_ID`** targets the wrong library. |
-| **Documents** in that space | Listed by `search_documents` | An **empty** space yields **no work** (not an error). |
-| **Category tree** | Labels from **`get_category_tree`** | **`exo_category_cache`** stores **`category_id`** / **`category_label`**; LLM suggestions must **match labels exactly** for assignment. |
-| **MCP write access** | `update_document_description`, `add_content_to_category` | Writes must be allowed for the MCP user. |
+| Prerequisite | Typical `.env` key | Why |
+|--------------|-------------------|-----|
+| **Space** | `WF04_SPACE_ID`, `EXO_SPACE_NAME` | **`search_documents`** scope and tracking / LLM labels; discover ids via [fixtures/FIXTURE_BOOTSTRAP_PROMPT.md](fixtures/FIXTURE_BOOTSTRAP_PROMPT.md). |
+| **Documents** in that space | — | `search_documents` lists candidates; an **empty** space yields **no work** (not an error). |
+| **Category tree** | — | **`get_category_tree`** runs once per execution; LLM suggestions must **match tenant labels exactly** for assignment. |
+| **MCP write access** | — | `update_document_description` and `add_content_to_category` must be allowed for the MCP user. |
 
 **n8n**
 
 | Prerequisite | Why |
 |--------------|-----|
 | **MCP OAuth** + `EXO_MCP_ENDPOINT` | All reads and writes are MCP-first; rewrite endpoint with **`npm run generate:workflow-json`** or deploy. |
-| **OpenAI** or equivalent | **`gpt-4o-mini`** structured output for description and categories. |
+| **OpenAI** or equivalent | **Analyze Document** agent with **`gpt-4o-mini`** on **GPT-4o Mini Model** and **Structured Output** parser. |
 | **Data Tables** | `exo_processed_documents` and **`exo_category_cache`** — auto-created by the graph; no manual bootstrap. |
-| **Deploy id** | `N8N_WORKFLOW_ID_WF04` in root `.env` for REST deploy. |
+| **Self-contained graph** | No `subworkflow-dependencies.json`; set `N8N_WORKFLOW_ID_WF04` in root `.env` for deploy only. |
 
-**`WF04_SPACE_ID`** and **`EXO_SPACE_NAME`** in root **`.env`** are rewritten into **`workflow.json`** literals by **`npm run generate:workflow-json`** and/or deploy — the canonical graph does **not** use n8n **`$vars`** for these keys.
-
-Wrong **`WF04_SPACE_ID`** or misaligned **`EXO_SPACE_NAME`** misroute scans or confuse tracking labels with no in-graph validation.
+Wrong **`WF04_SPACE_ID`** misroutes **`search_documents`**; misaligned **`EXO_SPACE_NAME`** confuses tracking labels — verify after a tenant copy.
 
 ## Runtime variables
 
-Set keys in **repository root `.env`**. **`./tools/deploy.sh wf04`** and **`npm run generate:workflow-json`** rewrite **List Documents** `space_id` and **Prepare AI Input** `spaceName` literals ([`tools/lib/n8n-workflow-deploy-core.mjs`](../../tools/lib/n8n-workflow-deploy-core.mjs)). No n8n Variables / `$vars.*` at runtime for WF04 space keys.
+Set keys in **repository root `.env`**. **`./tools/deploy.sh wf04`** and **`npm run generate:workflow-json`** rewrite **List Documents** `space_id` and **Prepare AI Input** `spaceName` literals ([`tools/lib/n8n-workflow-deploy-core.mjs`](../../tools/lib/n8n-workflow-deploy-core.mjs)).
 
 | Variable | Meaning |
 |----------|---------|
@@ -64,22 +74,29 @@ Set keys in **repository root `.env`**. **`./tools/deploy.sh wf04`** and **`npm 
 ## High-level flow
 
 1. **Trigger** — **Manual Start** or **Daily Schedule** (02:00).
-2. **Parallel** — **`List Documents`** (MCP **`search_documents`**) on one branch; **`Ensure Tracking Table`** → **`Get Processed For Doc`** on another; both feed the **Merge** that picks new/changed docs.
-3. **Search & split** — **Split Out** expands hits; **Merge** SQL compares **`document_id`** / **`updated_date`** to the tracking table.
-4. **Incremental filter** — apply **per-run limit** (**`Limit to 5 Documents`**).
-5. **Category prefetch** — **`Ensure Category Table`** → **`get_category_tree`** (`executeOnce`) → **`Flatten Category Tree`** → **`Sync Category Table`** → **`Get Categories`**; **`Ready to Process`** waits with **`Limit to 5 Documents`** before **`Process Each Document`**.
-6. **Per document** — `get_document_by_id`, structured LLM, **`update_document_description`**, category lookup and **`add_content_to_category`** when labels match; **`content_id`** as **`/document:`** + id.
-7. **Record & summarize** — upsert tracking; aggregate counts.
+2. **Triple parallel** — **List Documents** | **Ensure Tracking Table** → **Get Processed For Doc** | **Ensure Category Table** → **Get Category Tree**.
+3. **Document intake** — **Split Out Documents** → **Merge Documents to Process** (SQL: new/changed vs **`exo_processed_documents`**) → **Limit to 5 Documents**.
+4. **Category cache** — **Flatten Category Tree** → **Sync Category Table** → **Get Categories** (`executeOnce` on tree read).
+5. **Gate** — **Ready to Process** → **Process Each Document**.
+6. **Per item — read & analyze** — **Read Document** → **Prepare AI Input** → **Analyze Document** → **Extract Results**.
+7. **Description write** — **Add Description** → **IF Description MCP OK** → **Check Description Result**; MCP failure → **Stop - Description update failed**.
+8. **Categories** — **IF Suggested Categories** → lookup path (**Lookup Category By Label**, **Enrich Category Lookup**, **Filter Matched Categories**, **Aggregate Matched Categories**, **IF Zero Category Matches**) → **Assign Categories** → **IF Assign MCP OK** → **Check Assign Result**; MCP failure → **Stop - Category assign failed**; no suggestions or no matches → **Update Tracking**.
+9. **Tracking** — **Update Tracking** upserts **`exo_processed_documents`**; loop continues until the batch is done.
+10. **Summary** — **Processing Summary** after **Process Each Document** completes.
 
 ## n8n design choices
 
 | Area | Choice | Why |
 |------|--------|-----|
-| Safety | **Hard cap** on documents per execution | Prevents runaway LLM + MCP cost on large libraries ([SPEC.functional.md](SPEC.functional.md)). |
-| Correctness | **Structured LLM output** (schema) | Keeps descriptions short and categories machine-verifiable before MCP writes. |
-| Idempotency | **Data Table `exo_processed_documents`** | Same pattern as WF02: **ensure table** on a parallel branch before **read-all** processed rows, then merge — **skip** unchanged docs across days. |
-| Categories | **`exo_category_cache`** refreshed each run | Tenant labels vary; exact string match required for assignment. |
-| Failure handling | **Explicit stops** after partial writes | Documented in technical spec when description succeeds but category assignment fails. |
+| Readability | **Five canvas zones** | Document selection, category read, analysis, description write, category assign — one question per region (ADR 0004). |
+| Intake | **Triple parallel from trigger** | Listing, tracking read, and category sync proceed without a single front-loaded Set/IF chain. |
+| Safety | **Hard cap** on documents per execution | **`Limit to 5 Documents`** prevents runaway LLM + MCP cost ([SPEC.functional.md](SPEC.functional.md)). |
+| Correctness | **Structured LLM output** (schema) | Short descriptions and machine-verifiable category names before MCP writes. |
+| Idempotency | **Data Table `exo_processed_documents`** | Merge SQL skips unchanged docs across scheduled runs. |
+| Categories | **`exo_category_cache`** refreshed each run | Tenant labels vary; exact string match required — unmatched suggestions are skipped without error. |
+| Gate | **Ready to Process** (`chooseBranch`) | Category branch only **gates** the loop; document ids are unchanged for **Read Document**. |
+| Failure handling | **Stop nodes** after partial MCP writes | Description or assign failures halt the item path ([SPEC.technical.md](SPEC.technical.md) §3.3). |
+| Configuration | **Plain literals** in `workflow.json`; deploy from root `.env` | Tenant **`space_id`** and display name injected at generate/deploy time. |
 | MCP | **No REST fallback** | MCP-first portfolio consistency ([SPEC.technical.md](SPEC.technical.md)). |
 
 ## MCP eXo interaction model
@@ -88,9 +105,9 @@ Tools used:
 
 - **`search_documents`** — enumerate candidates in the space.
 - **`get_document_by_id`** — fetch details for enrichment.
-- **`get_category_tree`** — called **once** per execution; **`Flatten Category Tree`** (Code) walks nested JSON before **`Sync Category Table`**.
+- **`get_category_tree`** — called **once** per execution; **Flatten Category Tree** walks nested JSON before **Sync Category Table**.
 - **`update_document_description`** — persist summary text.
-- **`add_content_to_category`** — attach resolved categories.
+- **`add_content_to_category`** — attach resolved categories (`content_id` = `/document:` + id).
 
 See [SPEC.technical.md](SPEC.technical.md) §3 for envelope shape, write order, and lookup rules.
 
@@ -98,7 +115,7 @@ See [SPEC.technical.md](SPEC.technical.md) §3 for envelope shape, write order, 
 
 - **Demo literals** — set **`WF04_SPACE_ID`** and **`EXO_SPACE_NAME`** in root **`.env`** and run **`npm run generate:workflow-json`** or **`./tools/deploy.sh wf04`** before testing on a new tenant.
 - **OAuth / OpenAI** — authorize MCP and LLM credentials on the target n8n instance.
-- **Category labels** — LLM suggestions must **mirror** tenant labels exactly or assignment is skipped; the graph refreshes **`exo_category_cache`** each run.
+- **Category labels** — LLM output must **mirror** tenant labels exactly or assignment is skipped.
 - **Per-run cap** and **no rollback** on partial failure — see [SPEC.functional.md](SPEC.functional.md) §4.
 
 ## Code vs native
@@ -118,6 +135,6 @@ The graph uses **Split Out**, **Merge**, **IF**, **Data Table**, and an **AI Age
 | [workflow.json](workflow.json) | Canonical export — name on instance: `WF04 - Metadata enrichment`. |
 | [SPEC.functional.md](SPEC.functional.md) | Goals, limits, acceptance criteria. |
 | [SPEC.technical.md](SPEC.technical.md) | Sequence, MCP tools, Data Table, LLM schema, demo runbook. |
-| [config.env.example](config.env.example) | Example `.env` keys. |
+| [config.env.example](config.env.example) | Example `.env` keys for deploy injection. |
 | [fixtures/FIXTURE_BOOTSTRAP_PROMPT.md](fixtures/FIXTURE_BOOTSTRAP_PROMPT.md) | Tenant bootstrap prompt for space id and display name. |
 | [fixtures/workflow.export.snapshot.json](fixtures/workflow.export.snapshot.json) | Secondary full snapshot (traceability). |
