@@ -6,7 +6,7 @@
 
 Automate triage of incoming Art2Rue festival emails and create eXo tasks only for messages that are clearly actionable.
 
-The final workflow prefers native n8n nodes for normalization, guardrails, and data extraction. A single **Code** node remains for controlled HTML in the task description.
+The workflow uses native n8n nodes for intake, guardrails, and triage, plus an **HTML** node for the task description. There is no utility sub-workflow and no **Code** node on the canonical graph.
 
 ## 2) Business context
 
@@ -24,13 +24,12 @@ The point is to show that an n8n + eXo MCP flow can turn actionable email into a
 ## 3) In-scope behavior
 
 1. Read emails with `list_emails`.
-2. Decode MCP envelopes via sub-workflow `UTIL - Unwrap MCP JSON`.
-3. Normalize email fields: `emailId`, `subject`, `body`, `sender`, `receivedAt`.
-4. Filter emails without an identifier.
-5. Structured LLM analysis per email.
-6. Create a task only when `actionRequired=true` and `actionConfidence >= 0.7`.
-7. Native resolution of assignee and priority from LLM output.
-8. Create an eXo task in the target project with `assignee` (and other fields) in the same `create_task_in_project` call — no separate `assign_task` step.
+2. Expand the MCP response with **Split Out** on `content[0].text` (one item per email).
+3. Drop items missing any required field for routing: `email_id`, `subject`, `content.body`, `sender.address`.
+4. Structured LLM analysis per remaining email (`action_required`, `action_confidence`, `assignee_username`, `priority`, `task_title`, `summary`).
+5. Create a task only when `action_required` is true and `action_confidence` ≥ 0.7.
+6. Map assignee and priority from structured LLM output into `create_task_in_project`.
+7. Create an eXo task in the target project with `assignee`, `priority`, title, and HTML description in the same `create_task_in_project` call — no separate `assign_task` step.
 
 ## 4) Out of scope (current)
 
