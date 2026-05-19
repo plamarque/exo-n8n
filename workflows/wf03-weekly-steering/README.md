@@ -2,14 +2,6 @@
 
 **TL;DR** — Automate the **weekly steering committee prep pack**: list open project tasks, ask an LLM for an **HTML progress narrative**, a **suggested agenda**, and **watch items**, then **create or update** the weekly meeting note and refresh the **recurring calendar** invite with the right link and description — without copy-paste.
 
-## Video walkthrough
-
-Prefer a short screencast before the long read?
-
-**Short video (FR voice-over):** [Loom — WF03 weekly steering preparation](https://www.loom.com/share/aeb338dd0ef54d678ef9752370db64b2)
-
-French partner article aligned with that recording (wf03 section): [docs/ARTICLE-FR-partenaires-eXo.md](../../docs/ARTICLE-FR-partenaires-eXo.md).
-
 ## n8n canvas
 
 ![WF03 — Weekly steering preparation workflow in the n8n editor](wf03.png)
@@ -129,7 +121,6 @@ The graph uses **Set**, **HTML**, **IF**, **Merge**, and an **AI Agent** with st
 
 | Artifact | Role |
 |----------|------|
-| [../../docs/ARTICLE-FR-partenaires-eXo.md](../../docs/ARTICLE-FR-partenaires-eXo.md) | French partner article — wf03 section, Loom, screenshots. |
 | [workflow.json](workflow.json) | Canonical export — name on instance: `WF03 - Weekly steering preparation`. |
 | [SPEC.functional.md](SPEC.functional.md) | Goals, actors, note shape, business rules. |
 | [SPEC.technical.md](SPEC.technical.md) | MCP contract, sequence, operations, didactic slice notes. |

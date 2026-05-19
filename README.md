@@ -96,7 +96,7 @@ Together they enable:
 
 ### WF03 — Weekly steering preparation
 
-**Tutorial:** [workflows/wf03-weekly-steering/README.md](workflows/wf03-weekly-steering/README.md) · **Video:** [Loom — WF03](https://www.loom.com/share/aeb338dd0ef54d678ef9752370db64b2)
+**Tutorial:** [workflows/wf03-weekly-steering/README.md](workflows/wf03-weekly-steering/README.md)
 
 **Idea:** Automate the **weekly steering prep pack** on a **self-contained** graph: list open tasks, one **LLM** call for progress narrative + agenda + watch items, **create or update** the meeting note from a template, and refresh the **recurring calendar** invite with the correct link and description.
 

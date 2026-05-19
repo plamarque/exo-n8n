@@ -6,7 +6,7 @@ node_modules/
 # Ephemeral SDK output and scratch (not committed)
 work/
 
-# Local French article (not committed; optional local copy for partners)
+# Uncommitted local draft (blog source; not linked from tracked docs)
 docs/ARTICLE-FR-partenaires-eXo.md
 
 # Local env files
